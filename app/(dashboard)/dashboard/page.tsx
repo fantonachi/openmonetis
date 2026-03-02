@@ -4,7 +4,13 @@ import { SectionCards } from "@/components/dashboard/section-cards";
 import MonthNavigation from "@/components/month-picker/month-navigation";
 import { getUser } from "@/lib/auth/server";
 import { fetchDashboardData } from "@/lib/dashboard/fetch-dashboard-data";
+import {
+	buildOptionSets,
+	buildSluggedFilters,
+	fetchLancamentoFilterSources,
+} from "@/lib/lancamentos/page-helpers";
 import { parsePeriodParam } from "@/lib/utils/period";
+import { getRecentEstablishmentsAction } from "../lancamentos/actions";
 import { fetchUserDashboardPreferences } from "./data";
 
 type PageSearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -28,12 +34,26 @@ export default async function Page({ searchParams }: PageProps) {
 	const periodoParam = getSingleParam(resolvedSearchParams, "periodo");
 	const { period: selectedPeriod } = parsePeriodParam(periodoParam);
 
-	const [data, preferences] = await Promise.all([
-		fetchDashboardData(user.id, selectedPeriod),
-		fetchUserDashboardPreferences(user.id),
-	]);
-
+	const [dashboardData, preferences, filterSources, estabelecimentos] =
+		await Promise.all([
+			fetchDashboardData(user.id, selectedPeriod),
+			fetchUserDashboardPreferences(user.id),
+			fetchLancamentoFilterSources(user.id),
+			getRecentEstablishmentsAction(),
+		]);
 	const { disableMagnetlines, dashboardWidgets } = preferences;
+	const sluggedFilters = buildSluggedFilters(filterSources);
+	const {
+		pagadorOptions,
+		splitPagadorOptions,
+		defaultPagadorId,
+		contaOptions,
+		cartaoOptions,
+		categoriaOptions,
+	} = buildOptionSets({
+		...sluggedFilters,
+		pagadorRows: filterSources.pagadorRows,
+	});
 
 	return (
 		<main className="flex flex-col gap-4">
@@ -42,11 +62,20 @@ export default async function Page({ searchParams }: PageProps) {
 				disableMagnetlines={disableMagnetlines}
 			/>
 			<MonthNavigation />
-			<SectionCards metrics={data.metrics} />
+			<SectionCards metrics={dashboardData.metrics} />
 			<DashboardGridEditable
-				data={data}
+				data={dashboardData}
 				period={selectedPeriod}
 				initialPreferences={dashboardWidgets}
+				quickActionOptions={{
+					pagadorOptions,
+					splitPagadorOptions,
+					defaultPagadorId,
+					contaOptions,
+					cartaoOptions,
+					categoriaOptions,
+					estabelecimentos,
+				}}
 			/>
 		</main>
 	);

@@ -27,7 +27,7 @@ export const revalidateConfig = {
 	estabelecimentos: ["/estabelecimentos", "/lancamentos"],
 	orcamentos: ["/orcamentos"],
 	pagadores: ["/pagadores"],
-	anotacoes: ["/anotacoes", "/anotacoes/arquivadas"],
+	anotacoes: ["/anotacoes", "/anotacoes/arquivadas", "/dashboard"],
 	lancamentos: ["/lancamentos", "/contas"],
 	inbox: ["/pre-lancamentos", "/lancamentos", "/dashboard"],
 } as const;
@@ -39,6 +39,7 @@ const DASHBOARD_ENTITIES: ReadonlySet<string> = new Set([
 	"cartoes",
 	"orcamentos",
 	"pagadores",
+	"anotacoes",
 	"inbox",
 ]);
 

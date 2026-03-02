@@ -1,7 +1,7 @@
 "use client";
 
 import {
-	closestCenter,
+	closestCorners,
 	DndContext,
 	type DragEndEvent,
 	KeyboardSensor,
@@ -16,15 +16,21 @@ import {
 	sortableKeyboardCoordinates,
 } from "@dnd-kit/sortable";
 import {
+	RiArrowDownLine,
+	RiArrowUpLine,
 	RiCheckLine,
 	RiCloseLine,
 	RiDragMove2Line,
 	RiEyeOffLine,
+	RiTodoLine,
 } from "@remixicon/react";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
+import { NoteDialog } from "@/components/anotacoes/note-dialog";
 import { SortableWidget } from "@/components/dashboard/sortable-widget";
 import { WidgetSettingsDialog } from "@/components/dashboard/widget-settings-dialog";
+import { LancamentoDialog } from "@/components/lancamentos/dialogs/lancamento-dialog/lancamento-dialog";
+import type { SelectOption } from "@/components/lancamentos/types";
 import { Button } from "@/components/ui/button";
 import WidgetCard from "@/components/widget-card";
 import type { DashboardData } from "@/lib/dashboard/fetch-dashboard-data";
@@ -42,12 +48,22 @@ type DashboardGridEditableProps = {
 	data: DashboardData;
 	period: string;
 	initialPreferences: WidgetPreferences | null;
+	quickActionOptions: {
+		pagadorOptions: SelectOption[];
+		splitPagadorOptions: SelectOption[];
+		defaultPagadorId: string | null;
+		contaOptions: SelectOption[];
+		cartaoOptions: SelectOption[];
+		categoriaOptions: SelectOption[];
+		estabelecimentos: string[];
+	};
 };
 
 export function DashboardGridEditable({
 	data,
 	period,
 	initialPreferences,
+	quickActionOptions,
 }: DashboardGridEditableProps) {
 	const [isEditing, setIsEditing] = useState(false);
 	const [isPending, startTransition] = useTransition();
@@ -183,53 +199,112 @@ export function DashboardGridEditable({
 	return (
 		<div className="space-y-4">
 			{/* Toolbar */}
-			<div className="flex items-center justify-end gap-2">
-				{isEditing ? (
-					<>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleCancelEditing}
-							disabled={isPending}
-							className="gap-2"
-						>
-							<RiCloseLine className="size-4" />
-							Cancelar
-						</Button>
-						<Button
-							size="sm"
-							onClick={handleSave}
-							disabled={isPending}
-							className="gap-2"
-						>
-							<RiCheckLine className="size-4" />
-							Salvar
-						</Button>
-					</>
+			<div className="flex flex-wrap items-center justify-between gap-2">
+				{!isEditing ? (
+					<div className="flex min-w-0 flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+						<span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+							Ação rápida
+						</span>
+						<div className="-mb-1 flex items-center gap-2 overflow-x-auto pb-1 sm:mb-0 sm:overflow-visible sm:pb-0">
+							<LancamentoDialog
+								mode="create"
+								pagadorOptions={quickActionOptions.pagadorOptions}
+								splitPagadorOptions={quickActionOptions.splitPagadorOptions}
+								defaultPagadorId={quickActionOptions.defaultPagadorId}
+								contaOptions={quickActionOptions.contaOptions}
+								cartaoOptions={quickActionOptions.cartaoOptions}
+								categoriaOptions={quickActionOptions.categoriaOptions}
+								estabelecimentos={quickActionOptions.estabelecimentos}
+								defaultPeriod={period}
+								defaultTransactionType="Receita"
+								trigger={
+									<Button size="sm" variant="outline" className="gap-2">
+										<RiArrowUpLine className="size-4 text-success/80" />
+										Nova receita
+									</Button>
+								}
+							/>
+							<LancamentoDialog
+								mode="create"
+								pagadorOptions={quickActionOptions.pagadorOptions}
+								splitPagadorOptions={quickActionOptions.splitPagadorOptions}
+								defaultPagadorId={quickActionOptions.defaultPagadorId}
+								contaOptions={quickActionOptions.contaOptions}
+								cartaoOptions={quickActionOptions.cartaoOptions}
+								categoriaOptions={quickActionOptions.categoriaOptions}
+								estabelecimentos={quickActionOptions.estabelecimentos}
+								defaultPeriod={period}
+								defaultTransactionType="Despesa"
+								trigger={
+									<Button size="sm" variant="outline" className="gap-2">
+										<RiArrowDownLine className="size-4 text-destructive/80" />
+										Nova despesa
+									</Button>
+								}
+							/>
+							<NoteDialog
+								mode="create"
+								trigger={
+									<Button size="sm" variant="outline" className="gap-2">
+										<RiTodoLine className="size-4 text-info/80" />
+										Nova anotação
+									</Button>
+								}
+							/>
+						</div>
+					</div>
 				) : (
-					<>
-						<WidgetSettingsDialog
-							hiddenWidgets={hiddenWidgets}
-							onToggleWidget={handleToggleWidget}
-							onReset={handleReset}
-						/>
-						<Button
-							variant="outline"
-							size="sm"
-							onClick={handleStartEditing}
-							className="gap-2"
-						>
-							<RiDragMove2Line className="size-4" />
-							Reordenar
-						</Button>
-					</>
+					<div />
 				)}
+
+				<div className="flex items-center gap-2">
+					{isEditing ? (
+						<>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleCancelEditing}
+								disabled={isPending}
+								className="gap-2"
+							>
+								<RiCloseLine className="size-4" />
+								Cancelar
+							</Button>
+							<Button
+								size="sm"
+								onClick={handleSave}
+								disabled={isPending}
+								className="gap-2"
+							>
+								<RiCheckLine className="size-4" />
+								Salvar
+							</Button>
+						</>
+					) : (
+						<>
+							<WidgetSettingsDialog
+								hiddenWidgets={hiddenWidgets}
+								onToggleWidget={handleToggleWidget}
+								onReset={handleReset}
+							/>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={handleStartEditing}
+								className="gap-2"
+							>
+								<RiDragMove2Line className="size-4" />
+								Reordenar
+							</Button>
+						</>
+					)}
+				</div>
 			</div>
 
 			{/* Grid */}
 			<DndContext
 				sensors={sensors}
-				collisionDetection={closestCenter}
+				collisionDetection={closestCorners}
 				onDragEnd={handleDragEnd}
 			>
 				<SortableContext

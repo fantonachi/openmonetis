@@ -22,7 +22,7 @@ export function PeriodFilterButtons({ currentFilter }: PeriodFilterProps) {
 	const handleFilterChange = (filter: PeriodFilter) => {
 		const params = new URLSearchParams(searchParams.toString());
 		params.set("meses", filter);
-		router.push(`/top-estabelecimentos?${params.toString()}`);
+		router.push(`/relatorios/estabelecimentos?${params.toString()}`);
 	};
 
 	return (

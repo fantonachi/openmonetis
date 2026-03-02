@@ -1,6 +1,8 @@
 "use client";
 
 import {
+	RiArrowDownSFill,
+	RiArrowUpSFill,
 	RiExternalLinkLine,
 	RiGroupLine,
 	RiVerifiedBadgeFill,
@@ -15,6 +17,10 @@ import { WidgetEmptyState } from "../widget-empty-state";
 
 type PagadoresWidgetProps = {
 	pagadores: DashboardPagador[];
+};
+
+const formatPercentage = (value: number) => {
+	return `${Math.abs(value).toFixed(0)}%`;
 };
 
 const buildInitials = (value: string) => {
@@ -44,6 +50,12 @@ export function PagadoresWidget({ pagadores }: PagadoresWidgetProps) {
 				<ul className="flex flex-col">
 					{pagadores.map((pagador) => {
 						const initials = buildInitials(pagador.name);
+						const hasValidPercentageChange =
+							typeof pagador.percentageChange === "number" &&
+							Number.isFinite(pagador.percentageChange);
+						const percentageChange = hasValidPercentageChange
+							? pagador.percentageChange
+							: null;
 
 						return (
 							<li
@@ -87,6 +99,25 @@ export function PagadoresWidget({ pagadores }: PagadoresWidgetProps) {
 
 								<div className="flex shrink-0 flex-col items-end">
 									<MoneyValues amount={pagador.totalExpenses} />
+									{percentageChange !== null && (
+										<span
+											className={`flex items-center gap-0.5 text-xs ${
+												percentageChange > 0
+													? "text-destructive"
+													: percentageChange < 0
+														? "text-success"
+														: "text-muted-foreground"
+											}`}
+										>
+											{percentageChange > 0 && (
+												<RiArrowUpSFill className="size-3" />
+											)}
+											{percentageChange < 0 && (
+												<RiArrowDownSFill className="size-3" />
+											)}
+											{formatPercentage(percentageChange)}
+										</span>
+									)}
 								</div>
 							</li>
 						);

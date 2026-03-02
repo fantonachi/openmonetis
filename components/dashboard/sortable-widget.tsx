@@ -37,7 +37,8 @@ export function SortableWidget({
 			className={cn(
 				"relative",
 				isDragging && "z-50 opacity-90",
-				isEditing && "cursor-grab active:cursor-grabbing",
+				isEditing &&
+					"cursor-grab active:cursor-grabbing touch-none select-none",
 			)}
 			{...(isEditing ? { ...attributes, ...listeners } : {})}
 		>

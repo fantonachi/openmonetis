@@ -9,6 +9,7 @@ import {
 	RiGroupLine,
 	RiPriceTag3Line,
 	RiSparklingLine,
+	RiStore2Line,
 	RiTodoLine,
 } from "@remixicon/react";
 
@@ -109,6 +110,11 @@ export const NAV_SECTIONS: NavSection[] = [
 				label: "uso de cartões",
 				icon: <RiBankCard2Line className="size-4" />,
 				preservePeriod: true,
+			},
+			{
+				href: "/relatorios/estabelecimentos",
+				label: "estabelecimentos",
+				icon: <RiStore2Line className="size-4" />,
 			},
 		],
 	},

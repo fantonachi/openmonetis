@@ -69,7 +69,10 @@ export async function fetchTopEstablishments(
 			),
 		)
 		.groupBy(lancamentos.name)
-		.orderBy(sql`ABS(sum(${lancamentos.amount})) DESC`)
+		.orderBy(
+			sql`count(${lancamentos.id}) DESC`,
+			sql`ABS(sum(${lancamentos.amount})) DESC`,
+		)
 		.limit(10);
 
 	const establishments = rows
