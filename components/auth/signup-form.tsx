@@ -281,7 +281,6 @@ export function SignupForm({ className, ...props }: DivProps) {
 				</CardContent>
 			</Card>
 
-			{/* <AuthFooter /> */}
 			<FieldDescription className="text-center">
 				<a href="/" className="underline underline-offset-4">
 					Voltar para o site

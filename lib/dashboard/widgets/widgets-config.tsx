@@ -7,33 +7,30 @@ import {
 	RiExchangeLine,
 	RiGroupLine,
 	RiLineChartLine,
-	RiMoneyDollarCircleLine,
 	RiNumbersLine,
 	RiPieChartLine,
 	RiRefreshLine,
-	RiSlideshowLine,
-	RiStore2Line,
 	RiStore3Line,
+	RiTodoLine,
 	RiWallet3Line,
 } from "@remixicon/react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { BoletosWidget } from "@/components/dashboard/boletos-widget";
 import { ExpensesByCategoryWidgetWithChart } from "@/components/dashboard/expenses-by-category-widget-with-chart";
+import { GoalsProgressWidget } from "@/components/dashboard/goals-progress-widget";
 import { IncomeByCategoryWidgetWithChart } from "@/components/dashboard/income-by-category-widget-with-chart";
 import { IncomeExpenseBalanceWidget } from "@/components/dashboard/income-expense-balance-widget";
 import { InstallmentExpensesWidget } from "@/components/dashboard/installment-expenses-widget";
 import { InvoicesWidget } from "@/components/dashboard/invoices-widget";
 import { MyAccountsWidget } from "@/components/dashboard/my-accounts-widget";
+import { NotesWidget } from "@/components/dashboard/notes-widget";
 import { PagadoresWidget } from "@/components/dashboard/pagadores-widget";
-import { PaymentConditionsWidget } from "@/components/dashboard/payment-conditions-widget";
-import { PaymentMethodsWidget } from "@/components/dashboard/payment-methods-widget";
+import { PaymentOverviewWidget } from "@/components/dashboard/payment-overview-widget";
 import { PaymentStatusWidget } from "@/components/dashboard/payment-status-widget";
 import { PurchasesByCategoryWidget } from "@/components/dashboard/purchases-by-category-widget";
-import { RecentTransactionsWidget } from "@/components/dashboard/recent-transactions-widget";
 import { RecurringExpensesWidget } from "@/components/dashboard/recurring-expenses-widget";
-import { TopEstablishmentsWidget } from "@/components/dashboard/top-establishments-widget";
-import { TopExpensesWidget } from "@/components/dashboard/top-expenses-widget";
+import { SpendingOverviewWidget } from "@/components/dashboard/spending-overview-widget";
 import type { DashboardData } from "./fetch-dashboard-data";
 
 export type WidgetConfig = {
@@ -114,30 +111,49 @@ export const widgetsConfig: WidgetConfig[] = [
 		),
 	},
 	{
-		id: "recent-transactions",
-		title: "Lançamentos Recentes",
-		subtitle: "Últimas 5 despesas registradas",
+		id: "notes",
+		title: "Anotações",
+		subtitle: "Últimas anotações ativas",
+		icon: <RiTodoLine className="size-4" />,
+		component: ({ data }) => <NotesWidget notes={data.notesData} />,
+		action: (
+			<Link
+				href="/anotacoes"
+				className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+			>
+				Ver todas
+				<RiArrowRightLine className="size-4" />
+			</Link>
+		),
+	},
+	{
+		id: "goals-progress",
+		title: "Progresso de Orçamentos",
+		subtitle: "Orçamentos por categoria no período",
 		icon: <RiExchangeLine className="size-4" />,
 		component: ({ data }) => (
-			<RecentTransactionsWidget data={data.recentTransactionsData} />
+			<GoalsProgressWidget data={data.goalsProgressData} />
+		),
+		action: (
+			<Link
+				href="/orcamentos"
+				className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+			>
+				Ver todos
+				<RiArrowRightLine className="size-4" />
+			</Link>
 		),
 	},
 	{
-		id: "payment-conditions",
-		title: "Condições de Pagamentos",
-		subtitle: "Análise das condições",
-		icon: <RiSlideshowLine className="size-4" />,
+		id: "payment-overview",
+		title: "Comportamento de Pagamento",
+		subtitle: "Despesas por condição e forma de pagamento",
+		icon: <RiWallet3Line className="size-4" />,
 		component: ({ data }) => (
-			<PaymentConditionsWidget data={data.paymentConditionsData} />
-		),
-	},
-	{
-		id: "payment-methods",
-		title: "Formas de Pagamento",
-		subtitle: "Distribuição das despesas",
-		icon: <RiMoneyDollarCircleLine className="size-4" />,
-		component: ({ data }) => (
-			<PaymentMethodsWidget data={data.paymentMethodsData} />
+			<PaymentOverviewWidget
+				paymentConditionsData={data.paymentConditionsData}
+				paymentMethodsData={data.paymentMethodsData}
+			/>
 		),
 	},
 	{
@@ -168,33 +184,16 @@ export const widgetsConfig: WidgetConfig[] = [
 		),
 	},
 	{
-		id: "top-expenses",
-		title: "Maiores Gastos do Mês",
-		subtitle: "Top 10 Despesas",
+		id: "spending-overview",
+		title: "Panorama de Gastos",
+		subtitle: "Principais despesas e frequência por local",
 		icon: <RiArrowUpDoubleLine className="size-4" />,
 		component: ({ data }) => (
-			<TopExpensesWidget
-				allExpenses={data.topExpensesAll}
-				cardOnlyExpenses={data.topExpensesCardOnly}
+			<SpendingOverviewWidget
+				topExpensesAll={data.topExpensesAll}
+				topExpensesCardOnly={data.topExpensesCardOnly}
+				topEstablishmentsData={data.topEstablishmentsData}
 			/>
-		),
-	},
-	{
-		id: "top-establishments",
-		title: "Top Estabelecimentos",
-		subtitle: "Frequência de gastos no período",
-		icon: <RiStore2Line className="size-4" />,
-		component: ({ data }) => (
-			<TopEstablishmentsWidget data={data.topEstablishmentsData} />
-		),
-		action: (
-			<Link
-				href="/top-estabelecimentos"
-				className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
-			>
-				Ver mais
-				<RiArrowRightLine className="size-4" />
-			</Link>
 		),
 	},
 	{

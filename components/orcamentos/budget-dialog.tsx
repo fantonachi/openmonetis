@@ -9,7 +9,6 @@ import {
 import { CategoryIcon } from "@/components/categorias/category-icon";
 import { PeriodPicker } from "@/components/period-picker";
 import { Button } from "@/components/ui/button";
-import { CurrencyInput } from "@/components/ui/currency-input";
 import {
 	Dialog,
 	DialogContent,
@@ -27,6 +26,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { useControlledState } from "@/hooks/use-controlled-state";
 import { useFormState } from "@/hooks/use-form-state";
 
@@ -53,6 +53,12 @@ const buildInitialValues = ({
 	period: budget?.period ?? defaultPeriod,
 	amount: budget ? (Math.round(budget.amount * 100) / 100).toFixed(2) : "",
 });
+
+const formatCurrency = (value: number) =>
+	new Intl.NumberFormat("pt-BR", {
+		style: "currency",
+		currency: "BRL",
+	}).format(value);
 
 export function BudgetDialog({
 	mode,
@@ -164,6 +170,15 @@ export function BudgetDialog({
 	const submitLabel =
 		mode === "create" ? "Salvar orçamento" : "Atualizar orçamento";
 	const disabled = categories.length === 0;
+	const parsedAmount = Number.parseFloat(formState.amount);
+	const sliderValue = Number.isFinite(parsedAmount)
+		? Math.max(0, parsedAmount)
+		: 0;
+	const baseForSlider = Math.max(budget?.spent ?? 0, sliderValue, 1000);
+	const sliderMax = Math.max(
+		1000,
+		Math.ceil((baseForSlider * 1.5) / 100) * 100,
+	);
 
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -215,7 +230,7 @@ export function BudgetDialog({
 							</Select>
 						</div>
 
-						<div className="grid gap-4 sm:grid-cols-2">
+						<div className="space-y-4">
 							<div className="space-y-2">
 								<Label htmlFor="budget-period">Período</Label>
 								<PeriodPicker
@@ -227,12 +242,30 @@ export function BudgetDialog({
 
 							<div className="space-y-2">
 								<Label htmlFor="budget-amount">Valor limite</Label>
-								<CurrencyInput
-									id="budget-amount"
-									placeholder="R$ 0,00"
-									value={formState.amount}
-									onValueChange={(value) => updateField("amount", value)}
-								/>
+								<div className="space-y-3 rounded-md border p-3">
+									<div className="flex items-center justify-between text-sm">
+										<span className="text-muted-foreground">Limite atual</span>
+										<span className="font-semibold text-foreground">
+											{formatCurrency(sliderValue)}
+										</span>
+									</div>
+
+									<Slider
+										id="budget-amount"
+										value={[sliderValue]}
+										min={0}
+										max={sliderMax}
+										step={10}
+										onValueChange={(value) =>
+											updateField("amount", value[0]?.toFixed(2) ?? "0.00")
+										}
+									/>
+
+									<div className="flex items-center justify-between text-xs text-muted-foreground">
+										<span>{formatCurrency(0)}</span>
+										<span>{formatCurrency(sliderMax)}</span>
+									</div>
+								</div>
 							</div>
 						</div>
 

@@ -6,16 +6,16 @@ import { fetchIncomeByCategory } from "./categories/income-by-category";
 import { fetchInstallmentExpenses } from "./expenses/installment-expenses";
 import { fetchRecurringExpenses } from "./expenses/recurring-expenses";
 import { fetchTopExpenses } from "./expenses/top-expenses";
+import { fetchGoalsProgressData } from "./goals-progress";
 import { fetchIncomeExpenseBalance } from "./income-expense-balance";
 import { fetchDashboardInvoices } from "./invoices";
 import { fetchDashboardCardMetrics } from "./metrics";
-import { fetchDashboardNotifications } from "./notifications";
+import { fetchDashboardNotes } from "./notes";
 import { fetchDashboardPagadores } from "./pagadores";
 import { fetchPaymentConditions } from "./payments/payment-conditions";
 import { fetchPaymentMethods } from "./payments/payment-methods";
 import { fetchPaymentStatus } from "./payments/payment-status";
 import { fetchPurchasesByCategory } from "./purchases-by-category";
-import { fetchRecentTransactions } from "./recent-transactions";
 import { fetchTopEstablishments } from "./top-establishments";
 
 async function fetchDashboardDataInternal(userId: string, period: string) {
@@ -24,11 +24,11 @@ async function fetchDashboardDataInternal(userId: string, period: string) {
 		accountsSnapshot,
 		invoicesSnapshot,
 		boletosSnapshot,
-		notificationsSnapshot,
+		goalsProgressData,
 		paymentStatusData,
 		incomeExpenseBalanceData,
 		pagadoresSnapshot,
-		recentTransactionsData,
+		notesData,
 		paymentConditionsData,
 		paymentMethodsData,
 		recurringExpensesData,
@@ -44,11 +44,11 @@ async function fetchDashboardDataInternal(userId: string, period: string) {
 		fetchDashboardAccounts(userId),
 		fetchDashboardInvoices(userId, period),
 		fetchDashboardBoletos(userId, period),
-		fetchDashboardNotifications(userId, period),
+		fetchGoalsProgressData(userId, period),
 		fetchPaymentStatus(userId, period),
 		fetchIncomeExpenseBalance(userId, period),
 		fetchDashboardPagadores(userId, period),
-		fetchRecentTransactions(userId, period),
+		fetchDashboardNotes(userId),
 		fetchPaymentConditions(userId, period),
 		fetchPaymentMethods(userId, period),
 		fetchRecurringExpenses(userId, period),
@@ -66,11 +66,11 @@ async function fetchDashboardDataInternal(userId: string, period: string) {
 		accountsSnapshot,
 		invoicesSnapshot,
 		boletosSnapshot,
-		notificationsSnapshot,
+		goalsProgressData,
 		paymentStatusData,
 		incomeExpenseBalanceData,
 		pagadoresSnapshot,
-		recentTransactionsData,
+		notesData,
 		paymentConditionsData,
 		paymentMethodsData,
 		recurringExpensesData,

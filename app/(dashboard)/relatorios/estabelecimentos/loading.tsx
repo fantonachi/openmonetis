@@ -4,7 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
 	return (
 		<main className="flex flex-col gap-4 px-6">
-			<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+			<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
 				<div className="flex flex-col gap-1">
 					<Skeleton className="h-8 w-48" />
 					<Skeleton className="h-4 w-64" />
