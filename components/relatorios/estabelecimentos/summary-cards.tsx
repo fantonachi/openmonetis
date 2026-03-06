@@ -8,7 +8,7 @@ import {
 } from "@remixicon/react";
 import MoneyValues from "@/components/money-values";
 import { Card, CardContent } from "@/components/ui/card";
-import type { TopEstabelecimentosData } from "@/lib/top-estabelecimentos/fetch-data";
+import type { TopEstabelecimentosData } from "@/lib/relatorios/estabelecimentos/fetch-data";
 
 type SummaryCardsProps = {
 	summary: TopEstabelecimentosData["summary"];

@@ -95,7 +95,7 @@ export function PagadorDialog({
 	);
 
 	// Use form state hook for form management
-	const { formState, updateField, setFormState } =
+	const { formState, resetForm, updateField } =
 		useFormState<PagadorFormValues>(initialState);
 
 	const availableAvatars = useMemo(() => {
@@ -111,10 +111,10 @@ export function PagadorDialog({
 	// Reset form when dialog opens
 	useEffect(() => {
 		if (dialogOpen) {
-			setFormState(initialState);
+			resetForm(initialState);
 			setErrorMessage(null);
 		}
-	}, [dialogOpen, initialState, setFormState]);
+	}, [dialogOpen, initialState, resetForm]);
 
 	const handleSubmit = useCallback(
 		(event: React.FormEvent<HTMLFormElement>) => {
@@ -160,7 +160,7 @@ export function PagadorDialog({
 				if (result.success) {
 					toast.success(result.message);
 					setDialogOpen(false);
-					setFormState(initialState);
+					resetForm(initialState);
 					return;
 				}
 
@@ -168,7 +168,7 @@ export function PagadorDialog({
 				toast.error(result.error);
 			});
 		},
-		[formState, initialState, mode, pagador?.id, setDialogOpen, setFormState],
+		[formState, initialState, mode, pagador?.id, resetForm, setDialogOpen],
 	);
 
 	const title = mode === "create" ? "Novo pagador" : "Editar pagador";

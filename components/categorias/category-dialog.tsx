@@ -76,16 +76,16 @@ export function CategoryDialog({
 	});
 
 	// Use form state hook for form management
-	const { formState, updateField, setFormState } =
+	const { formState, resetForm, updateField } =
 		useFormState<CategoryFormValues>(initialState);
 
 	// Reset form when dialog opens
 	useEffect(() => {
 		if (dialogOpen) {
-			setFormState(initialState);
+			resetForm(initialState);
 			setErrorMessage(null);
 		}
-	}, [dialogOpen, setFormState, initialState]);
+	}, [dialogOpen, initialState, resetForm]);
 
 	// Clear error when dialog closes
 	useEffect(() => {
@@ -123,7 +123,7 @@ export function CategoryDialog({
 			if (result.success) {
 				toast.success(result.message);
 				setDialogOpen(false);
-				setFormState(initialState);
+				resetForm(initialState);
 				return;
 			}
 

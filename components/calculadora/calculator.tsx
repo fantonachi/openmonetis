@@ -1,9 +1,9 @@
 "use client";
 
 import { CalculatorKeypad } from "@/components/calculadora/calculator-keypad";
+import { useCalculatorKeyboard } from "@/components/calculadora/use-calculator-keyboard";
+import { useCalculatorState } from "@/components/calculadora/use-calculator-state";
 import { Button } from "@/components/ui/button";
-import { useCalculatorKeyboard } from "@/hooks/use-calculator-keyboard";
-import { useCalculatorState } from "@/hooks/use-calculator-state";
 import { CalculatorDisplay } from "./calculator-display";
 
 type CalculatorProps = {
@@ -64,6 +64,7 @@ export default function Calculator({
 				resultText={resultText}
 				copied={copied}
 				onCopy={copyToClipboard}
+				isResultView={Boolean(history)}
 			/>
 			<CalculatorKeypad buttons={buttons} activeOperator={operator} />
 			{onSelectValue && (

@@ -25,7 +25,7 @@ interface UseLogoSelectionProps {
  *   mode: 'create',
  *   currentLogo: formState.logo,
  *   currentName: formState.name,
- *   onUpdate: (updates) => setFormState(prev => ({ ...prev, ...updates }))
+ *   onUpdate: (updates) => updateFields(updates)
  * });
  * ```
  */

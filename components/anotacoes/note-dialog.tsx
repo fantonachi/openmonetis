@@ -85,17 +85,17 @@ export function NoteDialog({
 
 	const initialState = buildInitialValues(note);
 
-	const { formState, updateField, setFormState } =
+	const { formState, resetForm, updateField } =
 		useFormState<NoteFormValues>(initialState);
 
 	useEffect(() => {
 		if (dialogOpen) {
-			setFormState(buildInitialValues(note));
+			resetForm(buildInitialValues(note));
 			setErrorMessage(null);
 			setNewTaskText("");
 			requestAnimationFrame(() => titleRef.current?.focus());
 		}
-	}, [dialogOpen, note, setFormState]);
+	}, [dialogOpen, note, resetForm]);
 
 	const dialogTitle = mode === "create" ? "Nova anotação" : "Editar anotação";
 	const description =
@@ -338,7 +338,7 @@ export function NoteDialog({
 							</div>
 
 							{sortedTasks.length > 0 && (
-								<div className="space-y-1 max-h-[240px] overflow-y-auto pr-1">
+								<div className="space-y-1 max-h-[300px] overflow-y-auto pr-1 mt-4 rounded-md p-2 bg-card ">
 									{sortedTasks.map((task) => (
 										<div
 											key={task.id}

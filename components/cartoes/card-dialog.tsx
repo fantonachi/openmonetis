@@ -13,6 +13,7 @@ import {
 	updateCardAction,
 } from "@/app/(dashboard)/cartoes/actions";
 import { LogoPickerDialog, LogoPickerTrigger } from "@/components/logo-picker";
+import { useLogoSelection } from "@/components/logo-picker/use-logo-selection";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -25,7 +26,6 @@ import {
 } from "@/components/ui/dialog";
 import { useControlledState } from "@/hooks/use-controlled-state";
 import { useFormState } from "@/hooks/use-form-state";
-import { useLogoSelection } from "@/hooks/use-logo-selection";
 import { deriveNameFromLogo, normalizeLogo } from "@/lib/logo";
 import { formatLimitInput } from "@/lib/utils/currency";
 import { CardFormFields } from "./card-form-fields";
@@ -100,16 +100,16 @@ export function CardDialog({
 	);
 
 	// Use form state hook for form management
-	const { formState, updateField, updateFields, setFormState } =
+	const { formState, resetForm, updateField, updateFields } =
 		useFormState<CardFormValues>(initialState);
 
 	// Reset form when dialog opens
 	useEffect(() => {
 		if (dialogOpen) {
-			setFormState(initialState);
+			resetForm(initialState);
 			setErrorMessage(null);
 		}
-	}, [dialogOpen, initialState, setFormState]);
+	}, [dialogOpen, initialState, resetForm]);
 
 	// Close logo dialog when main dialog closes
 	useEffect(() => {
@@ -173,7 +173,7 @@ export function CardDialog({
 				if (result.success) {
 					toast.success(result.message);
 					setDialogOpen(false);
-					setFormState(initialState);
+					resetForm(initialState);
 					return;
 				}
 
@@ -181,7 +181,7 @@ export function CardDialog({
 				toast.error(result.error);
 			});
 		},
-		[card?.id, formState, initialState, mode, setDialogOpen, setFormState],
+		[card?.id, formState, initialState, mode, resetForm, setDialogOpen],
 	);
 
 	const title = mode === "create" ? "Novo cartão" : "Editar cartão";

@@ -1,5 +1,5 @@
+import type { CalculatorButtonConfig } from "@/components/calculadora/use-calculator-state";
 import { Button } from "@/components/ui/button";
-import type { CalculatorButtonConfig } from "@/hooks/use-calculator-state";
 import type { Operator } from "@/lib/utils/calculator";
 import { cn } from "@/lib/utils/ui";
 

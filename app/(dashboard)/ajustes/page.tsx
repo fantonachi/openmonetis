@@ -12,6 +12,7 @@ import { UpdatePasswordForm } from "@/components/ajustes/update-password-form";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { auth } from "@/lib/auth/config";
+import { DEFAULT_FONT_KEY } from "@/public/fonts/font_index";
 import { fetchAjustesPageData } from "./data";
 
 export default async function Page() {
@@ -75,8 +76,8 @@ export default async function Page() {
 								lancamentosColumnOrder={
 									userPreferences?.lancamentosColumnOrder ?? null
 								}
-								systemFont={userPreferences?.systemFont ?? "ai-sans"}
-								moneyFont={userPreferences?.moneyFont ?? "ai-sans"}
+								systemFont={userPreferences?.systemFont ?? DEFAULT_FONT_KEY}
+								moneyFont={userPreferences?.moneyFont ?? DEFAULT_FONT_KEY}
 							/>
 						</div>
 					</Card>

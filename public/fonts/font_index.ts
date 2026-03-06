@@ -14,12 +14,12 @@ import localFont from "next/font/local";
 const ai_sans = localFont({
 	src: [
 		{
-			path: "./AISans-Regular.woff2",
+			path: "./ai-sans-regular.woff2",
 			weight: "400",
 			style: "normal",
 		},
 		{
-			path: "./AISans-Semibold.woff2",
+			path: "./ai-sans-semibold.woff2",
 			weight: "700",
 			style: "normal",
 		},
@@ -28,64 +28,27 @@ const ai_sans = localFont({
 	variable: "--font-ai-sans",
 });
 
+const itau = localFont({
+	src: [
+		{
+			path: "./itau-text-regular.woff2",
+			weight: "400",
+			style: "normal",
+		},
+		{
+			path: "./itau-text-bold.woff2",
+			weight: "700",
+			style: "normal",
+		},
+	],
+	display: "swap",
+	variable: "--font-itau",
+});
+
 const anthropic_sans = localFont({
-	src: "./anthropicSans.woff2",
+	src: "./anthropic-sans.woff2",
 	display: "swap",
 	variable: "--font-anthropic-sans",
-});
-
-const sf_pro_display = localFont({
-	src: [
-		{
-			path: "./SF-Pro-Display-Regular.otf",
-			weight: "400",
-			style: "normal",
-		},
-		{
-			path: "./SF-Pro-Display-Medium.otf",
-			weight: "500",
-			style: "normal",
-		},
-		{
-			path: "./SF-Pro-Display-Semibold.otf",
-			weight: "600",
-			style: "normal",
-		},
-		{
-			path: "./SF-Pro-Display-Bold.otf",
-			weight: "700",
-			style: "normal",
-		},
-	],
-	display: "swap",
-	variable: "--font-sf-pro-display",
-});
-
-const sf_pro_rounded = localFont({
-	src: [
-		{
-			path: "./SF-Pro-Rounded-Regular.otf",
-			weight: "400",
-			style: "normal",
-		},
-		{
-			path: "./SF-Pro-Rounded-Medium.otf",
-			weight: "500",
-			style: "normal",
-		},
-		{
-			path: "./SF-Pro-Rounded-Semibold.otf",
-			weight: "600",
-			style: "normal",
-		},
-		{
-			path: "./SF-Pro-Rounded-Bold.otf",
-			weight: "700",
-			style: "normal",
-		},
-	],
-	display: "swap",
-	variable: "--font-sf-pro-rounded",
 });
 
 const inter = Inter({
@@ -145,14 +108,10 @@ const ibm_plex_mono = IBM_Plex_Mono({
 	variable: "--font-ibm-plex-mono",
 });
 
-export type FontOption = {
-	key: string;
-	label: string;
-	variable: string;
-};
+export const DEFAULT_FONT_KEY = "ai-sans";
 
-export const FONT_OPTIONS: FontOption[] = [
-	{ key: "ai-sans", label: "AI Sans", variable: "var(--font-ai-sans)" },
+export const FONT_OPTIONS = [
+	{ key: "ai-sans", label: "Open AI Sans", variable: "var(--font-ai-sans)" },
 	{
 		key: "anthropic-sans",
 		label: "Anthropic Sans",
@@ -163,6 +122,11 @@ export const FONT_OPTIONS: FontOption[] = [
 		key: "fira-sans",
 		label: "Fira Sans",
 		variable: "var(--font-fira-sans)",
+	},
+	{
+		key: "itau",
+		label: "Itaú Sans",
+		variable: "var(--font-itau)",
 	},
 	{ key: "geist", label: "Geist Sans", variable: "var(--font-geist)" },
 	{
@@ -182,29 +146,21 @@ export const FONT_OPTIONS: FontOption[] = [
 		variable: "var(--font-reddit-sans)",
 	},
 	{ key: "roboto", label: "Roboto", variable: "var(--font-roboto)" },
-	{
-		key: "sf-pro-display",
-		label: "SF Pro Display",
-		variable: "var(--font-sf-pro-display)",
-	},
-	{
-		key: "sf-pro-rounded",
-		label: "SF Pro Rounded",
-		variable: "var(--font-sf-pro-rounded)",
-	},
 	{ key: "ubuntu", label: "Ubuntu", variable: "var(--font-ubuntu)" },
+] as const;
+
+export type FontKey = (typeof FONT_OPTIONS)[number]["key"];
+
+export const FONT_KEYS = FONT_OPTIONS.map((option) => option.key) as [
+	FontKey,
+	...FontKey[],
 ];
 
-/** @deprecated Use FONT_OPTIONS */
-export const SYSTEM_FONT_OPTIONS = FONT_OPTIONS;
-/** @deprecated Use FONT_OPTIONS */
-export const MONEY_FONT_OPTIONS = FONT_OPTIONS;
+const VALID_FONT_KEY_SET = new Set<string>(FONT_KEYS);
 
 const allFonts = [
 	ai_sans,
 	anthropic_sans,
-	sf_pro_display,
-	sf_pro_rounded,
 	inter,
 	geist_sans,
 	roboto,
@@ -214,15 +170,21 @@ const allFonts = [
 	jetbrains_mono,
 	fira_code,
 	ibm_plex_mono,
+	itau,
 ];
 
 export const allFontVariables = allFonts.map((f) => f.variable).join(" ");
 
-// Backward compatibility
-export const main_font = ai_sans;
-export const money_font = ai_sans;
+function isValidFontKey(value: string): value is FontKey {
+	return VALID_FONT_KEY_SET.has(value);
+}
+
+export function normalizeFontKey(value: string | null | undefined): FontKey {
+	if (!value) return DEFAULT_FONT_KEY;
+	return isValidFontKey(value) ? value : DEFAULT_FONT_KEY;
+}
 
 export function getFontVariable(key: string): string {
 	const option = FONT_OPTIONS.find((o) => o.key === key);
-	return option?.variable ?? "var(--font-ai-sans)";
+	return option?.variable ?? `var(--font-${DEFAULT_FONT_KEY})`;
 }

@@ -1,13 +1,14 @@
 import { desc, eq } from "drizzle-orm";
 import { tokensApi } from "@/db/schema";
 import { db, schema } from "@/lib/db";
+import { type FontKey, normalizeFontKey } from "@/public/fonts/font_index";
 
 export interface UserPreferences {
 	disableMagnetlines: boolean;
 	extratoNoteAsColumn: boolean;
 	lancamentosColumnOrder: string[] | null;
-	systemFont: string;
-	moneyFont: string;
+	systemFont: FontKey;
+	moneyFont: FontKey;
 }
 
 export interface ApiToken {
@@ -43,7 +44,13 @@ export async function fetchUserPreferences(
 		.where(eq(schema.preferenciasUsuario.userId, userId))
 		.limit(1);
 
-	return result[0] || null;
+	if (!result[0]) return null;
+
+	return {
+		...result[0],
+		systemFont: normalizeFontKey(result[0].systemFont),
+		moneyFont: normalizeFontKey(result[0].moneyFont),
+	};
 }
 
 export async function fetchApiTokens(userId: string): Promise<ApiToken[]> {

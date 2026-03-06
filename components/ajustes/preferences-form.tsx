@@ -36,7 +36,7 @@ import {
 	DEFAULT_LANCAMENTOS_COLUMN_ORDER,
 	LANCAMENTOS_COLUMN_LABELS,
 } from "@/lib/lancamentos/column-order";
-import { FONT_OPTIONS, getFontVariable } from "@/public/fonts/font_index";
+import { FONT_OPTIONS } from "@/public/fonts/font_index";
 
 interface PreferencesFormProps {
 	disableMagnetlines: boolean;
@@ -189,14 +189,6 @@ export function PreferencesForm({
 							))}
 						</SelectContent>
 					</Select>
-					<p
-						className="text-sm text-muted-foreground pt-1"
-						style={{
-							fontFamily: getFontVariable(selectedSystemFont),
-						}}
-					>
-						Suas finanças em um só lugar
-					</p>
 				</div>
 
 				{/* Fonte de valores */}
@@ -223,14 +215,6 @@ export function PreferencesForm({
 							))}
 						</SelectContent>
 					</Select>
-					<p
-						className="text-sm text-muted-foreground pt-1 tabular-nums"
-						style={{
-							fontFamily: getFontVariable(selectedMoneyFont),
-						}}
-					>
-						R$ 1.234,56
-					</p>
 				</div>
 			</section>
 

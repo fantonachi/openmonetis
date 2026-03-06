@@ -10,6 +10,7 @@ import { account, pagadores, tokensApi } from "@/db/schema";
 import { auth } from "@/lib/auth/config";
 import { db, schema } from "@/lib/db";
 import { PAGADOR_ROLE_ADMIN } from "@/lib/pagadores/constants";
+import { DEFAULT_FONT_KEY, FONT_KEYS } from "@/public/fonts/font_index";
 
 type ActionResponse<T = void> = {
 	success: boolean;
@@ -52,28 +53,12 @@ const deleteAccountSchema = z.object({
 	}),
 });
 
-const VALID_FONTS = [
-	"ai-sans",
-	"anthropic-sans",
-	"fira-code",
-	"fira-sans",
-	"geist",
-	"ibm-plex-mono",
-	"inter",
-	"jetbrains-mono",
-	"reddit-sans",
-	"roboto",
-	"sf-pro-display",
-	"sf-pro-rounded",
-	"ubuntu",
-] as const;
-
 const updatePreferencesSchema = z.object({
 	disableMagnetlines: z.boolean(),
 	extratoNoteAsColumn: z.boolean(),
 	lancamentosColumnOrder: z.array(z.string()).nullable(),
-	systemFont: z.enum(VALID_FONTS).default("ai-sans"),
-	moneyFont: z.enum(VALID_FONTS).default("ai-sans"),
+	systemFont: z.enum(FONT_KEYS).default(DEFAULT_FONT_KEY),
+	moneyFont: z.enum(FONT_KEYS).default(DEFAULT_FONT_KEY),
 });
 
 // Actions

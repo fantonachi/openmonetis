@@ -2,7 +2,7 @@
 
 import { RiFireLine, RiTrophyLine } from "@remixicon/react";
 import { Card, CardContent } from "@/components/ui/card";
-import type { TopEstabelecimentosData } from "@/lib/top-estabelecimentos/fetch-data";
+import type { TopEstabelecimentosData } from "@/lib/relatorios/estabelecimentos/fetch-data";
 
 type HighlightsCardsProps = {
 	summary: TopEstabelecimentosData["summary"];

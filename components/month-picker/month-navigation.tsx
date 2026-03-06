@@ -3,61 +3,37 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useTransition } from "react";
 import { Card } from "@/components/ui/card";
-import { useMonthPeriod } from "@/hooks/use-month-period";
+import { getNextPeriod, getPreviousPeriod } from "@/lib/utils/period";
 import LoadingSpinner from "./loading-spinner";
 import NavigationButton from "./nav-button";
 import ReturnButton from "./return-button";
+import { useMonthPeriod } from "./use-month-period";
 
 export default function MonthNavigation() {
-	const {
-		monthNames,
-		currentMonth,
-		currentYear,
-		defaultMonth,
-		defaultYear,
-		buildHref,
-	} = useMonthPeriod();
+	const { period, currentMonth, currentYear, defaultPeriod, buildHref } =
+		useMonthPeriod();
 
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 
 	const currentMonthLabel = useMemo(
-		() => currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1),
-		[currentMonth],
+		() =>
+			`${currentMonth.charAt(0).toUpperCase()}${currentMonth.slice(1)} ${currentYear}`,
+		[currentMonth, currentYear],
 	);
-
-	const currentMonthIndex = useMemo(
-		() => monthNames.indexOf(currentMonth),
-		[monthNames, currentMonth],
+	const prevTarget = useMemo(
+		() => buildHref(getPreviousPeriod(period)),
+		[buildHref, period],
 	);
-
-	const prevTarget = useMemo(() => {
-		let idx = currentMonthIndex - 1;
-		let year = currentYear;
-		if (idx < 0) {
-			idx = monthNames.length - 1;
-			year = (parseInt(currentYear, 10) - 1).toString();
-		}
-		return buildHref(monthNames[idx], year);
-	}, [currentMonthIndex, currentYear, monthNames, buildHref]);
-
-	const nextTarget = useMemo(() => {
-		let idx = currentMonthIndex + 1;
-		let year = currentYear;
-		if (idx >= monthNames.length) {
-			idx = 0;
-			year = (parseInt(currentYear, 10) + 1).toString();
-		}
-		return buildHref(monthNames[idx], year);
-	}, [currentMonthIndex, currentYear, monthNames, buildHref]);
-
+	const nextTarget = useMemo(
+		() => buildHref(getNextPeriod(period)),
+		[buildHref, period],
+	);
 	const returnTarget = useMemo(
-		() => buildHref(defaultMonth, defaultYear),
-		[buildHref, defaultMonth, defaultYear],
+		() => buildHref(defaultPeriod),
+		[buildHref, defaultPeriod],
 	);
-
-	const isDifferentFromCurrent =
-		currentMonth !== defaultMonth || currentYear !== defaultYear.toString();
+	const isDifferentFromCurrent = period !== defaultPeriod;
 
 	// Prefetch otimizado: apenas meses adjacentes (M-1, M+1) e mês atual
 	// Isso melhora a performance da navegação sem sobrecarregar o cliente
@@ -91,10 +67,9 @@ export default function MonthNavigation() {
 					<div
 						className="mx-1 space-x-1 capitalize font-semibold"
 						aria-current={!isDifferentFromCurrent ? "date" : undefined}
-						aria-label={`Período selecionado: ${currentMonthLabel} de ${currentYear}`}
+						aria-label={`Período selecionado: ${currentMonthLabel}`}
 					>
 						<span>{currentMonthLabel}</span>
-						<span>{currentYear}</span>
 					</div>
 
 					{isPending && <LoadingSpinner />}

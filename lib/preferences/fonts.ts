@@ -1,15 +1,20 @@
 import { eq } from "drizzle-orm";
 import { cache } from "react";
 import { db, schema } from "@/lib/db";
+import {
+	DEFAULT_FONT_KEY,
+	type FontKey,
+	normalizeFontKey,
+} from "@/public/fonts/font_index";
 
 export type FontPreferences = {
-	systemFont: string;
-	moneyFont: string;
+	systemFont: FontKey;
+	moneyFont: FontKey;
 };
 
 const DEFAULT_FONT_PREFS: FontPreferences = {
-	systemFont: "ai-sans",
-	moneyFont: "ai-sans",
+	systemFont: DEFAULT_FONT_KEY,
+	moneyFont: DEFAULT_FONT_KEY,
 };
 
 export const fetchUserFontPreferences = cache(
@@ -26,8 +31,8 @@ export const fetchUserFontPreferences = cache(
 		if (!result[0]) return DEFAULT_FONT_PREFS;
 
 		return {
-			systemFont: result[0].systemFont,
-			moneyFont: result[0].moneyFont,
+			systemFont: normalizeFontKey(result[0].systemFont),
+			moneyFont: normalizeFontKey(result[0].moneyFont),
 		};
 	},
 );

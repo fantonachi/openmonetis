@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import type { PeriodFilter } from "@/lib/top-estabelecimentos/fetch-data";
+import type { PeriodFilter } from "@/lib/relatorios/estabelecimentos/fetch-data";
 import { cn } from "@/lib/utils";
 
 type PeriodFilterProps = {

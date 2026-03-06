@@ -4,9 +4,9 @@ import { RiPriceTag3Line } from "@remixicon/react";
 import { CategoryIconBadge } from "@/components/categorias/category-icon-badge";
 import MoneyValues from "@/components/money-values";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { WidgetEmptyState } from "@/components/widget-empty-state";
-import type { TopEstabelecimentosData } from "@/lib/top-estabelecimentos/fetch-data";
-import { Progress } from "../ui/progress";
+import type { TopEstabelecimentosData } from "@/lib/relatorios/estabelecimentos/fetch-data";
 
 type TopCategoriesProps = {
 	categories: TopEstabelecimentosData["topCategories"];
