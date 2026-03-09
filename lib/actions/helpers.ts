@@ -1,7 +1,7 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
-import type { ActionResult } from "./types";
-import { errorResult } from "./types";
+import type { ActionResult } from "@/lib/types/actions";
+import { errorResult } from "@/lib/types/actions";
 
 /**
  * Handles errors in server actions consistently

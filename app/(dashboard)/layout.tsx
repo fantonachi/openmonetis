@@ -1,6 +1,6 @@
-import { FontProvider } from "@/components/font-provider";
 import { AppNavbar } from "@/components/navigation/navbar/app-navbar";
-import { PrivacyProvider } from "@/components/privacy-provider";
+import { FontProvider } from "@/components/providers/font-provider";
+import { PrivacyProvider } from "@/components/providers/privacy-provider";
 import { getUserSession } from "@/lib/auth/server";
 import { fetchDashboardNotifications } from "@/lib/dashboard/notifications";
 import { fetchPagadoresWithAccess } from "@/lib/pagadores/access";

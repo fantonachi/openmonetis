@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
 
 const PERIOD_PARAM = "periodo";
 
@@ -18,13 +17,14 @@ export function NavLink({
 }: NavLinkProps) {
 	const searchParams = useSearchParams();
 
-	const resolvedHref = useMemo(() => {
-		if (!preservePeriod) return href;
+	let resolvedHref = href;
+	if (preservePeriod) {
 		const periodo = searchParams.get(PERIOD_PARAM);
-		if (!periodo) return href;
-		const separator = href.includes("?") ? "&" : "?";
-		return `${href}${separator}${PERIOD_PARAM}=${encodeURIComponent(periodo)}`;
-	}, [href, preservePeriod, searchParams]);
+		if (periodo) {
+			const separator = href.includes("?") ? "&" : "?";
+			resolvedHref = `${href}${separator}${PERIOD_PARAM}=${encodeURIComponent(periodo)}`;
+		}
+	}
 
 	return <Link href={resolvedHref} {...props} />;
 }

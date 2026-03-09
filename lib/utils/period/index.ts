@@ -70,9 +70,8 @@ export function formatPeriod(year: number, month: number): string {
  * @example
  * getCurrentPeriod() // "2025-11"
  */
-export function getCurrentPeriod(): string {
-	const now = new Date();
-	return formatPeriod(now.getFullYear(), now.getMonth() + 1);
+export function getCurrentPeriod(date: Date = new Date()): string {
+	return formatPeriod(date.getFullYear(), date.getMonth() + 1);
 }
 
 /**
@@ -175,11 +174,31 @@ export function buildPeriodRange(start: string, end: string): string[] {
 	return items;
 }
 
+/**
+ * Builds a trailing period window ending at the reference period
+ * @example
+ * buildPeriodWindow("2025-11", 3) // ["2025-09", "2025-10", "2025-11"]
+ */
+export function buildPeriodWindow(
+	referencePeriod: string,
+	totalMonths: number,
+): string[] {
+	if (totalMonths <= 0) {
+		return [];
+	}
+
+	return Array.from({ length: totalMonths }, (_, index) =>
+		addMonthsToPeriod(referencePeriod, index - (totalMonths - 1)),
+	);
+}
+
 // ============================================================================
 // URL PARAM HANDLING (mes-ano format for Portuguese URLs)
 // ============================================================================
 
-const MONTH_MAP = new Map(MONTH_NAMES.map((name, index) => [name, index]));
+const MONTH_MAP = new Map<string, number>(
+	MONTH_NAMES.map((name, index) => [name, index]),
+);
 
 const normalize = (value: string | null | undefined) =>
 	(value ?? "").trim().toLowerCase();
@@ -272,6 +291,32 @@ function capitalize(value: string): string {
 }
 
 /**
+ * Converts period string (YYYY-MM) to Date object for the first day of month
+ */
+export function periodToDate(period: string): Date {
+	const { year, month } = parsePeriod(period);
+	return new Date(year, month - 1, 1);
+}
+
+/**
+ * Converts Date object to period string (YYYY-MM)
+ */
+export function dateToPeriod(date: Date): string {
+	return formatPeriod(date.getFullYear(), date.getMonth() + 1);
+}
+
+/**
+ * Formats period as "Mes Ano"
+ * @example
+ * formatMonthYearLabel("2025-11") // "Novembro 2025"
+ */
+export function formatMonthYearLabel(period: string): string {
+	const { year, month } = parsePeriod(period);
+	const monthName = MONTH_NAMES[month - 1] ?? "";
+	return `${capitalize(monthName)} ${year}`;
+}
+
+/**
  * Formats period for display in Portuguese
  * @example
  * displayPeriod("2025-11") // "Novembro de 2025"
@@ -289,6 +334,46 @@ export function displayPeriod(period: string): string {
  */
 export function formatMonthLabel(period: string): string {
 	return displayPeriod(period);
+}
+
+/**
+ * Formats period for short display with full year
+ * @example
+ * formatShortPeriodLabel("2025-11") // "Nov/2025"
+ */
+export function formatShortPeriodLabel(period: string): string {
+	const rawLabel = new Intl.DateTimeFormat("pt-BR", {
+		month: "short",
+	}).format(periodToDate(period));
+	const label = capitalize(rawLabel.replace(".", ""));
+	const { year } = parsePeriod(period);
+	return `${label}/${year}`;
+}
+
+/**
+ * Formats period for compact display
+ * @example
+ * formatCompactPeriodLabel("2025-11") // "Nov/25"
+ */
+export function formatCompactPeriodLabel(period: string): string {
+	const { year } = parsePeriod(period);
+	const rawLabel = new Intl.DateTimeFormat("pt-BR", {
+		month: "short",
+	}).format(periodToDate(period));
+	const label = capitalize(rawLabel.replace(".", ""));
+	return `${label}/${String(year).slice(-2)}`;
+}
+
+/**
+ * Formats period as short month only
+ * @example
+ * formatPeriodMonthShort("2025-11") // "Nov"
+ */
+export function formatPeriodMonthShort(period: string): string {
+	const rawLabel = new Intl.DateTimeFormat("pt-BR", {
+		month: "short",
+	}).format(periodToDate(period));
+	return capitalize(rawLabel.replace(".", ""));
 }
 
 // ============================================================================
@@ -320,5 +405,5 @@ export function derivePeriodFromDate(value?: string | null): string {
 		return getCurrentPeriod();
 	}
 
-	return formatPeriod(date.getFullYear(), date.getMonth() + 1);
+	return dateToPeriod(date);
 }

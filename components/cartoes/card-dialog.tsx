@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createCardAction,
@@ -24,12 +18,15 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { useControlledState } from "@/hooks/use-controlled-state";
-import { useFormState } from "@/hooks/use-form-state";
+import {
+	DEFAULT_CARD_BRANDS,
+	DEFAULT_CARD_STATUS,
+} from "@/lib/cartoes/constants";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
+import { useFormState } from "@/lib/hooks/use-form-state";
 import { deriveNameFromLogo, normalizeLogo } from "@/lib/logo";
-import { formatLimitInput } from "@/lib/utils/currency";
+import { formatLimitInput, normalizeDecimalInput } from "@/lib/utils/currency";
 import { CardFormFields } from "./card-form-fields";
-import { DEFAULT_CARD_BRANDS, DEFAULT_CARD_STATUS } from "./constants";
 import type { Card, CardFormValues } from "./types";
 
 type AccountOption = {
@@ -133,56 +130,66 @@ export function CardDialog({
 		},
 	});
 
-	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			event.preventDefault();
-			setErrorMessage(null);
+	type CardCreatePayload = Parameters<typeof createCardAction>[0];
 
-			if (mode === "update" && !card?.id) {
-				const message = "Cartão inválido.";
-				setErrorMessage(message);
-				toast.error(message);
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setErrorMessage(null);
+
+		if (mode === "update" && !card?.id) {
+			const message = "Cartão inválido.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
+
+		if (!formState.contaId) {
+			const message = "Selecione a conta vinculada.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
+
+		const rawLimit = normalizeDecimalInput(formState.limit);
+		const payload: CardCreatePayload = {
+			name: formState.name.trim(),
+			brand: formState.brand,
+			status: formState.status,
+			closingDay: formState.closingDay,
+			dueDay: formState.dueDay,
+			limit: rawLimit ? Number(rawLimit) : null,
+			note: formState.note.trim() || null,
+			logo: formState.logo,
+			contaId: formState.contaId,
+		};
+
+		if (!payload.logo) {
+			const message = "Selecione um logo.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
+
+		startTransition(async () => {
+			const result =
+				mode === "create"
+					? await createCardAction(payload)
+					: await updateCardAction({
+							id: card?.id ?? "",
+							...payload,
+						});
+
+			if (result.success) {
+				toast.success(result.message);
+				setDialogOpen(false);
+				resetForm(initialState);
 				return;
 			}
 
-			if (!formState.contaId) {
-				const message = "Selecione a conta vinculada.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			const payload = { ...formState };
-
-			if (!payload.logo) {
-				const message = "Selecione um logo.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			startTransition(async () => {
-				const result =
-					mode === "create"
-						? await createCardAction(payload)
-						: await updateCardAction({
-								id: card?.id ?? "",
-								...payload,
-							});
-
-				if (result.success) {
-					toast.success(result.message);
-					setDialogOpen(false);
-					resetForm(initialState);
-					return;
-				}
-
-				setErrorMessage(result.error);
-				toast.error(result.error);
-			});
-		},
-		[card?.id, formState, initialState, mode, resetForm, setDialogOpen],
-	);
+			setErrorMessage(result.error);
+			toast.error(result.error);
+		});
+	};
 
 	const title = mode === "create" ? "Novo cartão" : "Editar cartão";
 	const description =
@@ -191,15 +198,12 @@ export function CardDialog({
 			: "Atualize as informações do cartão selecionado.";
 	const submitLabel = mode === "create" ? "Salvar cartão" : "Atualizar cartão";
 
-	const handleMainDialogOpenChange = useCallback(
-		(open: boolean) => {
-			if (!open && logoDialogOpen) {
-				return;
-			}
-			setDialogOpen(open);
-		},
-		[logoDialogOpen, setDialogOpen],
-	);
+	const handleMainDialogOpenChange = (open: boolean) => {
+		if (!open && logoDialogOpen) {
+			return;
+		}
+		setDialogOpen(open);
+	};
 
 	return (
 		<>

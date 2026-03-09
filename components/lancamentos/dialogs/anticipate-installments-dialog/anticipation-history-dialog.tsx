@@ -19,7 +19,7 @@ import {
 	EmptyMedia,
 	EmptyTitle,
 } from "@/components/ui/empty";
-import { useControlledState } from "@/hooks/use-controlled-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
 import type { InstallmentAnticipationWithRelations } from "@/lib/installments/anticipation-types";
 import { AnticipationCard } from "../../shared/anticipation-card";
 

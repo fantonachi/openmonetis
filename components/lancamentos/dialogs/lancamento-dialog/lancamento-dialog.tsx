@@ -1,12 +1,6 @@
 "use client";
 import { RiAddLine } from "@remixicon/react";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createLancamentoAction,
@@ -27,7 +21,7 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { useControlledState } from "@/hooks/use-controlled-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
 import {
 	filterSecondaryPagadorOptions,
 	groupAndSortCategorias,
@@ -165,203 +159,160 @@ export function LancamentoDialog({
 		return groupAndSortCategorias(filtered);
 	}, [categoriaOptions, formState.transactionType]);
 
+	type CreateLancamentoInput = Parameters<typeof createLancamentoAction>[0];
+	type UpdateLancamentoInput = Parameters<typeof updateLancamentoAction>[0];
+
 	const totalAmount = useMemo(() => {
 		const parsed = Number.parseFloat(formState.amount);
 		return Number.isNaN(parsed) ? 0 : Math.abs(parsed);
 	}, [formState.amount]);
 
-	const getCardInfo = useCallback(
-		(cartaoId: string | undefined) => {
-			if (!cartaoId) return null;
-			const card = cartaoOptions.find((opt) => opt.value === cartaoId);
-			if (!card) return null;
+	function getCardInfo(cartaoId: string | undefined) {
+		if (!cartaoId) return null;
+		const card = cartaoOptions.find((opt) => opt.value === cartaoId);
+		if (!card) return null;
+		return {
+			closingDay: card.closingDay ?? null,
+			dueDay: card.dueDay ?? null,
+		};
+	}
+
+	function handleFieldChange<Key extends keyof FormState>(
+		key: Key,
+		value: FormState[Key],
+	) {
+		setFormState((prev) => {
+			const effectiveCartaoId =
+				key === "cartaoId" ? (value as string) : prev.cartaoId;
+			const cardInfo = getCardInfo(effectiveCartaoId);
+
+			const dependencies = applyFieldDependencies(key, value, prev, cardInfo);
+
 			return {
-				closingDay: card.closingDay ?? null,
-				dueDay: card.dueDay ?? null,
+				...prev,
+				[key]: value,
+				...dependencies,
 			};
-		},
-		[cartaoOptions],
-	);
+		});
+	}
 
-	const handleFieldChange = useCallback(
-		<Key extends keyof FormState>(key: Key, value: FormState[Key]) => {
-			setFormState((prev) => {
-				const effectiveCartaoId =
-					key === "cartaoId" ? (value as string) : prev.cartaoId;
-				const cardInfo = getCardInfo(effectiveCartaoId);
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setErrorMessage(null);
 
-				const dependencies = applyFieldDependencies(key, value, prev, cardInfo);
+		if (!formState.purchaseDate) {
+			const message = "Informe a data da transação.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-				return {
-					...prev,
-					[key]: value,
-					...dependencies,
-				};
-			});
-		},
-		[getCardInfo],
-	);
+		if (!formState.name.trim()) {
+			const message = "Informe a descrição do lançamento.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			event.preventDefault();
-			setErrorMessage(null);
+		if (formState.isSplit && !formState.pagadorId) {
+			const message =
+				"Selecione o pagador principal para dividir o lançamento.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			if (!formState.purchaseDate) {
-				const message = "Informe a data da transação.";
+		if (formState.isSplit && !formState.secondaryPagadorId) {
+			const message =
+				"Selecione o pagador secundário para dividir o lançamento.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
+
+		const amountValue = Number(formState.amount);
+		if (Number.isNaN(amountValue)) {
+			const message = "Informe um valor válido.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
+
+		const sanitizedAmount = Math.abs(amountValue);
+
+		if (!formState.categoriaId) {
+			const message = "Selecione uma categoria.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
+
+		if (formState.paymentMethod === "Cartão de crédito") {
+			if (!formState.cartaoId) {
+				const message = "Selecione o cartão.";
 				setErrorMessage(message);
 				toast.error(message);
 				return;
 			}
+		} else if (!formState.contaId) {
+			const message = "Selecione a conta.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			if (!formState.name.trim()) {
-				const message = "Informe a descrição do lançamento.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			if (formState.isSplit && !formState.pagadorId) {
-				const message =
-					"Selecione o pagador principal para dividir o lançamento.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			if (formState.isSplit && !formState.secondaryPagadorId) {
-				const message =
-					"Selecione o pagador secundário para dividir o lançamento.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			const amountValue = Number(formState.amount);
-			if (Number.isNaN(amountValue)) {
-				const message = "Informe um valor válido.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			const sanitizedAmount = Math.abs(amountValue);
-
-			if (!formState.categoriaId) {
-				const message = "Selecione uma categoria.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			if (formState.paymentMethod === "Cartão de crédito") {
-				if (!formState.cartaoId) {
-					const message = "Selecione o cartão.";
-					setErrorMessage(message);
-					toast.error(message);
-					return;
-				}
-			} else if (!formState.contaId) {
-				const message = "Selecione a conta.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
-
-			const payload = {
-				purchaseDate: formState.purchaseDate,
-				period: formState.period,
-				name: formState.name.trim(),
-				transactionType: formState.transactionType,
-				amount: sanitizedAmount,
-				condition: formState.condition,
-				paymentMethod: formState.paymentMethod,
-				pagadorId: formState.pagadorId,
-				secondaryPagadorId: formState.isSplit
-					? formState.secondaryPagadorId
+		const payload: CreateLancamentoInput = {
+			purchaseDate: formState.purchaseDate,
+			period: formState.period,
+			name: formState.name.trim(),
+			transactionType:
+				formState.transactionType as CreateLancamentoInput["transactionType"],
+			amount: sanitizedAmount,
+			condition: formState.condition as CreateLancamentoInput["condition"],
+			paymentMethod:
+				formState.paymentMethod as CreateLancamentoInput["paymentMethod"],
+			pagadorId: formState.pagadorId ?? null,
+			secondaryPagadorId: formState.isSplit
+				? formState.secondaryPagadorId
+				: undefined,
+			isSplit: formState.isSplit,
+			primarySplitAmount: formState.isSplit
+				? Number.parseFloat(formState.primarySplitAmount) || undefined
+				: undefined,
+			secondarySplitAmount: formState.isSplit
+				? Number.parseFloat(formState.secondarySplitAmount) || undefined
+				: undefined,
+			contaId: formState.contaId ?? null,
+			cartaoId: formState.cartaoId ?? null,
+			categoriaId: formState.categoriaId ?? null,
+			note: formState.note.trim() || null,
+			isSettled:
+				formState.paymentMethod === "Cartão de crédito"
+					? null
+					: Boolean(formState.isSettled),
+			installmentCount:
+				formState.condition === "Parcelado" && formState.installmentCount
+					? Number(formState.installmentCount)
 					: undefined,
-				isSplit: formState.isSplit,
-				primarySplitAmount: formState.isSplit
-					? Number.parseFloat(formState.primarySplitAmount) || undefined
+			recurrenceCount:
+				formState.condition === "Recorrente" && formState.recurrenceCount
+					? Number(formState.recurrenceCount)
 					: undefined,
-				secondarySplitAmount: formState.isSplit
-					? Number.parseFloat(formState.secondarySplitAmount) || undefined
+			dueDate:
+				formState.paymentMethod === "Boleto" && formState.dueDate
+					? formState.dueDate
 					: undefined,
-				contaId: formState.contaId,
-				cartaoId: formState.cartaoId,
-				categoriaId: formState.categoriaId,
-				note: formState.note.trim() || undefined,
-				isSettled:
-					formState.paymentMethod === "Cartão de crédito"
-						? null
-						: Boolean(formState.isSettled),
-				installmentCount:
-					formState.condition === "Parcelado" && formState.installmentCount
-						? Number(formState.installmentCount)
-						: undefined,
-				recurrenceCount:
-					formState.condition === "Recorrente" && formState.recurrenceCount
-						? Number(formState.recurrenceCount)
-						: undefined,
-				dueDate:
-					formState.paymentMethod === "Boleto" && formState.dueDate
-						? formState.dueDate
-						: undefined,
-				boletoPaymentDate:
-					mode === "update" &&
-					formState.paymentMethod === "Boleto" &&
-					formState.boletoPaymentDate
-						? formState.boletoPaymentDate
-						: undefined,
-			};
+			boletoPaymentDate:
+				mode === "update" &&
+				formState.paymentMethod === "Boleto" &&
+				formState.boletoPaymentDate
+					? formState.boletoPaymentDate
+					: undefined,
+		};
 
-			startTransition(async () => {
-				if (mode === "create") {
-					const result = await createLancamentoAction(payload);
-
-					if (result.success) {
-						toast.success(result.message);
-						onSuccess?.();
-						setDialogOpen(false);
-						return;
-					}
-
-					setErrorMessage(result.error);
-					toast.error(result.error);
-					return;
-				}
-
-				// Update mode
-				const hasSeriesId = Boolean(lancamento?.seriesId);
-
-				if (hasSeriesId && onBulkEditRequest) {
-					// Para lançamentos em série, abre o diálogo de bulk action
-					onBulkEditRequest({
-						id: lancamento?.id ?? "",
-						name: formState.name.trim(),
-						categoriaId: formState.categoriaId,
-						note: formState.note.trim() || "",
-						pagadorId: formState.pagadorId,
-						contaId: formState.contaId,
-						cartaoId: formState.cartaoId,
-						amount: sanitizedAmount,
-						dueDate:
-							formState.paymentMethod === "Boleto"
-								? formState.dueDate || null
-								: null,
-						boletoPaymentDate:
-							mode === "update" && formState.paymentMethod === "Boleto"
-								? formState.boletoPaymentDate || null
-								: null,
-					});
-					return;
-				}
-
-				// Atualização normal para lançamentos únicos ou todos os campos
-				const result = await updateLancamentoAction({
-					id: lancamento?.id ?? "",
-					...payload,
-				});
+		startTransition(async () => {
+			if (mode === "create") {
+				const result = await createLancamentoAction(payload);
 
 				if (result.success) {
 					toast.success(result.message);
@@ -372,18 +323,54 @@ export function LancamentoDialog({
 
 				setErrorMessage(result.error);
 				toast.error(result.error);
-			});
-		},
-		[
-			formState,
-			mode,
-			lancamento?.id,
-			lancamento?.seriesId,
-			setDialogOpen,
-			onSuccess,
-			onBulkEditRequest,
-		],
-	);
+				return;
+			}
+
+			// Update mode
+			const hasSeriesId = Boolean(lancamento?.seriesId);
+
+			if (hasSeriesId && onBulkEditRequest) {
+				// Para lançamentos em série, abre o diálogo de bulk action
+				onBulkEditRequest({
+					id: lancamento?.id ?? "",
+					name: formState.name.trim(),
+					categoriaId: formState.categoriaId,
+					note: formState.note.trim() || "",
+					pagadorId: formState.pagadorId,
+					contaId: formState.contaId,
+					cartaoId: formState.cartaoId,
+					amount: sanitizedAmount,
+					dueDate:
+						formState.paymentMethod === "Boleto"
+							? formState.dueDate || null
+							: null,
+					boletoPaymentDate:
+						mode === "update" && formState.paymentMethod === "Boleto"
+							? formState.boletoPaymentDate || null
+							: null,
+				});
+				return;
+			}
+
+			// Atualização normal para lançamentos únicos ou todos os campos
+			const updatePayload: UpdateLancamentoInput = {
+				id: lancamento?.id ?? "",
+				...payload,
+			};
+
+			const result = await updateLancamentoAction(updatePayload);
+
+			if (result.success) {
+				toast.success(result.message);
+				onSuccess?.();
+				setDialogOpen(false);
+				return;
+			}
+
+			setErrorMessage(result.error);
+			toast.error(result.error);
+		});
+	};
 
 	const isCopyMode = mode === "create" && Boolean(lancamento) && !isImporting;
 	const isImportMode = mode === "create" && Boolean(lancamento) && isImporting;

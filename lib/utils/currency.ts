@@ -2,6 +2,48 @@
  * Utility functions for currency/decimal formatting and parsing
  */
 
+type CurrencyFormatOptions = {
+	maximumFractionDigits?: number;
+	minimumFractionDigits?: number;
+	notation?: Intl.NumberFormatOptions["notation"];
+};
+
+export const currencyFormatter = new Intl.NumberFormat("pt-BR", {
+	style: "currency",
+	currency: "BRL",
+	minimumFractionDigits: 2,
+	maximumFractionDigits: 2,
+});
+
+export const currencyFormatterNoCents = new Intl.NumberFormat("pt-BR", {
+	style: "currency",
+	currency: "BRL",
+	minimumFractionDigits: 0,
+	maximumFractionDigits: 0,
+});
+
+export const formatCurrency = (
+	value: number,
+	options: CurrencyFormatOptions = {},
+) =>
+	new Intl.NumberFormat("pt-BR", {
+		style: "currency",
+		currency: "BRL",
+		minimumFractionDigits: options.minimumFractionDigits ?? 2,
+		maximumFractionDigits: options.maximumFractionDigits ?? 2,
+		...(options.notation ? { notation: options.notation } : {}),
+	}).format(value);
+
+export const formatCurrencyCompact = (
+	value: number,
+	options: CurrencyFormatOptions = {},
+) =>
+	formatCurrency(value, {
+		minimumFractionDigits: options.minimumFractionDigits ?? 0,
+		maximumFractionDigits: options.maximumFractionDigits ?? 0,
+		notation: options.notation ?? "compact",
+	});
+
 /**
  * Formats a decimal number for database storage (2 decimal places)
  * @param value - The number to format

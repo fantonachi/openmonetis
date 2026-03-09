@@ -35,7 +35,7 @@ export function NavMenu() {
 	return (
 		<>
 			{/* Desktop */}
-			<nav className="hidden md:flex items-center justify-center flex-1">
+			<nav className="hidden md:flex items-center justify-center flex-1 ">
 				<NavigationMenu viewport={false}>
 					<NavigationMenuList className="gap-0">
 						<NavigationMenuItem>
@@ -73,14 +73,14 @@ export function NavMenu() {
 					<Button
 						variant="ghost"
 						size="icon"
-						className="-order-1 md:hidden text-foreground hover:bg-foreground/10 hover:text-foreground"
+						className="-order-1 border border-black/10 text-black/75 shadow-none md:hidden hover:border-black/20 hover:bg-black/10 hover:text-black focus-visible:ring-black/20"
 					>
 						<RiMenuLine className="size-5" />
 						<span className="sr-only">Abrir menu</span>
 					</Button>
 				</SheetTrigger>
-				<SheetContent side="left" className="w-72 p-0">
-					<SheetHeader className="p-4 border-b">
+				<SheetContent side="left" className="w-72 p-0 shadow-none">
+					<SheetHeader className="border-b border-border/60 p-4">
 						<SheetTitle>Menu</SheetTitle>
 					</SheetHeader>
 					<nav className="p-3 overflow-y-auto">

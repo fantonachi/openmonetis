@@ -38,3 +38,34 @@ export const deriveNameFromLogo = (logo?: string | null) => {
 		.map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
 		.join(" ");
 };
+
+const LOGO_SRC_PATTERN = /^(https?:\/\/|data:)/;
+
+type ResolveLogoSrcOptions = {
+	basePath?: string;
+};
+
+export const resolveLogoSrc = (
+	logo?: string | null,
+	options?: ResolveLogoSrcOptions,
+) => {
+	if (!logo) {
+		return null;
+	}
+
+	if (LOGO_SRC_PATTERN.test(logo)) {
+		return logo;
+	}
+
+	if (logo.startsWith("/")) {
+		return logo;
+	}
+
+	const fileName = normalizeLogo(logo);
+	if (!fileName) {
+		return null;
+	}
+
+	const basePath = options?.basePath?.replace(/\/$/, "") || "/logos";
+	return `${basePath}/${fileName}`;
+};

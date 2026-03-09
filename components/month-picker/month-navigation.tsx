@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useTransition } from "react";
-import { Card } from "@/components/ui/card";
+import { useEffect, useTransition } from "react";
 import { getNextPeriod, getPreviousPeriod } from "@/lib/utils/period";
+import { Card } from "../ui/card";
 import LoadingSpinner from "./loading-spinner";
 import NavigationButton from "./nav-button";
 import ReturnButton from "./return-button";
@@ -16,23 +16,10 @@ export default function MonthNavigation() {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
 
-	const currentMonthLabel = useMemo(
-		() =>
-			`${currentMonth.charAt(0).toUpperCase()}${currentMonth.slice(1)} ${currentYear}`,
-		[currentMonth, currentYear],
-	);
-	const prevTarget = useMemo(
-		() => buildHref(getPreviousPeriod(period)),
-		[buildHref, period],
-	);
-	const nextTarget = useMemo(
-		() => buildHref(getNextPeriod(period)),
-		[buildHref, period],
-	);
-	const returnTarget = useMemo(
-		() => buildHref(defaultPeriod),
-		[buildHref, defaultPeriod],
-	);
+	const currentMonthLabel = `${currentMonth.charAt(0).toUpperCase()}${currentMonth.slice(1)} ${currentYear}`;
+	const prevTarget = buildHref(getPreviousPeriod(period));
+	const nextTarget = buildHref(getNextPeriod(period));
+	const returnTarget = buildHref(defaultPeriod);
 	const isDifferentFromCurrent = period !== defaultPeriod;
 
 	// Prefetch otimizado: apenas meses adjacentes (M-1, M+1) e mês atual
@@ -55,7 +42,7 @@ export default function MonthNavigation() {
 	};
 
 	return (
-		<Card className="flex w-full flex-row bg-card text-card-foreground p-4 sticky top-16 z-10">
+		<Card className="flex w-full flex-row p-4 sticky top-16 z-10 backdrop-blur-sm bg-card/30">
 			<div className="flex items-center gap-1">
 				<NavigationButton
 					direction="left"

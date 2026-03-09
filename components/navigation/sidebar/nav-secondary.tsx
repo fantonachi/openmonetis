@@ -3,7 +3,7 @@
 import type { RemixiconComponentType } from "@remixicon/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import * as React from "react";
+import type * as React from "react";
 import {
 	SidebarGroup,
 	SidebarGroupContent,
@@ -24,30 +24,22 @@ export function NavSecondary({
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
 	const pathname = usePathname();
 
-	const isLinkActive = React.useCallback(
-		(url: string) => {
-			const normalizedPathname =
-				pathname.endsWith("/") && pathname !== "/"
-					? pathname.slice(0, -1)
-					: pathname;
-			const normalizedUrl =
-				url.endsWith("/") && url !== "/" ? url.slice(0, -1) : url;
-
-			// Verifica se é exatamente igual ou se o pathname começa com a URL
-			return (
-				normalizedPathname === normalizedUrl ||
-				normalizedPathname.startsWith(`${normalizedUrl}/`)
-			);
-		},
-		[pathname],
-	);
-
 	return (
 		<SidebarGroup {...props}>
 			<SidebarGroupContent>
 				<SidebarMenu>
 					{items.map((item) => {
-						const itemIsActive = isLinkActive(item.url);
+						const normalizedPathname =
+							pathname.endsWith("/") && pathname !== "/"
+								? pathname.slice(0, -1)
+								: pathname;
+						const normalizedUrl =
+							item.url.endsWith("/") && item.url !== "/"
+								? item.url.slice(0, -1)
+								: item.url;
+						const itemIsActive =
+							normalizedPathname === normalizedUrl ||
+							normalizedPathname.startsWith(`${normalizedUrl}/`);
 						return (
 							<SidebarMenuItem key={item.title}>
 								<SidebarMenuButton

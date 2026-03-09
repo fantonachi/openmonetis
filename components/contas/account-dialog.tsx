@@ -1,12 +1,6 @@
 "use client";
 
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createAccountAction,
@@ -24,10 +18,13 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { useControlledState } from "@/hooks/use-controlled-state";
-import { useFormState } from "@/hooks/use-form-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
+import { useFormState } from "@/lib/hooks/use-form-state";
 import { deriveNameFromLogo, normalizeLogo } from "@/lib/logo";
-import { formatInitialBalanceInput } from "@/lib/utils/currency";
+import {
+	formatInitialBalanceInput,
+	normalizeDecimalInput,
+} from "@/lib/utils/currency";
 
 import { AccountFormFields } from "./account-form-fields";
 import type { Account, AccountFormValues } from "./types";
@@ -145,6 +142,8 @@ export function AccountDialog({
 		}
 	}, [dialogOpen]);
 
+	type AccountCreatePayload = Parameters<typeof createAccountAction>[0];
+
 	// Use logo selection hook
 	const handleLogoSelection = useLogoSelection({
 		mode,
@@ -159,33 +158,38 @@ export function AccountDialog({
 		},
 	});
 
-	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			event.preventDefault();
-			setErrorMessage(null);
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setErrorMessage(null);
+		const accountId = account?.id;
 
-			if (mode === "update" && !account?.id) {
-				const message = "Conta inválida.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
+		if (mode === "update" && !accountId) {
+			const message = "Conta inválida.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			const payload = { ...formState };
+		const payload: AccountCreatePayload = {
+			name: formState.name.trim(),
+			accountType: formState.accountType,
+			status: formState.status,
+			note: formState.note.trim() || null,
+			logo: formState.logo,
+			initialBalance: Number(normalizeDecimalInput(formState.initialBalance)),
+			excludeFromBalance: formState.excludeFromBalance,
+			excludeInitialBalanceFromIncome:
+				formState.excludeInitialBalanceFromIncome,
+		};
 
-			if (!payload.logo) {
-				setErrorMessage("Selecione um logo.");
-				return;
-			}
+		if (!payload.logo) {
+			setErrorMessage("Selecione um logo.");
+			return;
+		}
 
-			startTransition(async () => {
-				const result =
-					mode === "create"
-						? await createAccountAction(payload)
-						: await updateAccountAction({
-								id: account?.id ?? "",
-								...payload,
-							});
+		startTransition(async () => {
+			if (mode === "create") {
+				const result = await createAccountAction(payload);
 
 				if (result.success) {
 					toast.success(result.message);
@@ -196,10 +200,29 @@ export function AccountDialog({
 
 				setErrorMessage(result.error);
 				toast.error(result.error);
+				return;
+			}
+
+			if (!accountId) {
+				return;
+			}
+
+			const result = await updateAccountAction({
+				id: accountId,
+				...payload,
 			});
-		},
-		[account?.id, formState, initialState, mode, resetForm, setDialogOpen],
-	);
+
+			if (result.success) {
+				toast.success(result.message);
+				setDialogOpen(false);
+				resetForm(initialState);
+				return;
+			}
+
+			setErrorMessage(result.error);
+			toast.error(result.error);
+		});
+	};
 
 	const title = mode === "create" ? "Nova conta" : "Editar conta";
 	const description =
@@ -208,15 +231,12 @@ export function AccountDialog({
 			: "Atualize as informações da conta selecionada.";
 	const submitLabel = mode === "create" ? "Salvar conta" : "Atualizar conta";
 
-	const handleMainDialogOpenChange = useCallback(
-		(open: boolean) => {
-			if (!open && logoDialogOpen) {
-				return;
-			}
-			setDialogOpen(open);
-		},
-		[logoDialogOpen, setDialogOpen],
-	);
+	const handleMainDialogOpenChange = (open: boolean) => {
+		if (!open && logoDialogOpen) {
+			return;
+		}
+		setDialogOpen(open);
+	};
 
 	return (
 		<>

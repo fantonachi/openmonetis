@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createBudgetAction,
 	updateBudgetAction,
 } from "@/app/(dashboard)/orcamentos/actions";
 import { CategoryIcon } from "@/components/categorias/category-icon";
-import { PeriodPicker } from "@/components/period-picker";
+import { PeriodPicker } from "@/components/shared/period-picker";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -27,8 +27,9 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { useControlledState } from "@/hooks/use-controlled-state";
-import { useFormState } from "@/hooks/use-form-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
+import { useFormState } from "@/lib/hooks/use-form-state";
+import { formatCurrency } from "@/lib/utils/currency";
 
 import type { Budget, BudgetCategory, BudgetFormValues } from "./types";
 
@@ -54,12 +55,6 @@ const buildInitialValues = ({
 	amount: budget ? (Math.round(budget.amount * 100) / 100).toFixed(2) : "",
 });
 
-const formatCurrency = (value: number) =>
-	new Intl.NumberFormat("pt-BR", {
-		style: "currency",
-		currency: "BRL",
-	}).format(value);
-
 export function BudgetDialog({
 	mode,
 	trigger,
@@ -79,10 +74,14 @@ export function BudgetDialog({
 		onOpenChange,
 	);
 
-	const initialState = buildInitialValues({
-		budget,
-		defaultPeriod,
-	});
+	const initialState = useMemo(
+		() =>
+			buildInitialValues({
+				budget,
+				defaultPeriod,
+			}),
+		[budget, defaultPeriod],
+	);
 
 	// Use form state hook for form management
 	const { formState, resetForm, updateField } =

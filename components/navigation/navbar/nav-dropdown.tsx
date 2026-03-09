@@ -23,7 +23,7 @@ export function NavDropdown({ items }: NavDropdownProps) {
 						{item.badge && item.badge > 0 ? (
 							<Badge
 								variant="secondary"
-								className="text-[10px] px-1.5 py-0 h-4 min-w-4 ml-auto"
+								className="text-xs px-1.5 py-0 h-4 min-w-4 ml-auto"
 							>
 								{item.badge}
 							</Badge>

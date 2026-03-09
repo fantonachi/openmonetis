@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createCategoryAction,
@@ -16,10 +16,10 @@ import {
 	DialogTitle,
 	DialogTrigger,
 } from "@/components/ui/dialog";
-import { useControlledState } from "@/hooks/use-controlled-state";
-import { useFormState } from "@/hooks/use-form-state";
 import { CATEGORY_TYPES } from "@/lib/categorias/constants";
 import { getDefaultIconForType } from "@/lib/categorias/icons";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
+import { useFormState } from "@/lib/hooks/use-form-state";
 
 import { CategoryFormFields } from "./category-form-fields";
 import type { Category, CategoryFormValues } from "./types";
@@ -41,7 +41,7 @@ const buildInitialValues = ({
 	defaultType?: CategoryFormValues["type"];
 }): CategoryFormValues => {
 	const initialType = category?.type ?? defaultType ?? CATEGORY_TYPES[0];
-	const fallbackIcon = getDefaultIconForType(initialType);
+	const fallbackIcon = getDefaultIconForType();
 	const existingIcon = category?.icon ?? "";
 	const icon = existingIcon || fallbackIcon;
 
@@ -70,10 +70,14 @@ export function CategoryDialog({
 		onOpenChange,
 	);
 
-	const initialState = buildInitialValues({
-		category,
-		defaultType,
-	});
+	const initialState = useMemo(
+		() =>
+			buildInitialValues({
+				category,
+				defaultType,
+			}),
+		[category, defaultType],
+	);
 
 	// Use form state hook for form management
 	const { formState, resetForm, updateField } =

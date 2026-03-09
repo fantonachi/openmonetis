@@ -1,6 +1,6 @@
 "use client";
 import * as React from "react";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/shared/logo";
 import { NavMain } from "@/components/navigation/sidebar/nav-main";
 import { NavSecondary } from "@/components/navigation/sidebar/nav-secondary";
 import { NavUser } from "@/components/navigation/sidebar/nav-user";

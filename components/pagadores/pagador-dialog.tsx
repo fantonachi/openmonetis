@@ -1,12 +1,6 @@
 "use client";
 import Image from "next/image";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createPagadorAction,
@@ -32,8 +26,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useControlledState } from "@/hooks/use-controlled-state";
-import { useFormState } from "@/hooks/use-form-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
+import { useFormState } from "@/lib/hooks/use-form-state";
 import {
 	DEFAULT_PAGADOR_AVATAR,
 	PAGADOR_STATUS_OPTIONS,
@@ -116,46 +110,33 @@ export function PagadorDialog({
 		}
 	}, [dialogOpen, initialState, resetForm]);
 
-	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			event.preventDefault();
-			setErrorMessage(null);
+	type PagadorCreatePayload = Parameters<typeof createPagadorAction>[0];
 
-			if (mode === "update" && !pagador?.id) {
-				const message = "Pagador inválido.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setErrorMessage(null);
+		const pagadorId = pagador?.id;
 
-			const payload: {
-				name: string;
-				email?: string;
-				status: PagadorStatus;
-				avatarUrl: string;
-				note: string;
-				isAutoSend: boolean;
-			} = {
-				name: formState.name.trim(),
-				status: formState.status,
-				avatarUrl: formState.avatarUrl,
-				note: formState.note.trim(),
-				isAutoSend: formState.isAutoSend,
-			};
+		if (mode === "update" && !pagadorId) {
+			const message = "Pagador inválido.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			const emailValue = formState.email.trim();
-			if (emailValue.length > 0) {
-				payload.email = emailValue;
-			}
+		const emailValue = formState.email.trim();
+		const payload: PagadorCreatePayload = {
+			name: formState.name.trim(),
+			status: formState.status,
+			avatarUrl: formState.avatarUrl,
+			email: emailValue || null,
+			note: formState.note.trim() || null,
+			isAutoSend: formState.isAutoSend,
+		};
 
-			startTransition(async () => {
-				const result =
-					mode === "create"
-						? await createPagadorAction(payload)
-						: await updatePagadorAction({
-								id: pagador?.id ?? "",
-								...payload,
-							});
+		startTransition(async () => {
+			if (mode === "create") {
+				const result = await createPagadorAction(payload);
 
 				if (result.success) {
 					toast.success(result.message);
@@ -166,10 +147,29 @@ export function PagadorDialog({
 
 				setErrorMessage(result.error);
 				toast.error(result.error);
+				return;
+			}
+
+			if (!pagadorId) {
+				return;
+			}
+
+			const result = await updatePagadorAction({
+				id: pagadorId,
+				...payload,
 			});
-		},
-		[formState, initialState, mode, pagador?.id, resetForm, setDialogOpen],
-	);
+
+			if (result.success) {
+				toast.success(result.message);
+				setDialogOpen(false);
+				resetForm(initialState);
+				return;
+			}
+
+			setErrorMessage(result.error);
+			toast.error(result.error);
+		});
+	};
 
 	const title = mode === "create" ? "Novo pagador" : "Editar pagador";
 	const description =

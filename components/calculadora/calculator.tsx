@@ -1,9 +1,9 @@
 "use client";
 
 import { CalculatorKeypad } from "@/components/calculadora/calculator-keypad";
-import { useCalculatorKeyboard } from "@/components/calculadora/use-calculator-keyboard";
-import { useCalculatorState } from "@/components/calculadora/use-calculator-state";
 import { Button } from "@/components/ui/button";
+import { useCalculatorKeyboard } from "@/lib/calculadora/use-calculator-keyboard";
+import { useCalculatorState } from "@/lib/calculadora/use-calculator-state";
 import { CalculatorDisplay } from "./calculator-display";
 
 type CalculatorProps = {

@@ -1,6 +1,7 @@
 "use client";
 
 import { RiCalendarLine } from "@remixicon/react";
+import { ptBR } from "date-fns/locale";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
+import { parseLocalDateString, toLocalDateString } from "@/lib/utils/date";
 import { cn } from "@/lib/utils/ui";
 
 function formatDate(date: Date | undefined, compact = false): string {
@@ -43,13 +45,7 @@ function isValidDate(date: Date | undefined): boolean {
 }
 
 function dateToYYYYMMDD(date: Date | undefined): string {
-	if (!date || !isValidDate(date)) {
-		return "";
-	}
-	const year = date.getFullYear();
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}-${month}-${day}`;
+	return isValidDate(date) ? (toLocalDateString(date) ?? "") : "";
 }
 
 function parseYYYYMMDD(dateString: string): Date | undefined {
@@ -62,8 +58,7 @@ function parseYYYYMMDD(dateString: string): Date | undefined {
 	// which in Brazil (UTC-3) becomes 2025-11-26 03:00 local time!
 	const ymdMatch = dateString.match(/^(\d{4})-(\d{2})-(\d{2})$/);
 	if (ymdMatch) {
-		const [, year, month, day] = ymdMatch;
-		const date = new Date(Number(year), Number(month) - 1, Number(day));
+		const date = parseLocalDateString(dateString);
 		return isValidDate(date) ? date : undefined;
 	}
 
@@ -179,29 +174,7 @@ export function DatePicker({
 						onSelect={handleCalendarSelect}
 						fromYear={2020}
 						toYear={new Date().getFullYear() + 10}
-						locale={{
-							localize: {
-								day: (n) => ["D", "S", "T", "Q", "Q", "S", "S"][n],
-								month: (n) =>
-									[
-										"Jan",
-										"Fev",
-										"Mar",
-										"Abr",
-										"Mai",
-										"Jun",
-										"Jul",
-										"Ago",
-										"Set",
-										"Out",
-										"Nov",
-										"Dez",
-									][n],
-							},
-							formatLong: {
-								date: () => "dd/MM/yyyy",
-							},
-						}}
+						locale={ptBR}
 					/>
 				</PopoverContent>
 			</Popover>

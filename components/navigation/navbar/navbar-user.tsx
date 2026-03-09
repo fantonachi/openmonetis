@@ -9,7 +9,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { FeedbackDialogBody } from "@/components/feedback/feedback-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
@@ -44,11 +44,9 @@ export function NavbarUser({ user, pagadorAvatarUrl }: NavbarUserProps) {
 	const [logoutLoading, setLogoutLoading] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
 
-	const avatarSrc = useMemo(() => {
-		if (pagadorAvatarUrl) return getAvatarSrc(pagadorAvatarUrl);
-		if (user.image) return user.image;
-		return getAvatarSrc(null);
-	}, [user.image, pagadorAvatarUrl]);
+	const avatarSrc = pagadorAvatarUrl
+		? getAvatarSrc(pagadorAvatarUrl)
+		: user.image || getAvatarSrc(null);
 
 	async function handleLogout() {
 		await authClient.signOut({
@@ -65,7 +63,7 @@ export function NavbarUser({ user, pagadorAvatarUrl }: NavbarUserProps) {
 			<DropdownMenu>
 				<DropdownMenuTrigger asChild>
 					<button
-						className="relative flex size-9 items-center justify-center overflow-hidden rounded-full border-background bg-background shadow-lg"
+						className="relative flex size-9 items-center justify-center overflow-hidden rounded-full shadow-none transition-colors focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:outline-none"
 						aria-label="Menu do usuário"
 					>
 						<Image
@@ -77,7 +75,11 @@ export function NavbarUser({ user, pagadorAvatarUrl }: NavbarUserProps) {
 						/>
 					</button>
 				</DropdownMenuTrigger>
-				<DropdownMenuContent align="end" className="w-60 p-2" sideOffset={10}>
+				<DropdownMenuContent
+					align="end"
+					className="w-60 border-border/60 p-2 shadow-none"
+					sideOffset={10}
+				>
 					<DropdownMenuLabel className="flex items-center gap-3 px-2 py-2">
 						<Image
 							src={avatarSrc}

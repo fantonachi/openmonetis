@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { AnimatedThemeToggler } from "@/components/animated-theme-toggler";
-import { Logo } from "@/components/logo";
 import { NotificationBell } from "@/components/notificacoes/notification-bell";
+import { AnimatedThemeToggler } from "@/components/shared/animated-theme-toggler";
+import { Logo } from "@/components/shared/logo";
 import { RefreshPageButton } from "@/components/shared/refresh-page-button";
 import type { DashboardNotificationsSnapshot } from "@/lib/dashboard/notifications";
 import { NavMenu } from "./nav-menu";
 import { NavbarUser } from "./navbar-user";
+
+const navbarActionClassName =
+	"border-black/10 bg-transparent text-black/75 shadow-none hover:border-black/20 hover:bg-black/10 hover:text-black focus-visible:ring-black/20 data-[state=open]:bg-black/10 data-[state=open]:text-black";
 
 type AppNavbarProps = {
 	user: {
@@ -26,11 +29,11 @@ export function AppNavbar({
 	notificationsSnapshot,
 }: AppNavbarProps) {
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 h-16 shrink-0 flex items-center bg-card backdrop-blur-lg supports-backdrop-filter:bg-card/50">
+		<header className="fixed top-0 left-0 right-0 z-50 flex h-16 shrink-0 items-center bg-primary font-[aeonik] tracking-tight">
 			<div className="w-full max-w-8xl mx-auto px-4 flex items-center gap-4 h-full">
 				{/* Logo */}
 				<Link href="/dashboard" className="shrink-0 mr-1">
-					<Logo variant="compact" />
+					<Logo variant="compact" invertTextOnDark={false} />
 				</Link>
 
 				{/* Navigation */}
@@ -44,8 +47,8 @@ export function AppNavbar({
 						budgetNotifications={notificationsSnapshot.budgetNotifications}
 						preLancamentosCount={preLancamentosCount}
 					/>
-					<RefreshPageButton />
-					<AnimatedThemeToggler />
+					<RefreshPageButton className={navbarActionClassName} />
+					<AnimatedThemeToggler className={navbarActionClassName} />
 				</div>
 
 				{/* User avatar */}

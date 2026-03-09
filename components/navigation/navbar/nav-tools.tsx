@@ -1,7 +1,7 @@
 "use client";
 
 import { RiCalculatorLine, RiEyeLine, RiEyeOffLine } from "@remixicon/react";
-import { usePrivacyMode } from "@/components/privacy-provider";
+import { usePrivacyMode } from "@/components/providers/privacy-provider";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/ui";
 

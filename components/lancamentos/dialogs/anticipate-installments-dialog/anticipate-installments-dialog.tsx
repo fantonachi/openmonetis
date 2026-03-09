@@ -1,21 +1,15 @@
 "use client";
 
 import { RiLoader4Line } from "@remixicon/react";
-import {
-	useCallback,
-	useEffect,
-	useMemo,
-	useState,
-	useTransition,
-} from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
 	createInstallmentAnticipationAction,
 	getEligibleInstallmentsAction,
 } from "@/app/(dashboard)/lancamentos/anticipation-actions";
 import { CategoryIcon } from "@/components/categorias/category-icon";
-import MoneyValues from "@/components/money-values";
-import { PeriodPicker } from "@/components/period-picker";
+import MoneyValues from "@/components/shared/money-values";
+import { PeriodPicker } from "@/components/shared/period-picker";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import {
@@ -42,8 +36,8 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useControlledState } from "@/hooks/use-controlled-state";
-import { useFormState } from "@/hooks/use-form-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
+import { useFormState } from "@/lib/hooks/use-form-state";
 import type { EligibleInstallment } from "@/lib/installments/anticipation-types";
 import { InstallmentSelectionTable } from "./installment-selection-table";
 
@@ -155,61 +149,58 @@ export function AnticipateInstallmentsDialog({
 		return totalAmount < 0 ? totalAmount + discount : totalAmount - discount;
 	}, [totalAmount, formState.discount]);
 
-	const handleSubmit = useCallback(
-		(event: React.FormEvent<HTMLFormElement>) => {
-			event.preventDefault();
-			setErrorMessage(null);
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		setErrorMessage(null);
 
-			if (selectedIds.length === 0) {
-				const message = "Selecione pelo menos uma parcela para antecipar.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
+		if (selectedIds.length === 0) {
+			const message = "Selecione pelo menos uma parcela para antecipar.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			if (formState.anticipationPeriod.length === 0) {
-				const message = "Informe o período da antecipação.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
+		if (formState.anticipationPeriod.length === 0) {
+			const message = "Informe o período da antecipação.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			const discount = Number(formState.discount) || 0;
-			if (discount > Math.abs(totalAmount)) {
-				const message =
-					"O desconto não pode ser maior que o valor total das parcelas.";
-				setErrorMessage(message);
-				toast.error(message);
-				return;
-			}
+		const discount = Number(formState.discount) || 0;
+		if (discount > Math.abs(totalAmount)) {
+			const message =
+				"O desconto não pode ser maior que o valor total das parcelas.";
+			setErrorMessage(message);
+			toast.error(message);
+			return;
+		}
 
-			startTransition(async () => {
-				const result = await createInstallmentAnticipationAction({
-					seriesId,
-					installmentIds: selectedIds,
-					anticipationPeriod: formState.anticipationPeriod,
-					discount: Number(formState.discount) || 0,
-					pagadorId: formState.pagadorId || undefined,
-					categoriaId: formState.categoriaId || undefined,
-					note: formState.note || undefined,
-				});
-
-				if (result.success) {
-					toast.success(result.message);
-					setDialogOpen(false);
-				} else {
-					const errorMsg = result.error || "Erro ao criar antecipação";
-					setErrorMessage(errorMsg);
-					toast.error(errorMsg);
-				}
+		startTransition(async () => {
+			const result = await createInstallmentAnticipationAction({
+				seriesId,
+				installmentIds: selectedIds,
+				anticipationPeriod: formState.anticipationPeriod,
+				discount: Number(formState.discount) || 0,
+				pagadorId: formState.pagadorId || undefined,
+				categoriaId: formState.categoriaId || undefined,
+				note: formState.note || undefined,
 			});
-		},
-		[selectedIds, formState, seriesId, setDialogOpen, totalAmount],
-	);
 
-	const handleCancel = useCallback(() => {
+			if (result.success) {
+				toast.success(result.message);
+				setDialogOpen(false);
+			} else {
+				const errorMsg = result.error || "Erro ao criar antecipação";
+				setErrorMessage(errorMsg);
+				toast.error(errorMsg);
+			}
+		});
+	};
+
+	const handleCancel = () => {
 		setDialogOpen(false);
-	}, [setDialogOpen]);
+	};
 
 	return (
 		<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

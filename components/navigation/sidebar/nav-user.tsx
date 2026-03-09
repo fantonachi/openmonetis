@@ -1,12 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo } from "react";
 import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	useSidebar,
 } from "@/components/ui/sidebar";
 import { getAvatarSrc } from "@/lib/pagadores/utils";
 
@@ -21,19 +19,9 @@ type NavUserProps = {
 };
 
 export function NavUser({ user, pagadorAvatarUrl }: NavUserProps) {
-	useSidebar();
-
-	const avatarSrc = useMemo(() => {
-		// Priorizar o avatar do pagador admin quando disponível
-		if (pagadorAvatarUrl) {
-			return getAvatarSrc(pagadorAvatarUrl);
-		}
-		// Fallback para a imagem do usuário (Google, etc)
-		if (user.image) {
-			return user.image;
-		}
-		return getAvatarSrc(null);
-	}, [user.image, pagadorAvatarUrl]);
+	const avatarSrc = pagadorAvatarUrl
+		? getAvatarSrc(pagadorAvatarUrl)
+		: user.image || getAvatarSrc(null);
 
 	return (
 		<SidebarMenu>

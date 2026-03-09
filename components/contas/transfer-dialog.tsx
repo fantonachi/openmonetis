@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { transferBetweenAccountsAction } from "@/app/(dashboard)/contas/actions";
 import type { AccountData } from "@/app/(dashboard)/contas/data";
 import { ContaCartaoSelectContent } from "@/components/lancamentos/select-items";
-import { PeriodPicker } from "@/components/period-picker";
+import { PeriodPicker } from "@/components/shared/period-picker";
 import { Button } from "@/components/ui/button";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -26,7 +26,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/components/ui/select";
-import { useControlledState } from "@/hooks/use-controlled-state";
+import { useControlledState } from "@/lib/hooks/use-controlled-state";
 import { getTodayDateString } from "@/lib/utils/date";
 
 interface TransferDialogProps {

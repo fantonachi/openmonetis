@@ -1,4 +1,4 @@
-import { SectionCardsSkeleton } from "./section-cards-skeleton";
+import { DashboardMetricsCardsSkeleton } from "./dashboard-metrics-cards-skeleton";
 import { WidgetSkeleton } from "./widget-skeleton";
 
 /**
@@ -8,8 +8,8 @@ import { WidgetSkeleton } from "./widget-skeleton";
 export function DashboardGridSkeleton() {
 	return (
 		<div className="@container/main space-y-4">
-			{/* Section Cards no topo */}
-			<SectionCardsSkeleton />
+			{/* Cards de métricas no topo */}
+			<DashboardMetricsCardsSkeleton />
 
 			{/* Grid de widgets - mesmos breakpoints do dashboard real */}
 			<div className="grid grid-cols-1 gap-3 @4xl/main:grid-cols-2 @6xl/main:grid-cols-3">

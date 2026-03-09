@@ -3,11 +3,10 @@ export const linkBase =
 	"inline-flex h-8 items-center justify-center rounded-full px-3 text-sm font-medium transition-all lowercase";
 
 // Estado inativo: muted, hover suave sem underline
-export const linkIdle =
-	"text-muted-foreground hover:text-foreground hover:bg-accent";
+export const linkIdle = "text-black/75 hover:bg-black/10 hover:text-black";
 
 // Estado ativo: pill com cor primária
-export const linkActive = "bg-primary/10 text-primary";
+export const linkActive = "bg-black/10 text-black";
 
 // Trigger do NavigationMenu — espelha linkBase + linkIdle, remove estilos padrão
 export const triggerClass = [
@@ -18,13 +17,15 @@ export const triggerClass = [
 	"text-sm!",
 	"font-medium!",
 	"bg-transparent!",
-	"text-muted-foreground!",
-	"hover:text-foreground!",
-	"hover:bg-accent!",
-	"focus:text-foreground!",
-	"focus:bg-accent!",
-	"data-[state=open]:text-foreground!",
-	"data-[state=open]:bg-accent!",
+	"text-black/75!",
+	"hover:text-black!",
+	"hover:bg-black/10!",
+	"focus:text-black!",
+	"focus:bg-black/10!",
+	"focus-visible:ring-black/20!",
+	"data-[state=open]:text-black!",
+	"data-[state=open]:bg-black/10!",
 	"shadow-none!",
+	"[&_svg]:text-current!",
 	"lowercase!",
 ].join(" ");
