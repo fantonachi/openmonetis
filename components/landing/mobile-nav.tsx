@@ -3,7 +3,7 @@
 import { RiArrowRightSLine, RiMenuLine } from "@remixicon/react";
 import Link from "next/link";
 import { useState } from "react";
-import { Logo } from "@/components/logo";
+import { Logo } from "@/components/shared/logo";
 import { Button } from "@/components/ui/button";
 import {
 	Sheet,

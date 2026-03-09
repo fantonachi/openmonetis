@@ -28,6 +28,23 @@ const ai_sans = localFont({
 	variable: "--font-ai-sans",
 });
 
+const aeonik = localFont({
+	src: [
+		{
+			path: "./aeonikfono-regular.woff2",
+			weight: "400",
+			style: "normal",
+		},
+		{
+			path: "./aeonikfono-medium.woff2",
+			weight: "600",
+			style: "normal",
+		},
+	],
+	display: "swap",
+	variable: "--font-aeonik",
+});
+
 const itau = localFont({
 	src: [
 		{
@@ -49,6 +66,28 @@ const anthropic_sans = localFont({
 	src: "./anthropic-sans.woff2",
 	display: "swap",
 	variable: "--font-anthropic-sans",
+});
+
+const america = localFont({
+	src: [
+		{
+			path: "./america-regular.woff2",
+			weight: "400",
+			style: "normal",
+		},
+		{
+			path: "./america-medium.woff2",
+			weight: "700",
+			style: "normal",
+		},
+		{
+			path: "./america-bold.woff2",
+			weight: "900",
+			style: "normal",
+		},
+	],
+	display: "swap",
+	variable: "--font-america",
 });
 
 const inter = Inter({
@@ -112,6 +151,8 @@ export const DEFAULT_FONT_KEY = "ai-sans";
 
 export const FONT_OPTIONS = [
 	{ key: "ai-sans", label: "Open AI Sans", variable: "var(--font-ai-sans)" },
+	{ key: "america", label: "America", variable: "var(--font-america)" },
+	{ key: "aeonik", label: "Aeonik", variable: "var(--font-aeonik)" },
 	{
 		key: "anthropic-sans",
 		label: "Anthropic Sans",
@@ -171,6 +212,8 @@ const allFonts = [
 	fira_code,
 	ibm_plex_mono,
 	itau,
+	america,
+	aeonik,
 ];
 
 export const allFontVariables = allFonts.map((f) => f.variable).join(" ");

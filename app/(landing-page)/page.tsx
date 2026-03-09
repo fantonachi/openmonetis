@@ -30,11 +30,11 @@ import {
 import { headers } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
-import { AnimatedThemeToggler } from "@/components/animated-theme-toggler";
 import { AnimateOnScroll } from "@/components/landing/animate-on-scroll";
 import { MobileNav } from "@/components/landing/mobile-nav";
 import { SetupTabs } from "@/components/landing/setup-tabs";
-import { Logo } from "@/components/logo";
+import { AnimatedThemeToggler } from "@/components/shared/animated-theme-toggler";
+import { Logo } from "@/components/shared/logo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -120,20 +120,20 @@ const screenshotSections = [
 	{
 		title: "Lançamentos",
 		description: "Registre e organize todas as suas transações financeiras",
-		lightSrc: "/preview-lancamentos-light.webp",
-		darkSrc: "/preview-lancamentos-dark.webp",
+		lightSrc: "/imagens/preview-lancamentos-light.webp",
+		darkSrc: "/imagens/preview-lancamentos-dark.webp",
 	},
 	{
 		title: "Calendário",
 		description: "Visualize suas finanças no calendário mensal",
-		lightSrc: "/preview-calendario-light.webp",
-		darkSrc: "/preview-calendario-dark.webp",
+		lightSrc: "/imagens/preview-calendario-light.webp",
+		darkSrc: "/imagens/preview-calendario-dark.webp",
 	},
 	{
 		title: "Cartões",
 		description: "Acompanhe faturas, limites e vencimentos dos seus cartões",
-		lightSrc: "/preview-cartao-light.webp",
-		darkSrc: "/preview-cartao-dark.webp",
+		lightSrc: "/imagens/preview-cartao-light.webp",
+		darkSrc: "/imagens/preview-cartao-dark.webp",
 	},
 ];
 
@@ -353,7 +353,7 @@ export default async function Page() {
 						<AnimateOnScroll>
 							<div>
 								<Image
-									src="/dashboard-preview-light.webp"
+									src="/imagens/dashboard-preview-light.webp"
 									alt="openmonetis Dashboard Preview"
 									width={1920}
 									height={1080}
@@ -361,7 +361,7 @@ export default async function Page() {
 									priority
 								/>
 								<Image
-									src="/dashboard-preview-dark.webp"
+									src="/imagens/dashboard-preview-dark.webp"
 									alt="openmonetis Dashboard Preview"
 									width={1920}
 									height={1080}
@@ -607,7 +607,7 @@ export default async function Page() {
 								<div className="order-1 md:order-2 flex items-center justify-center">
 									<div className="w-full max-w-[220px] md:max-w-[260px]">
 										<Image
-											src="/openmonetis_companion.webp"
+											src="/imagens/openmonetis_companion.webp"
 											alt="OpenMonetis Companion App"
 											width={1080}
 											height={2217}

@@ -3,7 +3,7 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --spacing-custom-height-1: 30rem;
+  --spacing-custom-height-card: 30rem;
   --spacing-8xl: 88rem;  /* 1408px */
   --spacing-9xl: 96rem;  /* 1536px */
 }
@@ -14,15 +14,15 @@
   --font-money: var(--font-ai-sans);
 
   /* Base surfaces - warm cream with subtle orange undertone */
-  --background: oklch(96.563% 0.00504 67.275);
-  --foreground: oklch(18% 0.02 45);
-  --card: oklch(100% 0 0);
-  --card-foreground: oklch(18% 0.02 45);
+  --background: oklch(98.01% 0.00331 67.026);
+  --foreground: #0a0a0a;
+  --card: var(--background);
+  --card-foreground: #0a0a0a;
   --popover: oklch(99.5% 0.004 80);
   --popover-foreground: oklch(18% 0.02 45);
 
   /* Primary - rich terracotta orange */
-  --primary: oklch(69.18% 0.18855 38.353);
+  --primary: #fc712b;
   --primary-foreground: oklch(98% 0.008 80);
 
   /* Secondary - warm stone with subtle saturation */
@@ -31,14 +31,14 @@
 
   /* Muted - softer background variant */
   --muted: oklch(94.5% 0.014 75);
-  --muted-foreground: oklch(45% 0.015 60);
+  --muted-foreground: #44413c;
 
   /* Accent - complementary warm tone */
   --accent: oklch(94% 0.01 70);
-  --accent-foreground: oklch(22% 0.025 45);
+  --accent-foreground: #44413c;
 
   /* Semantic states */
-  --success: oklch(55% 0.17 150);
+  --success: oklch(55.87% 0.12943 157.517);
   --success-foreground: oklch(98% 0.01 150);
   --warning: oklch(69.913% 0.1798 49.649);
   --warning-foreground: oklch(20% 0.04 85);
@@ -50,21 +50,21 @@
   --destructive-foreground: oklch(98% 0.005 30);
 
   /* Borders and inputs - defined but subtle */
-  --border: oklch(88% 0.015 80);
+  --border: oklch(82% 0.012 75);
   --input: oklch(82% 0.012 75);
   --ring: oklch(69.18% 0.18855 38.353);
 
   /* Charts - 10 harmonious, distinct, accessible colors */
-  --chart-1: var(--color-emerald-400);
-  --chart-2: var(--color-orange-400);
-  --chart-3: var(--color-indigo-400);
-  --chart-4: var(--color-amber-400);
-  --chart-5: var(--color-pink-400);
-  --chart-6: var(--color-stone-400);
-  --chart-7: var(--color-teal-400);
-  --chart-8: var(--color-violet-400);
-  --chart-9: var(--color-cyan-400);
-  --chart-10: var(--color-lime-400);
+  --chart-1: var(--color-emerald-500);
+  --chart-2: var(--color-orange-500);
+  --chart-3: var(--color-indigo-500);
+  --chart-4: var(--color-amber-500);
+  --chart-5: var(--color-pink-500);
+  --chart-6: var(--color-stone-500);
+  --chart-7: var(--color-teal-500);
+  --chart-8: var(--color-violet-500);
+  --chart-9: var(--color-cyan-500);
+  --chart-10: var(--color-lime-500);
 
   /* Sidebar - slight elevation from background */
   --sidebar: oklch(100% 0 0);
@@ -77,7 +77,7 @@
   --sidebar-ring: oklch(69.18% 0.18855 38.353);
 
   /* Layout */
-  --radius: 1rem;
+  --radius: 0.5rem;
 
   /* Shadows - warm tinted for cohesion */
   --shadow-2xs: 0 1px 2px 0px oklch(35% 0.02 45 / 0.04);
@@ -96,22 +96,19 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* Special components */
-  --welcome-banner: var(--primary);
-  --welcome-banner-foreground: var(--primary-foreground);
 }
 
 .dark {
   /* Base surfaces - warm dark with consistent hue family */
   --background: oklch(18.5% 0.002 70);
   --foreground: oklch(92% 0.015 80);
-  --card: oklch(0.13 0.01 64.18);
+  --card: var(--background);
   --card-foreground: oklch(92% 0.015 80);
   --popover: oklch(24% 0.003 70);
   --popover-foreground: oklch(92% 0.015 80);
 
   /* Primary - vibrant terracotta stands out on dark */
-  --primary: oklch(69.18% 0.18855 38.353);
+  --primary: #fa6c26;
   --primary-foreground: oklch(20% 0.002 70);
 
   /* Secondary - elevated surface */
@@ -166,7 +163,7 @@
   --sidebar-ring: oklch(69.18% 0.18855 38.353);
 
   /* Layout */
-  --radius: 1rem;
+  --radius: 0.5rem;
 
   /* Shadows - deeper for dark mode */
   --shadow-2xs: 0 1px 2px 0px oklch(0% 0 0 / 0.3);
@@ -181,14 +178,11 @@
     0 4px 6px -4px oklch(0% 0 0 / 0.45);
   --shadow-xl: 0 20px 25px -5px oklch(0% 0 0 / 0.6),
     0 8px 10px -6px oklch(0% 0 0 / 0.5);
-  --shadow-2xl: 0 25px 50px -12px oklch(0% 0 0 / 0.7);
+  --shadow-2xl: 0 25px 50px -12px oklch(0% 0 0 / 0.75);
 
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* Special components */
-  --welcome-banner: var(--card);
-  --welcome-banner-foreground: var(--card-foreground);
 }
 
 @theme inline {
@@ -251,8 +245,6 @@
   --shadow-2xl: var(--shadow-2xl);
   --tracking-normal: var(--tracking-normal);
   --spacing: var(--spacing);
-  --color-welcome-banner: var(--welcome-banner);
-  --color-welcome-banner-foreground: var(--welcome-banner-foreground);
 }
 
 @layer base {
@@ -270,11 +262,11 @@
   }
 
   *::selection {
-    @apply bg-primary/25 text-foreground;
+    @apply bg-primary text-foreground;
   }
 
   .dark *::selection {
-    @apply bg-primary/30 text-foreground;
+    @apply bg-primary text-background;
   }
 
   button:not(:disabled),

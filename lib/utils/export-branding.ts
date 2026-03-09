@@ -66,7 +66,7 @@ export function getPrimaryPdfColor(): [number, number, number] {
 }
 
 export async function loadExportLogoDataUrl(
-	logoPath = "/logo_text.png",
+	logoPath = "/imagens/logo_text.png",
 ): Promise<string | null> {
 	if (typeof window === "undefined" || typeof document === "undefined") {
 		return null;

@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { authClient, googleSignInAvailable } from "@/lib/auth/client";
 import { cn } from "@/lib/utils/ui";
-import { Logo } from "../logo";
+import { Logo } from "@/components/shared/logo";
 import { AuthErrorAlert } from "./auth-error-alert";
 import { AuthHeader } from "./auth-header";
 import AuthSidebar from "./auth-sidebar";
