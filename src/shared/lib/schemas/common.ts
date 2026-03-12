@@ -55,5 +55,6 @@ export const noteSchema = z
 	.string()
 	.trim()
 	.max(500, "A anotação deve ter no máximo 500 caracteres.")
+	.nullable()
 	.optional()
 	.transform((value) => (value && value.length > 0 ? value : null));

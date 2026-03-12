@@ -7,6 +7,15 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Corrigido
+
+- Lançamentos: o schema compartilhado de observação voltou a aceitar `null`, corrigindo o erro `Invalid input: expected string, received null` ao salvar novos lançamentos sem anotação.
+- Cartões/Faturas: o pagamento da fatura passou a usar o valor líquido do período no cartão, evitando que o extrato da conta registre o total bruto das despesas quando houver receitas como estornos ou créditos na mesma fatura.
+
+### Alterado
+
+- Queries e organização de domínios: o dashboard passou a nomear queries de leitura com sufixo `-queries.ts` e `preferences-queries.ts`, relatórios adotaram nomes explícitos como `cards-report-queries.ts`, `category-report-queries.ts`, `category-chart-queries.ts` e `establishments/queries.ts`, `insights/queries.ts` foi renomeado para `constants.ts` e as leituras reutilizáveis de lançamentos foram concentradas em `transactions/queries.ts`, deixando `page-helpers.ts` focado em parsing, filtros e transformação.
+
 ## [2.0.0] - 2026-03-09
 
 ### Alterado

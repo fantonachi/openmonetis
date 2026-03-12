@@ -124,12 +124,7 @@ export async function updateInvoicePaymentStatusAction(
 					.select({
 						total: sql<number>`
               coalesce(
-                sum(
-                  case
-                    when ${lancamentos.transactionType} = 'Despesa' then ${lancamentos.amount}
-                    else 0
-                  end
-                ),
+                sum(${lancamentos.amount}),
                 0
               )
             `,
@@ -145,9 +140,10 @@ export async function updateInvoicePaymentStatusAction(
 						),
 					);
 
-				const adminShare = Math.abs(Number(adminShareRow?.total ?? 0));
+				const adminShare = Number(adminShareRow?.total ?? 0);
+				const adminPayableAmount = Math.abs(Math.min(adminShare, 0));
 
-				if (adminShare > 0 && card.contaId) {
+				if (adminPayableAmount > 0 && card.contaId) {
 					const adminPagador = await tx.query.pagadores.findFirst({
 						columns: { id: true },
 						where: and(
@@ -170,7 +166,7 @@ export async function updateInvoicePaymentStatusAction(
 							? parseLocalDateString(data.paymentDate)
 							: getBusinessTodayDate();
 
-						const amount = `-${formatDecimal(adminShare)}`;
+						const amount = `-${formatDecimal(adminPayableAmount)}`;
 						const payload = {
 							condition: "À vista",
 							name: `Pagamento fatura - ${card.name}`,
