@@ -3,9 +3,7 @@ import { RiFingerprintLine, RiLoader4Line } from "@remixicon/react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Logo } from "@/shared/components/logo";
 import { Button } from "@/shared/components/ui/button";
-import { Card, CardContent } from "@/shared/components/ui/card";
 import {
 	Field,
 	FieldDescription,
@@ -16,12 +14,15 @@ import {
 import { Input } from "@/shared/components/ui/input";
 import { authClient, googleSignInAvailable } from "@/shared/lib/auth/client";
 import { cn } from "@/shared/utils/ui";
+import { AuthCardShell } from "./auth-card-shell";
 import { AuthErrorAlert } from "./auth-error-alert";
 import { AuthHeader } from "./auth-header";
-import AuthSidebar from "./auth-sidebar";
 import { GoogleAuthButton } from "./google-auth-button";
 
 type DivProps = React.ComponentProps<"div">;
+
+const authLinkClassName =
+	"font-medium text-foreground/88 underline decoration-border underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/30 focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40";
 
 export function LoginForm({ className, ...props }: DivProps) {
 	const router = useRouter();
@@ -130,119 +131,117 @@ export function LoginForm({ className, ...props }: DivProps) {
 	}
 
 	return (
-		<div className={cn("flex flex-col gap-6", className)} {...props}>
-			<Logo className="mb-2" />
-			<Card className="overflow-hidden p-0">
-				<CardContent className="grid gap-0 p-0 md:grid-cols-[1.05fr_0.95fr]">
-					<form
-						className="flex flex-col gap-6 p-6 md:p-8"
-						onSubmit={handleSubmit}
-						noValidate
-					>
-						<FieldGroup className="gap-4">
-							<AuthHeader title="Entrar no OpenMonetis" />
+		<div className={cn("flex flex-col gap-5", className)} {...props}>
+			<AuthCardShell>
+				<form
+					className="flex w-full items-center px-6 py-7 md:px-10 md:py-9"
+					onSubmit={handleSubmit}
+					noValidate
+				>
+					<FieldGroup className="mx-auto w-full max-w-md gap-5">
+						<AuthHeader
+							title="Entrar no OpenMonetis"
+							description="Acesse sua conta para acompanhar cartões, lançamentos e metas em um só lugar."
+						/>
 
-							<AuthErrorAlert error={error} />
+						<AuthErrorAlert error={error} />
 
-							<Field>
-								<FieldLabel htmlFor="email">E-mail</FieldLabel>
-								<Input
-									id="email"
-									type="email"
-									placeholder="Digite seu e-mail"
-									autoComplete="username webauthn"
-									required
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									aria-invalid={!!error}
-								/>
-							</Field>
+						<Field>
+							<FieldLabel htmlFor="email">E-mail</FieldLabel>
+							<Input
+								id="email"
+								type="email"
+								placeholder="Digite seu e-mail"
+								autoComplete="username webauthn"
+								required
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								aria-invalid={!!error}
+							/>
+						</Field>
 
-							<Field>
-								<div className="flex items-center">
-									<FieldLabel htmlFor="password">Senha</FieldLabel>
-								</div>
-								<Input
-									id="password"
-									type="password"
-									required
-									placeholder="Digite sua senha"
-									autoComplete="current-password"
-									value={password}
-									onChange={(e) => setPassword(e.target.value)}
-									aria-invalid={!!error}
-								/>
-							</Field>
+						<Field>
+							<div className="flex items-center">
+								<FieldLabel htmlFor="password">Senha</FieldLabel>
+							</div>
+							<Input
+								id="password"
+								type="password"
+								required
+								placeholder="Digite sua senha"
+								autoComplete="current-password"
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+								aria-invalid={!!error}
+							/>
+						</Field>
 
+						<Field>
+							<Button
+								type="submit"
+								disabled={loadingEmail || loadingGoogle || loadingPasskey}
+								className="w-full"
+							>
+								{loadingEmail ? (
+									<RiLoader4Line className="h-4 w-4 animate-spin" />
+								) : (
+									"Entrar"
+								)}
+							</Button>
+						</Field>
+
+						<FieldSeparator className="my-1.5 *:data-[slot=field-separator-content]:bg-card">
+							Ou continue com
+						</FieldSeparator>
+
+						<Field>
+							<GoogleAuthButton
+								onClick={handleGoogle}
+								loading={loadingGoogle}
+								disabled={
+									loadingEmail ||
+									loadingGoogle ||
+									loadingPasskey ||
+									!isGoogleAvailable
+								}
+								text="Entrar com Google"
+							/>
+						</Field>
+
+						{passkeySupported && (
 							<Field>
 								<Button
-									type="submit"
+									variant="outline"
+									type="button"
+									onClick={handlePasskey}
 									disabled={loadingEmail || loadingGoogle || loadingPasskey}
-									className="w-full"
+									className="w-full gap-2"
 								>
-									{loadingEmail ? (
+									{loadingPasskey ? (
 										<RiLoader4Line className="h-4 w-4 animate-spin" />
 									) : (
-										"Entrar"
+										<RiFingerprintLine className="h-5 w-5" />
 									)}
+									<span>Entrar com passkey</span>
 								</Button>
 							</Field>
+						)}
 
-							<FieldSeparator className="my-2 *:data-[slot=field-separator-content]:bg-card">
-								Ou continue com
-							</FieldSeparator>
+						<FieldDescription className="pt-1 text-center">
+							Não tem uma conta?{" "}
+							<a href="/signup" className={authLinkClassName}>
+								Inscreva-se
+							</a>
+						</FieldDescription>
 
-							<Field>
-								<GoogleAuthButton
-									onClick={handleGoogle}
-									loading={loadingGoogle}
-									disabled={
-										loadingEmail ||
-										loadingGoogle ||
-										loadingPasskey ||
-										!isGoogleAvailable
-									}
-									text="Entrar com Google"
-								/>
-							</Field>
-
-							{passkeySupported && (
-								<Field>
-									<Button
-										variant="outline"
-										type="button"
-										onClick={handlePasskey}
-										disabled={loadingEmail || loadingGoogle || loadingPasskey}
-										className="w-full gap-2"
-									>
-										{loadingPasskey ? (
-											<RiLoader4Line className="h-4 w-4 animate-spin" />
-										) : (
-											<RiFingerprintLine className="h-5 w-5" />
-										)}
-										<span>Entrar com passkey</span>
-									</Button>
-								</Field>
-							)}
-
-							<FieldDescription className="text-center">
-								Não tem uma conta?{" "}
-								<a href="/signup" className="underline underline-offset-4">
-									Inscreva-se
-								</a>
-							</FieldDescription>
-						</FieldGroup>
-					</form>
-
-					<AuthSidebar />
-				</CardContent>
-			</Card>
-
-			<FieldDescription className="text-center">
-				<a href="/" className="underline underline-offset-4">
-					Voltar para o site
-				</a>
-			</FieldDescription>
+						<FieldDescription className="text-center text-[13px] text-muted-foreground">
+							<a href="/" className={authLinkClassName}>
+								Voltar para a página inicial
+							</a>
+						</FieldDescription>
+					</FieldGroup>
+				</form>
+			</AuthCardShell>
 		</div>
 	);
 }

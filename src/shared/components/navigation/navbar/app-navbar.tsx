@@ -4,6 +4,7 @@ import { AnimatedThemeToggler } from "@/shared/components/animated-theme-toggler
 import { Logo } from "@/shared/components/logo";
 import { NotificationBell } from "@/shared/components/navigation/navbar/notification-bell";
 import { RefreshPageButton } from "@/shared/components/refresh-page-button";
+import { DotPattern } from "@/shared/components/ui/dot-pattern";
 import { NavMenu } from "./nav-menu";
 import { NavbarUser } from "./navbar-user";
 
@@ -29,17 +30,26 @@ export function AppNavbar({
 	notificationsSnapshot,
 }: AppNavbarProps) {
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 flex h-16 shrink-0 items-center bg-primary">
-			<div className="w-full max-w-8xl mx-auto px-4 flex items-center gap-4 h-full">
-				{/* Logo */}
+		<header className="fixed top-0 left-0 right-0 z-50 flex h-16 shrink-0 items-center border-b border-black/6 bg-primary">
+			<div className="pointer-events-none absolute inset-0 overflow-hidden">
+				<DotPattern
+					width={20}
+					height={20}
+					cx={1.25}
+					cy={1.25}
+					cr={1.25}
+					className="text-black/10 mask-[linear-gradient(to_right,transparent,black_6%,black_60%,transparent)]"
+				/>
+				<div className="absolute inset-0 bg-linear-to-b from-white/8 via-transparent to-black/6" />
+			</div>
+
+			<div className="relative z-10 mx-auto flex h-full w-full max-w-8xl items-center gap-4 px-4">
 				<Link href="/dashboard" className="shrink-0 mr-1">
 					<Logo variant="compact" invertTextOnDark={false} />
 				</Link>
 
-				{/* Navigation */}
 				<NavMenu />
 
-				{/* Right-side actions */}
 				<div className="ml-auto flex items-center gap-2">
 					<NotificationBell
 						notifications={notificationsSnapshot.notifications}
@@ -51,7 +61,6 @@ export function AppNavbar({
 					<AnimatedThemeToggler className={navbarActionClassName} />
 				</div>
 
-				{/* User avatar */}
 				<NavbarUser user={user} pagadorAvatarUrl={pagadorAvatarUrl} />
 			</div>
 		</header>

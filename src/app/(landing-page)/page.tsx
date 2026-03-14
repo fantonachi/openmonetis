@@ -1,5 +1,4 @@
 import {
-	RiArrowRightSLine,
 	RiBankCard2Line,
 	RiBarChartBoxLine,
 	RiCalendarLine,
@@ -211,7 +210,6 @@ export default async function Page() {
 									<Link href="/signup">
 										<Button size="sm" className="gap-2">
 											Começar
-											<RiArrowRightSLine size={16} />
 										</Button>
 									</Link>
 								</div>
