@@ -1,10 +1,10 @@
-import type { LancamentoItem } from "@/features/transactions/components/types";
+import type { TransactionItem } from "@/features/transactions/components/types";
 import { getTodayDateString } from "@/shared/utils/date";
 import { derivePeriodFromDate, getNextPeriod } from "@/shared/utils/period";
 import {
-	LANCAMENTO_CONDITIONS,
-	LANCAMENTO_PAYMENT_METHODS,
-	LANCAMENTO_TRANSACTION_TYPES,
+	PAYMENT_METHODS,
+	TRANSACTION_CONDITIONS,
+	TRANSACTION_TYPES,
 } from "./constants";
 
 /**
@@ -68,7 +68,7 @@ export type SplitType = "equal" | "60-40" | "70-30" | "80-20" | "custom";
 /**
  * Form state type for lancamento dialog
  */
-export type LancamentoFormState = {
+export type TransactionFormState = {
 	purchaseDate: string;
 	period: string;
 	name: string;
@@ -76,15 +76,15 @@ export type LancamentoFormState = {
 	amount: string;
 	condition: string;
 	paymentMethod: string;
-	pagadorId: string | undefined;
-	secondaryPagadorId: string | undefined;
+	payerId: string | undefined;
+	secondaryPayerId: string | undefined;
 	isSplit: boolean;
 	splitType: SplitType;
 	primarySplitAmount: string;
 	secondarySplitAmount: string;
-	contaId: string | undefined;
-	cartaoId: string | undefined;
-	categoriaId: string | undefined;
+	accountId: string | undefined;
+	cardId: string | undefined;
+	categoryId: string | undefined;
 	installmentCount: string;
 	recurrenceCount: string;
 	dueDate: string;
@@ -97,7 +97,7 @@ export type LancamentoFormState = {
  * Initial state overrides for lancamento form
  */
 export type LancamentoFormOverrides = {
-	defaultCartaoId?: string | null;
+	defaultCardId?: string | null;
 	defaultPaymentMethod?: string | null;
 	defaultPurchaseDate?: string | null;
 	defaultName?: string | null;
@@ -109,20 +109,20 @@ export type LancamentoFormOverrides = {
 /**
  * Builds initial form state from lancamento data and defaults
  */
-export function buildLancamentoInitialState(
-	lancamento?: LancamentoItem,
-	defaultPagadorId?: string | null,
+export function buildTransactionInitialState(
+	transaction?: TransactionItem,
+	defaultPayerId?: string | null,
 	preferredPeriod?: string,
 	overrides?: LancamentoFormOverrides,
-): LancamentoFormState {
-	const purchaseDate = lancamento?.purchaseDate
-		? lancamento.purchaseDate.slice(0, 10)
+): TransactionFormState {
+	const purchaseDate = transaction?.purchaseDate
+		? transaction.purchaseDate.slice(0, 10)
 		: (overrides?.defaultPurchaseDate ?? "");
 
 	const paymentMethod =
-		lancamento?.paymentMethod ??
+		transaction?.paymentMethod ??
 		overrides?.defaultPaymentMethod ??
-		LANCAMENTO_PAYMENT_METHODS[0];
+		PAYMENT_METHODS[0];
 
 	const derivedPeriod = derivePeriodFromDate(purchaseDate);
 	const fallbackPeriod =
@@ -132,28 +132,28 @@ export function buildLancamentoInitialState(
 
 	// Quando importando, usar valores padrão do usuário logado ao invés dos valores do lançamento original
 	const isImporting = overrides?.isImporting ?? false;
-	const fallbackPagadorId = isImporting
-		? (defaultPagadorId ?? null)
-		: (lancamento?.pagadorId ?? defaultPagadorId ?? null);
+	const fallbackPayerId = isImporting
+		? (defaultPayerId ?? null)
+		: (transaction?.payerId ?? defaultPayerId ?? null);
 
 	const boletoPaymentDate =
-		lancamento?.boletoPaymentDate ??
-		(paymentMethod === "Boleto" && (lancamento?.isSettled ?? false)
+		transaction?.boletoPaymentDate ??
+		(paymentMethod === "Boleto" && (transaction?.isSettled ?? false)
 			? getTodayDateString()
 			: "");
 
 	// Calcular o valor correto para importação de parcelados
 	let amountValue = overrides?.defaultAmount ?? "";
-	if (!amountValue && typeof lancamento?.amount === "number") {
-		let baseAmount = Math.abs(lancamento.amount);
+	if (!amountValue && typeof transaction?.amount === "number") {
+		let baseAmount = Math.abs(transaction.amount);
 
 		// Se está importando e é parcelado, usar o valor total (parcela * quantidade)
 		if (
 			isImporting &&
-			lancamento.condition === "Parcelado" &&
-			lancamento.installmentCount
+			transaction.condition === "Parcelado" &&
+			transaction.installmentCount
 		) {
-			baseAmount = baseAmount * lancamento.installmentCount;
+			baseAmount = baseAmount * transaction.installmentCount;
 		}
 
 		amountValue = (Math.round(baseAmount * 100) / 100).toFixed(2);
@@ -162,51 +162,51 @@ export function buildLancamentoInitialState(
 	return {
 		purchaseDate,
 		period:
-			lancamento?.period && /^\d{4}-\d{2}$/.test(lancamento.period)
-				? lancamento.period
+			transaction?.period && /^\d{4}-\d{2}$/.test(transaction.period)
+				? transaction.period
 				: fallbackPeriod,
-		name: lancamento?.name ?? overrides?.defaultName ?? "",
+		name: transaction?.name ?? overrides?.defaultName ?? "",
 		transactionType:
-			lancamento?.transactionType ??
+			transaction?.transactionType ??
 			overrides?.defaultTransactionType ??
-			LANCAMENTO_TRANSACTION_TYPES[0],
+			TRANSACTION_TYPES[0],
 		amount: amountValue,
-		condition: lancamento?.condition ?? LANCAMENTO_CONDITIONS[0],
+		condition: transaction?.condition ?? TRANSACTION_CONDITIONS[0],
 		paymentMethod,
-		pagadorId: fallbackPagadorId ?? undefined,
-		secondaryPagadorId: undefined,
+		payerId: fallbackPayerId ?? undefined,
+		secondaryPayerId: undefined,
 		isSplit: false,
 		splitType: "equal",
 		primarySplitAmount: "",
 		secondarySplitAmount: "",
-		contaId:
+		accountId:
 			paymentMethod === "Cartão de crédito"
 				? undefined
 				: isImporting
 					? undefined
-					: (lancamento?.contaId ?? undefined),
-		cartaoId:
+					: (transaction?.accountId ?? undefined),
+		cardId:
 			paymentMethod === "Cartão de crédito"
 				? isImporting
-					? (overrides?.defaultCartaoId ?? undefined)
-					: (lancamento?.cartaoId ?? overrides?.defaultCartaoId ?? undefined)
+					? (overrides?.defaultCardId ?? undefined)
+					: (transaction?.cardId ?? overrides?.defaultCardId ?? undefined)
 				: undefined,
-		categoriaId: isImporting
+		categoryId: isImporting
 			? undefined
-			: (lancamento?.categoriaId ?? undefined),
-		installmentCount: lancamento?.installmentCount
-			? String(lancamento.installmentCount)
+			: (transaction?.categoryId ?? undefined),
+		installmentCount: transaction?.installmentCount
+			? String(transaction.installmentCount)
 			: "",
-		recurrenceCount: lancamento?.recurrenceCount
-			? String(lancamento.recurrenceCount)
+		recurrenceCount: transaction?.recurrenceCount
+			? String(transaction.recurrenceCount)
 			: "",
-		dueDate: lancamento?.dueDate ?? "",
+		dueDate: transaction?.dueDate ?? "",
 		boletoPaymentDate,
-		note: lancamento?.note ?? "",
+		note: transaction?.note ?? "",
 		isSettled:
 			paymentMethod === "Cartão de crédito"
 				? null
-				: (lancamento?.isSettled ?? true),
+				: (transaction?.isSettled ?? true),
 	};
 }
 
@@ -248,12 +248,12 @@ export function calculateSplitAmounts(
  * This function encapsulates the business logic for field interdependencies
  */
 export function applyFieldDependencies(
-	key: keyof LancamentoFormState,
-	value: LancamentoFormState[keyof LancamentoFormState],
-	currentState: LancamentoFormState,
+	key: keyof TransactionFormState,
+	value: TransactionFormState[keyof TransactionFormState],
+	currentState: TransactionFormState,
 	cardInfo?: { closingDay: string | null; dueDay: string | null } | null,
-): Partial<LancamentoFormState> {
-	const updates: Partial<LancamentoFormState> = {};
+): Partial<TransactionFormState> {
+	const updates: Partial<TransactionFormState> = {};
 
 	// Auto-derive period from purchaseDate
 	if (key === "purchaseDate" && typeof value === "string" && value) {
@@ -276,11 +276,8 @@ export function applyFieldDependencies(
 		}
 	}
 
-	// Auto-derive period when cartaoId changes (credit card selected)
-	if (
-		key === "cartaoId" &&
-		currentState.paymentMethod === "Cartão de crédito"
-	) {
+	// Auto-derive period when cardId changes (credit card selected)
+	if (key === "cardId" && currentState.paymentMethod === "Cartão de crédito") {
 		if (typeof value === "string" && value && currentState.purchaseDate) {
 			updates.period = deriveCreditCardPeriod(
 				currentState.purchaseDate,
@@ -303,10 +300,10 @@ export function applyFieldDependencies(
 	// When payment method changes, adjust related fields
 	if (key === "paymentMethod" && typeof value === "string") {
 		if (value === "Cartão de crédito") {
-			updates.contaId = undefined;
+			updates.accountId = undefined;
 			updates.isSettled = null;
 		} else {
-			updates.cartaoId = undefined;
+			updates.cardId = undefined;
 			updates.isSettled = currentState.isSettled ?? true;
 		}
 
@@ -314,7 +311,7 @@ export function applyFieldDependencies(
 		if (value === "Cartão de crédito") {
 			if (
 				currentState.purchaseDate &&
-				currentState.cartaoId &&
+				currentState.cardId &&
 				cardInfo?.closingDay
 			) {
 				updates.period = deriveCreditCardPeriod(
@@ -350,7 +347,7 @@ export function applyFieldDependencies(
 
 	// When split is disabled, clear secondary pagador and split fields
 	if (key === "isSplit" && value === false) {
-		updates.secondaryPagadorId = undefined;
+		updates.secondaryPayerId = undefined;
 		updates.splitType = "equal";
 		updates.primarySplitAmount = "";
 		updates.secondarySplitAmount = "";
@@ -383,10 +380,10 @@ export function applyFieldDependencies(
 	}
 
 	// When primary pagador changes, clear secondary if it matches
-	if (key === "pagadorId" && typeof value === "string") {
-		const secondaryValue = currentState.secondaryPagadorId;
+	if (key === "payerId" && typeof value === "string") {
+		const secondaryValue = currentState.secondaryPayerId;
 		if (secondaryValue && secondaryValue === value) {
-			updates.secondaryPagadorId = undefined;
+			updates.secondaryPayerId = undefined;
 		}
 	}
 

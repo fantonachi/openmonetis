@@ -2,9 +2,9 @@ import type { SelectOption } from "@/features/transactions/components/types";
 import { capitalize } from "@/shared/utils/string";
 
 /**
- * Group label for categorias
+ * Group label for category options
  */
-type CategoriaGroup = {
+type CategoryGroup = {
 	label: string;
 	options: SelectOption[];
 };
@@ -24,15 +24,15 @@ function normalizeCategoryGroupLabel(value: string): string {
 }
 
 /**
- * Groups and sorts categoria options by their group property
- * @param categoriaOptions - Array of categoria select options
- * @returns Array of grouped and sorted categoria options
+ * Groups and sorts category options by their group property
+ * @param categoryOptions - Array of category select options
+ * @returns Array of grouped and sorted category options
  */
-export function groupAndSortCategorias(
-	categoriaOptions: SelectOption[],
-): CategoriaGroup[] {
-	// Group categorias by their group property
-	const groups = categoriaOptions.reduce<Record<string, SelectOption[]>>(
+export function groupAndSortCategories(
+	categoryOptions: SelectOption[],
+): CategoryGroup[] {
+	// Group category options by their group property
+	const groups = categoryOptions.reduce<Record<string, SelectOption[]>>(
 		(acc, option) => {
 			const key = option.group ?? "Outros";
 			if (!acc[key]) {
@@ -63,11 +63,11 @@ export function groupAndSortCategorias(
 }
 
 /**
- * Filters secondary pagador options to exclude the primary pagador
+ * Filters secondary payer options to exclude the primary payer
  */
-export function filterSecondaryPagadorOptions(
+export function filterSecondaryPayerOptions(
 	allOptions: SelectOption[],
-	primaryPagadorId?: string,
+	primaryPayerId?: string,
 ): SelectOption[] {
-	return allOptions.filter((option) => option.value !== primaryPagadorId);
+	return allOptions.filter((option) => option.value !== primaryPayerId);
 }

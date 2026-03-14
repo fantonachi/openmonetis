@@ -1,5 +1,5 @@
 import { and, eq, ilike, isNotNull, sql } from "drizzle-orm";
-import { cartoes, faturas, lancamentos, pagadores } from "@/db/schema";
+import { cards, invoices, payers, transactions } from "@/db/schema";
 import { ACCOUNT_AUTO_INVOICE_NOTE_PREFIX } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
 import {
@@ -28,14 +28,14 @@ type RawDashboardInvoice = {
 type RawInvoiceBreakdownRow = {
 	cardId: string | null;
 	period: string | null;
-	pagadorId: string | null;
+	payerId: string | null;
 	pagadorName: string | null;
 	pagadorAvatar: string | null;
 	amount: number | string | null;
 };
 
 export type InvoicePagadorBreakdown = {
-	pagadorId: string | null;
+	payerId: string | null;
 	pagadorName: string;
 	pagadorAvatar: string | null;
 	amount: number;
@@ -74,15 +74,15 @@ export async function fetchDashboardInvoices(
 ): Promise<DashboardInvoicesSnapshot> {
 	const paymentRows = await db
 		.select({
-			note: lancamentos.note,
-			purchaseDate: lancamentos.purchaseDate,
-			createdAt: lancamentos.createdAt,
+			note: transactions.note,
+			purchaseDate: transactions.purchaseDate,
+			createdAt: transactions.createdAt,
 		})
-		.from(lancamentos)
+		.from(transactions)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				ilike(lancamentos.note, `${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`),
+				eq(transactions.userId, userId),
+				ilike(transactions.note, `${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`),
 			),
 		);
 
@@ -117,80 +117,77 @@ export async function fetchDashboardInvoices(
 		}
 	}
 
-	const [rows, breakdownRows]: [
-		RawDashboardInvoice[],
-		RawInvoiceBreakdownRow[],
-	] = await Promise.all([
+	const [rows, breakdownRows] = (await Promise.all([
 		db
 			.select({
-				invoiceId: faturas.id,
-				cardId: cartoes.id,
-				cardName: cartoes.name,
-				logo: cartoes.logo,
-				dueDay: cartoes.dueDay,
-				period: faturas.period,
-				paymentStatus: faturas.paymentStatus,
-				invoiceCreatedAt: faturas.createdAt,
+				invoiceId: invoices.id,
+				cardId: cards.id,
+				cardName: cards.name,
+				logo: cards.logo,
+				dueDay: cards.dueDay,
+				period: invoices.period,
+				paymentStatus: invoices.paymentStatus,
+				invoiceCreatedAt: invoices.createdAt,
 				totalAmount: sql<number | null>`
-        COALESCE(SUM(${lancamentos.amount}), 0)
+        COALESCE(SUM(${transactions.amount}), 0)
       `,
-				transactionCount: sql<number | null>`COUNT(${lancamentos.id})`,
+				transactionCount: sql<number | null>`COUNT(${transactions.id})`,
 			})
-			.from(cartoes)
+			.from(cards)
 			.leftJoin(
-				faturas,
+				invoices,
 				and(
-					eq(faturas.cartaoId, cartoes.id),
-					eq(faturas.userId, userId),
-					eq(faturas.period, period),
+					eq(invoices.cardId, cards.id),
+					eq(invoices.userId, userId),
+					eq(invoices.period, period),
 				),
 			)
 			.leftJoin(
-				lancamentos,
+				transactions,
 				and(
-					eq(lancamentos.cartaoId, cartoes.id),
-					eq(lancamentos.userId, userId),
-					eq(lancamentos.period, period),
+					eq(transactions.cardId, cards.id),
+					eq(transactions.userId, userId),
+					eq(transactions.period, period),
 				),
 			)
-			.where(eq(cartoes.userId, userId))
+			.where(eq(cards.userId, userId))
 			.groupBy(
-				faturas.id,
-				cartoes.id,
-				cartoes.name,
-				cartoes.brand,
-				cartoes.status,
-				cartoes.logo,
-				cartoes.dueDay,
-				faturas.period,
-				faturas.paymentStatus,
+				invoices.id,
+				cards.id,
+				cards.name,
+				cards.brand,
+				cards.status,
+				cards.logo,
+				cards.dueDay,
+				invoices.period,
+				invoices.paymentStatus,
 			),
 		db
 			.select({
-				cardId: lancamentos.cartaoId,
-				period: lancamentos.period,
-				pagadorId: lancamentos.pagadorId,
-				pagadorName: pagadores.name,
-				pagadorAvatar: pagadores.avatarUrl,
-				amount: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+				cardId: transactions.cardId,
+				period: transactions.period,
+				payerId: transactions.payerId,
+				pagadorName: payers.name,
+				pagadorAvatar: payers.avatarUrl,
+				amount: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 			})
-			.from(lancamentos)
-			.leftJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+			.from(transactions)
+			.leftJoin(payers, eq(transactions.payerId, payers.id))
 			.where(
 				and(
-					eq(lancamentos.userId, userId),
-					eq(lancamentos.period, period),
-					isNotNull(lancamentos.cartaoId),
+					eq(transactions.userId, userId),
+					eq(transactions.period, period),
+					isNotNull(transactions.cardId),
 				),
 			)
 			.groupBy(
-				lancamentos.cartaoId,
-				lancamentos.period,
-				lancamentos.pagadorId,
-				pagadores.name,
-				pagadores.avatarUrl,
+				transactions.cardId,
+				transactions.period,
+				transactions.payerId,
+				payers.name,
+				payers.avatarUrl,
 			),
-	]);
+	])) as [RawDashboardInvoice[], RawInvoiceBreakdownRow[]];
 
 	const breakdownMap = new Map<string, InvoicePagadorBreakdown[]>();
 	for (const row of breakdownRows) {
@@ -205,7 +202,7 @@ export async function fetchDashboardInvoices(
 		const key = `${row.cardId}:${resolvedPeriod}`;
 		const current = breakdownMap.get(key) ?? [];
 		current.push({
-			pagadorId: row.pagadorId ?? null,
+			payerId: row.payerId ?? null,
 			pagadorName: row.pagadorName?.trim() || "Sem pagador",
 			pagadorAvatar: row.pagadorAvatar ?? null,
 			amount,
@@ -213,7 +210,7 @@ export async function fetchDashboardInvoices(
 		breakdownMap.set(key, current);
 	}
 
-	const invoices: DashboardInvoice[] = [];
+	const invoiceList: DashboardInvoice[] = [];
 
 	for (const row of rows) {
 		if (!row) {
@@ -242,7 +239,7 @@ export async function fetchDashboardInvoices(
 				? (paymentMap.get(paymentKey) ?? toDateOnlyString(row.invoiceCreatedAt))
 				: null;
 
-		invoices.push({
+		invoiceList.push({
 			id: row.invoiceId ?? buildFallbackId(row.cardId, period),
 			cardId: row.cardId,
 			cardName: row.cardName,
@@ -260,12 +257,12 @@ export async function fetchDashboardInvoices(
 		});
 	}
 
-	invoices.sort((a, b) => {
+	invoiceList.sort((a, b) => {
 		// Ordena do maior valor para o menor
 		return Math.abs(b.totalAmount) - Math.abs(a.totalAmount);
 	});
 
-	const totalPending = invoices.reduce((total, invoice) => {
+	const totalPending = invoiceList.reduce((total, invoice) => {
 		if (invoice.paymentStatus !== INVOICE_PAYMENT_STATUS.PENDING) {
 			return total;
 		}
@@ -273,7 +270,7 @@ export async function fetchDashboardInvoices(
 	}, 0);
 
 	return {
-		invoices,
+		invoices: invoiceList,
 		totalPending,
 	};
 }

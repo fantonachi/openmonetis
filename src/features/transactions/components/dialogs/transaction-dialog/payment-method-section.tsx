@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LANCAMENTO_PAYMENT_METHODS } from "@/features/transactions/constants";
+import { PAYMENT_METHODS } from "@/features/transactions/constants";
 import { Label } from "@/shared/components/ui/label";
 import { MonthPicker } from "@/shared/components/ui/month-picker";
 import {
@@ -23,7 +23,7 @@ import {
 } from "@/shared/utils/period";
 import { cn } from "@/shared/utils/ui";
 import {
-	ContaCartaoSelectContent,
+	AccountCardSelectContent,
 	PaymentMethodSelectContent,
 } from "../../select-items";
 import type { PaymentMethodSectionProps } from "./transaction-dialog-types";
@@ -39,7 +39,7 @@ function InlinePeriodPicker({
 
 	return (
 		<div className="ml-1">
-			<span className="text-xs text-muted-foreground">Fatura de </span>
+			<span className="text-xs text-muted-foreground">Invoice de </span>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<button
@@ -66,11 +66,11 @@ function InlinePeriodPicker({
 export function PaymentMethodSection({
 	formState,
 	onFieldChange,
-	contaOptions,
-	cartaoOptions,
+	accountOptions,
+	cardOptions,
 	isUpdateMode,
 	disablePaymentMethod,
-	disableCartaoSelect,
+	disableCardSelect,
 }: PaymentMethodSectionProps) {
 	const isCartaoSelected = formState.paymentMethod === "Cartão de crédito";
 	const showContaSelect = [
@@ -85,10 +85,10 @@ export function PaymentMethodSection({
 	// Filtrar contas apenas do tipo "Pré-Pago | VR/VA" quando forma de pagamento for "Pré-Pago | VR/VA"
 	const filteredContaOptions =
 		formState.paymentMethod === "Pré-Pago | VR/VA"
-			? contaOptions.filter(
+			? accountOptions.filter(
 					(option) => option.accountType === "Pré-Pago | VR/VA",
 				)
-			: contaOptions;
+			: accountOptions;
 
 	return (
 		<>
@@ -120,7 +120,7 @@ export function PaymentMethodSection({
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
-								{LANCAMENTO_PAYMENT_METHODS.map((method) => (
+								{PAYMENT_METHODS.map((method) => (
 									<SelectItem key={method} value={method}>
 										<PaymentMethodSelectContent label={method} />
 									</SelectItem>
@@ -133,23 +133,23 @@ export function PaymentMethodSection({
 						<div className="space-y-1 w-full md:w-1/2">
 							<Label htmlFor="cartao">Cartão</Label>
 							<Select
-								value={formState.cartaoId}
-								onValueChange={(value) => onFieldChange("cartaoId", value)}
-								disabled={disableCartaoSelect}
+								value={formState.cardId}
+								onValueChange={(value) => onFieldChange("cardId", value)}
+								disabled={disableCardSelect}
 							>
 								<SelectTrigger
 									id="cartao"
 									className="w-full"
-									disabled={disableCartaoSelect}
+									disabled={disableCardSelect}
 								>
 									<SelectValue placeholder="Selecione">
-										{formState.cartaoId &&
+										{formState.cardId &&
 											(() => {
-												const selectedOption = cartaoOptions.find(
-													(opt) => opt.value === formState.cartaoId,
+												const selectedOption = cardOptions.find(
+													(opt) => opt.value === formState.cardId,
 												);
 												return selectedOption ? (
-													<ContaCartaoSelectContent
+													<AccountCardSelectContent
 														label={selectedOption.label}
 														logo={selectedOption.logo}
 														isCartao={true}
@@ -159,16 +159,16 @@ export function PaymentMethodSection({
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
-									{cartaoOptions.length === 0 ? (
+									{cardOptions.length === 0 ? (
 										<div className="px-2 py-6 text-center">
 											<p className="text-sm text-muted-foreground">
 												Nenhum cartão cadastrado
 											</p>
 										</div>
 									) : (
-										cartaoOptions.map((option) => (
+										cardOptions.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												<ContaCartaoSelectContent
+												<AccountCardSelectContent
 													label={option.label}
 													logo={option.logo}
 													isCartao={true}
@@ -178,7 +178,7 @@ export function PaymentMethodSection({
 									)}
 								</SelectContent>
 							</Select>
-							{formState.cartaoId ? (
+							{formState.cardId ? (
 								<InlinePeriodPicker
 									period={formState.period}
 									onPeriodChange={(value) => onFieldChange("period", value)}
@@ -194,20 +194,20 @@ export function PaymentMethodSection({
 								!isUpdateMode ? "md:w-1/2" : "md:w-full",
 							)}
 						>
-							<Label htmlFor="conta">Conta</Label>
+							<Label htmlFor="conta">FinancialAccount</Label>
 							<Select
-								value={formState.contaId}
-								onValueChange={(value) => onFieldChange("contaId", value)}
+								value={formState.accountId}
+								onValueChange={(value) => onFieldChange("accountId", value)}
 							>
 								<SelectTrigger id="conta" className="w-full">
 									<SelectValue placeholder="Selecione">
-										{formState.contaId &&
+										{formState.accountId &&
 											(() => {
 												const selectedOption = filteredContaOptions.find(
-													(opt) => opt.value === formState.contaId,
+													(opt) => opt.value === formState.accountId,
 												);
 												return selectedOption ? (
-													<ContaCartaoSelectContent
+													<AccountCardSelectContent
 														label={selectedOption.label}
 														logo={selectedOption.logo}
 														isCartao={false}
@@ -226,7 +226,7 @@ export function PaymentMethodSection({
 									) : (
 										filteredContaOptions.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												<ContaCartaoSelectContent
+												<AccountCardSelectContent
 													label={option.label}
 													logo={option.logo}
 													isCartao={false}
@@ -252,18 +252,18 @@ export function PaymentMethodSection({
 						>
 							<Label htmlFor="cartaoUpdate">Cartão</Label>
 							<Select
-								value={formState.cartaoId}
-								onValueChange={(value) => onFieldChange("cartaoId", value)}
+								value={formState.cardId}
+								onValueChange={(value) => onFieldChange("cardId", value)}
 							>
 								<SelectTrigger id="cartaoUpdate" className="w-full">
 									<SelectValue placeholder="Selecione">
-										{formState.cartaoId &&
+										{formState.cardId &&
 											(() => {
-												const selectedOption = cartaoOptions.find(
-													(opt) => opt.value === formState.cartaoId,
+												const selectedOption = cardOptions.find(
+													(opt) => opt.value === formState.cardId,
 												);
 												return selectedOption ? (
-													<ContaCartaoSelectContent
+													<AccountCardSelectContent
 														label={selectedOption.label}
 														logo={selectedOption.logo}
 														isCartao={true}
@@ -273,16 +273,16 @@ export function PaymentMethodSection({
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
-									{cartaoOptions.length === 0 ? (
+									{cardOptions.length === 0 ? (
 										<div className="px-2 py-6 text-center">
 											<p className="text-sm text-muted-foreground">
 												Nenhum cartão cadastrado
 											</p>
 										</div>
 									) : (
-										cartaoOptions.map((option) => (
+										cardOptions.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												<ContaCartaoSelectContent
+												<AccountCardSelectContent
 													label={option.label}
 													logo={option.logo}
 													isCartao={true}
@@ -292,7 +292,7 @@ export function PaymentMethodSection({
 									)}
 								</SelectContent>
 							</Select>
-							{formState.cartaoId ? (
+							{formState.cardId ? (
 								<InlinePeriodPicker
 									period={formState.period}
 									onPeriodChange={(value) => onFieldChange("period", value)}
@@ -308,20 +308,20 @@ export function PaymentMethodSection({
 								!isUpdateMode ? "md:w-1/2" : "md:w-full",
 							)}
 						>
-							<Label htmlFor="contaUpdate">Conta</Label>
+							<Label htmlFor="contaUpdate">FinancialAccount</Label>
 							<Select
-								value={formState.contaId}
-								onValueChange={(value) => onFieldChange("contaId", value)}
+								value={formState.accountId}
+								onValueChange={(value) => onFieldChange("accountId", value)}
 							>
 								<SelectTrigger id="contaUpdate" className="w-full">
 									<SelectValue placeholder="Selecione">
-										{formState.contaId &&
+										{formState.accountId &&
 											(() => {
 												const selectedOption = filteredContaOptions.find(
-													(opt) => opt.value === formState.contaId,
+													(opt) => opt.value === formState.accountId,
 												);
 												return selectedOption ? (
-													<ContaCartaoSelectContent
+													<AccountCardSelectContent
 														label={selectedOption.label}
 														logo={selectedOption.logo}
 														isCartao={false}
@@ -340,7 +340,7 @@ export function PaymentMethodSection({
 									) : (
 										filteredContaOptions.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												<ContaCartaoSelectContent
+												<AccountCardSelectContent
 													label={option.label}
 													logo={option.logo}
 													isCartao={false}

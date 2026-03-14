@@ -8,18 +8,18 @@ import { generateObject } from "ai";
 import { getDay } from "date-fns";
 import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
 import {
-	cartoes,
-	categorias,
-	contas,
-	insightsSalvos,
-	lancamentos,
-	orcamentos,
-	pagadores,
+	budgets,
+	cards,
+	categories,
+	financialAccounts,
+	payers,
+	savedInsights,
+	transactions,
 } from "@/db/schema";
 import { ACCOUNT_AUTO_INVOICE_NOTE_PREFIX } from "@/shared/lib/accounts/constants";
 import { getUser } from "@/shared/lib/auth/server";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import {
 	type InsightsResponse,
 	InsightsResponseSchema,
@@ -62,92 +62,92 @@ async function aggregateMonthData(userId: string, period: string) {
 	] = await Promise.all([
 		db
 			.select({
-				transactionType: lancamentos.transactionType,
-				totalAmount: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+				transactionType: transactions.transactionType,
+				totalAmount: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 			})
-			.from(lancamentos)
-			.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+			.from(transactions)
+			.innerJoin(payers, eq(transactions.payerId, payers.id))
 			.where(
 				and(
-					eq(lancamentos.userId, userId),
-					eq(lancamentos.period, period),
-					eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-					ne(lancamentos.transactionType, TRANSFERENCIA),
+					eq(transactions.userId, userId),
+					eq(transactions.period, period),
+					eq(payers.role, PAYER_ROLE_ADMIN),
+					ne(transactions.transactionType, TRANSFERENCIA),
 					or(
-						isNull(lancamentos.note),
+						isNull(transactions.note),
 						sql`${
-							lancamentos.note
+							transactions.note
 						} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			)
-			.groupBy(lancamentos.transactionType),
+			.groupBy(transactions.transactionType),
 		db
 			.select({
-				transactionType: lancamentos.transactionType,
-				totalAmount: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+				transactionType: transactions.transactionType,
+				totalAmount: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 			})
-			.from(lancamentos)
-			.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+			.from(transactions)
+			.innerJoin(payers, eq(transactions.payerId, payers.id))
 			.where(
 				and(
-					eq(lancamentos.userId, userId),
-					eq(lancamentos.period, previousPeriod),
-					eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-					ne(lancamentos.transactionType, TRANSFERENCIA),
+					eq(transactions.userId, userId),
+					eq(transactions.period, previousPeriod),
+					eq(payers.role, PAYER_ROLE_ADMIN),
+					ne(transactions.transactionType, TRANSFERENCIA),
 					or(
-						isNull(lancamentos.note),
+						isNull(transactions.note),
 						sql`${
-							lancamentos.note
+							transactions.note
 						} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			)
-			.groupBy(lancamentos.transactionType),
+			.groupBy(transactions.transactionType),
 		db
 			.select({
-				transactionType: lancamentos.transactionType,
-				totalAmount: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+				transactionType: transactions.transactionType,
+				totalAmount: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 			})
-			.from(lancamentos)
-			.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+			.from(transactions)
+			.innerJoin(payers, eq(transactions.payerId, payers.id))
 			.where(
 				and(
-					eq(lancamentos.userId, userId),
-					eq(lancamentos.period, twoMonthsAgo),
-					eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-					ne(lancamentos.transactionType, TRANSFERENCIA),
+					eq(transactions.userId, userId),
+					eq(transactions.period, twoMonthsAgo),
+					eq(payers.role, PAYER_ROLE_ADMIN),
+					ne(transactions.transactionType, TRANSFERENCIA),
 					or(
-						isNull(lancamentos.note),
+						isNull(transactions.note),
 						sql`${
-							lancamentos.note
+							transactions.note
 						} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			)
-			.groupBy(lancamentos.transactionType),
+			.groupBy(transactions.transactionType),
 		db
 			.select({
-				transactionType: lancamentos.transactionType,
-				totalAmount: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+				transactionType: transactions.transactionType,
+				totalAmount: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 			})
-			.from(lancamentos)
-			.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+			.from(transactions)
+			.innerJoin(payers, eq(transactions.payerId, payers.id))
 			.where(
 				and(
-					eq(lancamentos.userId, userId),
-					eq(lancamentos.period, threeMonthsAgo),
-					eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-					ne(lancamentos.transactionType, TRANSFERENCIA),
+					eq(transactions.userId, userId),
+					eq(transactions.period, threeMonthsAgo),
+					eq(payers.role, PAYER_ROLE_ADMIN),
+					ne(transactions.transactionType, TRANSFERENCIA),
 					or(
-						isNull(lancamentos.note),
+						isNull(transactions.note),
 						sql`${
-							lancamentos.note
+							transactions.note
 						} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			)
-			.groupBy(lancamentos.transactionType),
+			.groupBy(transactions.transactionType),
 	]);
 
 	// Calcular totais dos últimos 3 meses
@@ -187,107 +187,107 @@ async function aggregateMonthData(userId: string, period: string) {
 	// Buscar despesas por categoria (top 5)
 	const expensesByCategory = await db
 		.select({
-			categoryName: categorias.name,
-			total: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+			categoryName: categories.name,
+			total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
-		.innerJoin(categorias, eq(lancamentos.categoriaId, categorias.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
+		.innerJoin(categories, eq(transactions.categoryId, categories.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(categorias.type, "despesa"),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(transactions.transactionType, "Despesa"),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(categories.type, "despesa"),
 				or(
-					isNull(lancamentos.note),
+					isNull(transactions.note),
 					sql`${
-						lancamentos.note
+						transactions.note
 					} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 				),
 			),
 		)
-		.groupBy(categorias.name)
-		.orderBy(sql`sum(${lancamentos.amount}) ASC`)
+		.groupBy(categories.name)
+		.orderBy(sql`sum(${transactions.amount}) ASC`)
 		.limit(5);
 
 	// Buscar orçamentos e uso
 	const budgetsData = await db
 		.select({
-			categoryName: categorias.name,
-			budgetAmount: orcamentos.amount,
-			spent: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+			categoryName: categories.name,
+			budgetAmount: budgets.amount,
+			spent: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 		})
-		.from(orcamentos)
-		.innerJoin(categorias, eq(orcamentos.categoriaId, categorias.id))
+		.from(budgets)
+		.innerJoin(categories, eq(budgets.categoryId, categories.id))
 		.leftJoin(
-			lancamentos,
+			transactions,
 			and(
-				eq(lancamentos.categoriaId, categorias.id),
-				eq(lancamentos.period, period),
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.transactionType, "Despesa"),
+				eq(transactions.categoryId, categories.id),
+				eq(transactions.period, period),
+				eq(transactions.userId, userId),
+				eq(transactions.transactionType, "Despesa"),
 			),
 		)
-		.where(and(eq(orcamentos.userId, userId), eq(orcamentos.period, period)))
-		.groupBy(categorias.name, orcamentos.amount);
+		.where(and(eq(budgets.userId, userId), eq(budgets.period, period)))
+		.groupBy(categories.name, budgets.amount);
 
 	// Buscar métricas de cartões
 	const cardsData = await db
 		.select({
-			totalLimit: sql<number>`coalesce(sum(${cartoes.limit}), 0)`,
+			totalLimit: sql<number>`coalesce(sum(${cards.limit}), 0)`,
 			cardCount: sql<number>`count(*)`,
 		})
-		.from(cartoes)
-		.where(and(eq(cartoes.userId, userId), eq(cartoes.status, "ativo")));
+		.from(cards)
+		.where(and(eq(cards.userId, userId), eq(cards.status, "ativo")));
 
-	// Buscar saldo total das contas
+	// Buscar saldo total das financialAccounts
 	const accountsData = await db
 		.select({
-			totalBalance: sql<number>`coalesce(sum(${contas.initialBalance}), 0)`,
+			totalBalance: sql<number>`coalesce(sum(${financialAccounts.initialBalance}), 0)`,
 			accountCount: sql<number>`count(*)`,
 		})
-		.from(contas)
+		.from(financialAccounts)
 		.where(
 			and(
-				eq(contas.userId, userId),
-				eq(contas.status, "ativa"),
-				eq(contas.excludeFromBalance, false),
+				eq(financialAccounts.userId, userId),
+				eq(financialAccounts.status, "ativa"),
+				eq(financialAccounts.excludeFromBalance, false),
 			),
 		);
 
 	// Calcular ticket médio das transações
 	const avgTicketData = await db
 		.select({
-			avgAmount: sql<number>`coalesce(avg(abs(${lancamentos.amount})), 0)`,
+			avgAmount: sql<number>`coalesce(avg(abs(${transactions.amount})), 0)`,
 			transactionCount: sql<number>`count(*)`,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				ne(lancamentos.transactionType, TRANSFERENCIA),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				ne(transactions.transactionType, TRANSFERENCIA),
 			),
 		);
 
 	// Buscar gastos por dia da semana
 	const dayOfWeekSpending = await db
 		.select({
-			purchaseDate: lancamentos.purchaseDate,
-			amount: lancamentos.amount,
+			purchaseDate: transactions.purchaseDate,
+			amount: transactions.amount,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(transactions.transactionType, "Despesa"),
+				eq(payers.role, PAYER_ROLE_ADMIN),
 			),
 		);
 
@@ -303,45 +303,45 @@ async function aggregateMonthData(userId: string, period: string) {
 	// Buscar métodos de pagamento (agregado)
 	const paymentMethodsData = await db
 		.select({
-			paymentMethod: lancamentos.paymentMethod,
-			total: sql<number>`coalesce(sum(abs(${lancamentos.amount})), 0)`,
+			paymentMethod: transactions.paymentMethod,
+			total: sql<number>`coalesce(sum(abs(${transactions.amount})), 0)`,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(transactions.transactionType, "Despesa"),
+				eq(payers.role, PAYER_ROLE_ADMIN),
 			),
 		)
-		.groupBy(lancamentos.paymentMethod);
+		.groupBy(transactions.paymentMethod);
 
 	// Buscar transações dos últimos 3 meses para análise de recorrência
 	const last3MonthsTransactions = await db
 		.select({
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			period: lancamentos.period,
-			condition: lancamentos.condition,
-			installmentCount: lancamentos.installmentCount,
-			currentInstallment: lancamentos.currentInstallment,
-			categoryName: categorias.name,
+			name: transactions.name,
+			amount: transactions.amount,
+			period: transactions.period,
+			condition: transactions.condition,
+			installmentCount: transactions.installmentCount,
+			currentInstallment: transactions.currentInstallment,
+			categoryName: categories.name,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
-		.leftJoin(categorias, eq(lancamentos.categoriaId, categorias.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
+		.leftJoin(categories, eq(transactions.categoryId, categories.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				sql`${lancamentos.period} IN (${period}, ${previousPeriod}, ${twoMonthsAgo})`,
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				ne(lancamentos.transactionType, TRANSFERENCIA),
+				eq(transactions.userId, userId),
+				sql`${transactions.period} IN (${period}, ${previousPeriod}, ${twoMonthsAgo})`,
+				eq(transactions.transactionType, "Despesa"),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				ne(transactions.transactionType, TRANSFERENCIA),
 			),
 		)
-		.orderBy(lancamentos.name);
+		.orderBy(transactions.name);
 
 	// Análise de recorrência
 	const transactionsByName = new Map<
@@ -656,7 +656,7 @@ DADOS IMPORTANTES PARA SUA ANÁLISE:
 - Comprometimento futuro de R$ ${aggregatedData.installments.futureCommitment.toFixed(2)}
 - Use isso para alertas sobre comprometimento de renda futura
 
-Organize suas observações nas 4 categorias especificadas no prompt do sistema:
+Organize suas observações nas 4 categories especificadas no prompt do sistema:
 1. Comportamentos Observados (behaviors): 3-6 itens
 2. Gatilhos de Consumo (triggers): 3-6 itens
 3. Recomendações Práticas (recommendations): 3-6 itens
@@ -697,11 +697,11 @@ export async function saveInsightsAction(
 		// Verificar se já existe um insight salvo para este período
 		const existing = await db
 			.select()
-			.from(insightsSalvos)
+			.from(savedInsights)
 			.where(
 				and(
-					eq(insightsSalvos.userId, user.id),
-					eq(insightsSalvos.period, period),
+					eq(savedInsights.userId, user.id),
+					eq(savedInsights.period, period),
 				),
 			)
 			.limit(1);
@@ -709,7 +709,7 @@ export async function saveInsightsAction(
 		if (existing.length > 0) {
 			// Atualizar existente
 			const updated = await db
-				.update(insightsSalvos)
+				.update(savedInsights)
 				.set({
 					modelId,
 					data: JSON.stringify(data),
@@ -717,13 +717,13 @@ export async function saveInsightsAction(
 				})
 				.where(
 					and(
-						eq(insightsSalvos.userId, user.id),
-						eq(insightsSalvos.period, period),
+						eq(savedInsights.userId, user.id),
+						eq(savedInsights.period, period),
 					),
 				)
 				.returning({
-					id: insightsSalvos.id,
-					createdAt: insightsSalvos.createdAt,
+					id: savedInsights.id,
+					createdAt: savedInsights.createdAt,
 				});
 
 			const updatedRecord = updated[0];
@@ -745,7 +745,7 @@ export async function saveInsightsAction(
 
 		// Criar novo
 		const result = await db
-			.insert(insightsSalvos)
+			.insert(savedInsights)
 			.values({
 				userId: user.id,
 				period,
@@ -753,8 +753,8 @@ export async function saveInsightsAction(
 				data: JSON.stringify(data),
 			})
 			.returning({
-				id: insightsSalvos.id,
-				createdAt: insightsSalvos.createdAt,
+				id: savedInsights.id,
+				createdAt: savedInsights.createdAt,
 			});
 
 		const insertedRecord = result[0];
@@ -796,11 +796,11 @@ export async function loadSavedInsightsAction(period: string): Promise<
 
 		const result = await db
 			.select()
-			.from(insightsSalvos)
+			.from(savedInsights)
 			.where(
 				and(
-					eq(insightsSalvos.userId, user.id),
-					eq(insightsSalvos.period, period),
+					eq(savedInsights.userId, user.id),
+					eq(savedInsights.period, period),
 				),
 			)
 			.limit(1);
@@ -849,11 +849,11 @@ export async function deleteSavedInsightsAction(
 		const user = await getUser();
 
 		await db
-			.delete(insightsSalvos)
+			.delete(savedInsights)
 			.where(
 				and(
-					eq(insightsSalvos.userId, user.id),
-					eq(insightsSalvos.period, period),
+					eq(savedInsights.userId, user.id),
+					eq(savedInsights.period, period),
 				),
 			);
 

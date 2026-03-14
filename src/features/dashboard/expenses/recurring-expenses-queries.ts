@@ -1,11 +1,11 @@
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
-import { lancamentos } from "@/db/schema";
+import { transactions } from "@/db/schema";
 import {
 	ACCOUNT_AUTO_INVOICE_NOTE_PREFIX,
 	INITIAL_BALANCE_NOTE,
 } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 
 export type RecurringExpense = {
@@ -24,37 +24,37 @@ export async function fetchRecurringExpenses(
 	userId: string,
 	period: string,
 ): Promise<RecurringExpensesData> {
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { expenses: [] };
 	}
 
 	const results = await db
 		.select({
-			id: lancamentos.id,
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			paymentMethod: lancamentos.paymentMethod,
-			recurrenceCount: lancamentos.recurrenceCount,
+			id: transactions.id,
+			name: transactions.name,
+			amount: transactions.amount,
+			paymentMethod: transactions.paymentMethod,
+			recurrenceCount: transactions.recurrenceCount,
 		})
-		.from(lancamentos)
+		.from(transactions)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(lancamentos.condition, "Recorrente"),
-				eq(lancamentos.pagadorId, adminPagadorId),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(transactions.transactionType, "Despesa"),
+				eq(transactions.condition, "Recorrente"),
+				eq(transactions.payerId, adminPayerId),
 				or(
-					isNull(lancamentos.note),
+					isNull(transactions.note),
 					and(
-						sql`${lancamentos.note} != ${INITIAL_BALANCE_NOTE}`,
-						sql`${lancamentos.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
+						sql`${transactions.note} != ${INITIAL_BALANCE_NOTE}`,
+						sql`${transactions.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			),
 		)
-		.orderBy(desc(lancamentos.purchaseDate), desc(lancamentos.createdAt));
+		.orderBy(desc(transactions.purchaseDate), desc(transactions.createdAt));
 
 	const expenses = results.map(
 		(row): RecurringExpense => ({

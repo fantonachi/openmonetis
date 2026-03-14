@@ -28,7 +28,7 @@ type CategoryBreakdownRow = {
 };
 
 type CategoryBudgetRow = {
-	categoriaId: string | null;
+	categoryId: string | null;
 	amount: unknown;
 };
 
@@ -43,8 +43,8 @@ export function buildCategoryBreakdownData({
 }): DashboardCategoryBreakdownData {
 	const budgetMap = new Map<string, number>();
 	for (const row of budgetRows) {
-		if (row.categoriaId) {
-			budgetMap.set(row.categoriaId, toNumber(row.amount));
+		if (row.categoryId) {
+			budgetMap.set(row.categoryId, toNumber(row.amount));
 		}
 	}
 

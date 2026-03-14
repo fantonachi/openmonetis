@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { lancamentos, recurringSeries } from "@/db/schema";
+import { recurringSeries, transactions } from "@/db/schema";
 import { db } from "@/shared/lib/db";
 import {
 	addMonthsToPeriod,
@@ -76,7 +76,7 @@ export async function generateRecurringTransactions(
 
 		const template = series.templateData;
 
-		// Create all lancamentos for missing periods in a transaction
+		// Create all transactions for missing periods in a transaction
 		await db.transaction(async (tx: typeof db) => {
 			const records = periodsToGenerate.map((period) => {
 				const purchaseDate = computePurchaseDate(period, series.dayOfMonth);
@@ -86,10 +86,10 @@ export async function generateRecurringTransactions(
 					transactionType: template.transactionType,
 					paymentMethod: template.paymentMethod,
 					condition: "Recorrente" as const,
-					categoriaId: template.categoriaId,
-					contaId: template.contaId,
-					cartaoId: template.cartaoId,
-					pagadorId: template.pagadorId,
+					categoryId: template.categoryId,
+					accountId: template.accountId,
+					cardId: template.cardId,
+					payerId: template.payerId,
 					note: template.note,
 					purchaseDate,
 					period,
@@ -104,7 +104,7 @@ export async function generateRecurringTransactions(
 				};
 			});
 
-			await tx.insert(lancamentos).values(records);
+			await tx.insert(transactions).values(records);
 
 			// Update lastGeneratedPeriod to the last period we generated
 			const lastPeriod =

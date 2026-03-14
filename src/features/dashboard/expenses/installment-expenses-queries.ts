@@ -1,11 +1,11 @@
 import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
-import { lancamentos } from "@/db/schema";
+import { transactions } from "@/db/schema";
 import {
 	ACCOUNT_AUTO_INVOICE_NOTE_PREFIX,
 	INITIAL_BALANCE_NOTE,
 } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 
 export type InstallmentExpense = {
@@ -28,42 +28,42 @@ export async function fetchInstallmentExpenses(
 	userId: string,
 	period: string,
 ): Promise<InstallmentExpensesData> {
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { expenses: [] };
 	}
 
 	const rows = await db
 		.select({
-			id: lancamentos.id,
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			paymentMethod: lancamentos.paymentMethod,
-			currentInstallment: lancamentos.currentInstallment,
-			installmentCount: lancamentos.installmentCount,
-			dueDate: lancamentos.dueDate,
-			purchaseDate: lancamentos.purchaseDate,
-			period: lancamentos.period,
+			id: transactions.id,
+			name: transactions.name,
+			amount: transactions.amount,
+			paymentMethod: transactions.paymentMethod,
+			currentInstallment: transactions.currentInstallment,
+			installmentCount: transactions.installmentCount,
+			dueDate: transactions.dueDate,
+			purchaseDate: transactions.purchaseDate,
+			period: transactions.period,
 		})
-		.from(lancamentos)
+		.from(transactions)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(lancamentos.condition, "Parcelado"),
-				eq(lancamentos.isAnticipated, false),
-				eq(lancamentos.pagadorId, adminPagadorId),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(transactions.transactionType, "Despesa"),
+				eq(transactions.condition, "Parcelado"),
+				eq(transactions.isAnticipated, false),
+				eq(transactions.payerId, adminPayerId),
 				or(
-					isNull(lancamentos.note),
+					isNull(transactions.note),
 					and(
-						sql`${lancamentos.note} != ${INITIAL_BALANCE_NOTE}`,
-						sql`${lancamentos.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
+						sql`${transactions.note} != ${INITIAL_BALANCE_NOTE}`,
+						sql`${transactions.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			),
 		)
-		.orderBy(desc(lancamentos.purchaseDate), desc(lancamentos.createdAt));
+		.orderBy(desc(transactions.purchaseDate), desc(transactions.createdAt));
 
 	type InstallmentExpenseRow = (typeof rows)[number];
 

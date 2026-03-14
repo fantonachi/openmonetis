@@ -1,7 +1,7 @@
 import { and, eq, ne, sql } from "drizzle-orm";
-import { categorias, lancamentos, orcamentos } from "@/db/schema";
+import { budgets, categories, transactions } from "@/db/schema";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 
 const BUDGET_CRITICAL_THRESHOLD = 80;
@@ -49,9 +49,9 @@ export async function fetchGoalsProgressData(
 	userId: string,
 	period: string,
 ): Promise<GoalsProgressData> {
-	const adminPagadorId = await getAdminPagadorId(userId);
+	const adminPayerId = await getAdminPayerId(userId);
 
-	if (!adminPagadorId) {
+	if (!adminPayerId) {
 		return {
 			items: [],
 			categories: [],
@@ -64,45 +64,45 @@ export async function fetchGoalsProgressData(
 	const [rows, categoryRows] = await Promise.all([
 		db
 			.select({
-				orcamentoId: orcamentos.id,
-				categoryId: categorias.id,
-				categoryName: categorias.name,
-				categoryIcon: categorias.icon,
-				period: orcamentos.period,
-				createdAt: orcamentos.createdAt,
-				budgetAmount: orcamentos.amount,
-				spentAmount: sql<number>`COALESCE(SUM(ABS(${lancamentos.amount})), 0)`,
+				orcamentoId: budgets.id,
+				categoryId: categories.id,
+				categoryName: categories.name,
+				categoryIcon: categories.icon,
+				period: budgets.period,
+				createdAt: budgets.createdAt,
+				budgetAmount: budgets.amount,
+				spentAmount: sql<number>`COALESCE(SUM(ABS(${transactions.amount})), 0)`,
 			})
-			.from(orcamentos)
-			.innerJoin(categorias, eq(orcamentos.categoriaId, categorias.id))
+			.from(budgets)
+			.innerJoin(categories, eq(budgets.categoryId, categories.id))
 			.leftJoin(
-				lancamentos,
+				transactions,
 				and(
-					eq(lancamentos.categoriaId, orcamentos.categoriaId),
-					eq(lancamentos.userId, orcamentos.userId),
-					eq(lancamentos.period, orcamentos.period),
-					eq(lancamentos.pagadorId, adminPagadorId),
-					eq(lancamentos.transactionType, "Despesa"),
-					ne(lancamentos.condition, "cancelado"),
+					eq(transactions.categoryId, budgets.categoryId),
+					eq(transactions.userId, budgets.userId),
+					eq(transactions.period, budgets.period),
+					eq(transactions.payerId, adminPayerId),
+					eq(transactions.transactionType, "Despesa"),
+					ne(transactions.condition, "cancelado"),
 				),
 			)
-			.where(and(eq(orcamentos.userId, userId), eq(orcamentos.period, period)))
+			.where(and(eq(budgets.userId, userId), eq(budgets.period, period)))
 			.groupBy(
-				orcamentos.id,
-				categorias.id,
-				categorias.name,
-				categorias.icon,
-				orcamentos.period,
-				orcamentos.createdAt,
-				orcamentos.amount,
+				budgets.id,
+				categories.id,
+				categories.name,
+				categories.icon,
+				budgets.period,
+				budgets.createdAt,
+				budgets.amount,
 			),
-		db.query.categorias.findMany({
-			where: and(eq(categorias.userId, userId), eq(categorias.type, "despesa")),
+		db.query.categories.findMany({
+			where: and(eq(categories.userId, userId), eq(categories.type, "despesa")),
 			orderBy: (category, { asc }) => [asc(category.name)],
 		}),
 	]);
 
-	const categories: GoalProgressCategory[] = categoryRows.map((category) => ({
+	const categoryList: GoalProgressCategory[] = categoryRows.map((category) => ({
 		id: category.id,
 		name: category.name,
 		icon: category.icon,
@@ -139,7 +139,7 @@ export async function fetchGoalsProgressData(
 
 	return {
 		items,
-		categories,
+		categories: categoryList,
 		totalBudgets: items.length,
 		exceededCount,
 		criticalCount,

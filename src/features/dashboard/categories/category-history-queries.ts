@@ -1,8 +1,8 @@
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { categorias, lancamentos, pagadores } from "@/db/schema";
+import { categories, payers, transactions } from "@/db/schema";
 import { ACCOUNT_AUTO_INVOICE_NOTE_PREFIX } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 import {
@@ -56,14 +56,14 @@ export async function fetchAllCategories(
 ): Promise<CategoryOption[]> {
 	const result = await db
 		.select({
-			id: categorias.id,
-			name: categorias.name,
-			icon: categorias.icon,
-			type: categorias.type,
+			id: categories.id,
+			name: categories.name,
+			icon: categories.icon,
+			type: categories.type,
 		})
-		.from(categorias)
-		.where(eq(categorias.userId, userId))
-		.orderBy(categorias.type, categorias.name);
+		.from(categories)
+		.where(eq(categories.userId, userId))
+		.orderBy(categories.type, categories.name);
 
 	return result as CategoryOption[];
 }
@@ -88,36 +88,36 @@ export async function fetchCategoryHistory(
 	// Fetch monthly data for ALL categories with transactions
 	const monthlyDataQuery = (await db
 		.select({
-			categoryId: categorias.id,
-			categoryName: categorias.name,
-			categoryIcon: categorias.icon,
-			period: lancamentos.period,
-			totalAmount: sql<string>`SUM(ABS(${lancamentos.amount}))`.as(
+			categoryId: categories.id,
+			categoryName: categories.name,
+			categoryIcon: categories.icon,
+			period: transactions.period,
+			totalAmount: sql<string>`SUM(ABS(${transactions.amount}))`.as(
 				"total_amount",
 			),
 		})
-		.from(lancamentos)
-		.innerJoin(categorias, eq(lancamentos.categoriaId, categorias.id))
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(categories, eq(transactions.categoryId, categories.id))
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(categorias.userId, userId),
-				inArray(lancamentos.period, periods),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
+				eq(transactions.userId, userId),
+				eq(categories.userId, userId),
+				inArray(transactions.period, periods),
+				eq(payers.role, PAYER_ROLE_ADMIN),
 				or(
-					isNull(lancamentos.note),
+					isNull(transactions.note),
 					sql`${
-						lancamentos.note
+						transactions.note
 					} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 				),
 			),
 		)
 		.groupBy(
-			categorias.id,
-			categorias.name,
-			categorias.icon,
-			lancamentos.period,
+			categories.id,
+			categories.name,
+			categories.icon,
+			transactions.period,
 		)) as MonthlyCategoryRow[];
 
 	if (monthlyDataQuery.length === 0) {

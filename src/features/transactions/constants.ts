@@ -1,16 +1,16 @@
-export const LANCAMENTO_TRANSACTION_TYPES = [
+export const TRANSACTION_TYPES = [
 	"Despesa",
 	"Receita",
 	"Transferência",
 ] as const;
 
-export const LANCAMENTO_CONDITIONS = [
+export const TRANSACTION_CONDITIONS = [
 	"À vista",
 	"Parcelado",
 	"Recorrente",
 ] as const;
 
-export const LANCAMENTO_PAYMENT_METHODS = [
+export const PAYMENT_METHODS = [
 	"Cartão de crédito",
 	"Cartão de débito",
 	"Pix",

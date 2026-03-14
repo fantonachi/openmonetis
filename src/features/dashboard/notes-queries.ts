@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import { anotacoes } from "@/db/schema";
+import { notes } from "@/db/schema";
 import { db } from "@/shared/lib/db";
 
 export type DashboardTask = {
@@ -14,7 +14,7 @@ export type DashboardNote = {
 	description: string;
 	type: "nota" | "tarefa";
 	tasks?: DashboardTask[];
-	arquivada: boolean;
+	archived: boolean;
 	createdAt: string;
 };
 
@@ -55,19 +55,19 @@ const parseTasks = (value: string | null): DashboardTask[] | undefined => {
 export async function fetchDashboardNotes(
 	userId: string,
 ): Promise<DashboardNote[]> {
-	const notes = await db.query.anotacoes.findMany({
-		where: and(eq(anotacoes.userId, userId), eq(anotacoes.arquivada, false)),
+	const noteRows = await db.query.notes.findMany({
+		where: and(eq(notes.userId, userId), eq(notes.archived, false)),
 		orderBy: (note, { desc }) => [desc(note.createdAt)],
 		limit: 5,
 	});
 
-	return notes.map((note) => ({
+	return noteRows.map((note) => ({
 		id: note.id,
 		title: (note.title ?? "").trim(),
 		description: (note.description ?? "").trim(),
 		type: (note.type ?? "nota") as "nota" | "tarefa",
 		tasks: parseTasks(note.tasks),
-		arquivada: note.arquivada,
+		archived: note.archived,
 		createdAt: note.createdAt.toISOString(),
 	}));
 }

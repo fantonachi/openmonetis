@@ -1,8 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
-import { contas, lancamentos, pagadores } from "@/db/schema";
+import { financialAccounts, payers, transactions } from "@/db/schema";
 import { INITIAL_BALANCE_NOTE } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 
 type RawDashboardAccount = {
@@ -36,49 +36,49 @@ export async function fetchDashboardAccounts(
 ): Promise<DashboardAccountsSnapshot> {
 	const rows = await db
 		.select({
-			id: contas.id,
-			name: contas.name,
-			accountType: contas.accountType,
-			status: contas.status,
-			logo: contas.logo,
-			initialBalance: contas.initialBalance,
-			excludeFromBalance: contas.excludeFromBalance,
+			id: financialAccounts.id,
+			name: financialAccounts.name,
+			accountType: financialAccounts.accountType,
+			status: financialAccounts.status,
+			logo: financialAccounts.logo,
+			initialBalance: financialAccounts.initialBalance,
+			excludeFromBalance: financialAccounts.excludeFromBalance,
 			balanceMovements: sql<number>`
         coalesce(
           sum(
             case
-              when ${lancamentos.note} = ${INITIAL_BALANCE_NOTE} then 0
-              else ${lancamentos.amount}
+              when ${transactions.note} = ${INITIAL_BALANCE_NOTE} then 0
+              else ${transactions.amount}
             end
           ),
           0
         )
       `,
 		})
-		.from(contas)
+		.from(financialAccounts)
 		.leftJoin(
-			lancamentos,
+			transactions,
 			and(
-				eq(lancamentos.contaId, contas.id),
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.isSettled, true),
+				eq(transactions.accountId, financialAccounts.id),
+				eq(transactions.userId, userId),
+				eq(transactions.isSettled, true),
 			),
 		)
-		.leftJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.leftJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(contas.userId, userId),
-				sql`(${lancamentos.id} IS NULL OR ${pagadores.role} = ${PAGADOR_ROLE_ADMIN})`,
+				eq(financialAccounts.userId, userId),
+				sql`(${transactions.id} IS NULL OR ${payers.role} = ${PAYER_ROLE_ADMIN})`,
 			),
 		)
 		.groupBy(
-			contas.id,
-			contas.name,
-			contas.accountType,
-			contas.status,
-			contas.logo,
-			contas.initialBalance,
-			contas.excludeFromBalance,
+			financialAccounts.id,
+			financialAccounts.name,
+			financialAccounts.accountType,
+			financialAccounts.status,
+			financialAccounts.logo,
+			financialAccounts.initialBalance,
+			financialAccounts.excludeFromBalance,
 		);
 
 	const accounts = rows

@@ -1,5 +1,10 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { categorias, contas, lancamentos, orcamentos } from "@/db/schema";
+import {
+	budgets,
+	categories,
+	financialAccounts,
+	transactions,
+} from "@/db/schema";
 import {
 	buildCategoryBreakdownData,
 	type DashboardCategoryBreakdownData,
@@ -9,9 +14,9 @@ import {
 	buildDashboardAdminFilters,
 	excludeAutoInvoiceEntries,
 	excludeInitialBalanceWhenConfigured,
-} from "@/features/dashboard/lancamento-filters";
+} from "@/features/dashboard/transaction-filters";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { getPreviousPeriod } from "@/shared/utils/period";
 
 export type CategoryIncomeItem = DashboardCategoryBreakdownItem;
@@ -23,47 +28,50 @@ export async function fetchIncomeByCategory(
 ): Promise<IncomeByCategoryData> {
 	const previousPeriod = getPreviousPeriod(period);
 
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { categories: [], currentTotal: 0, previousTotal: 0 };
 	}
 
-	// Single query: GROUP BY categoriaId + period for both current and previous periods
+	// Single query: GROUP BY categoryId + period for both current and previous periods
 	const [rows, budgetRows] = await Promise.all([
 		db
 			.select({
-				categoryId: categorias.id,
-				categoryName: categorias.name,
-				categoryIcon: categorias.icon,
-				period: lancamentos.period,
-				total: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+				categoryId: categories.id,
+				categoryName: categories.name,
+				categoryIcon: categories.icon,
+				period: transactions.period,
+				total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 			})
-			.from(lancamentos)
-			.innerJoin(categorias, eq(lancamentos.categoriaId, categorias.id))
-			.leftJoin(contas, eq(lancamentos.contaId, contas.id))
+			.from(transactions)
+			.innerJoin(categories, eq(transactions.categoryId, categories.id))
+			.leftJoin(
+				financialAccounts,
+				eq(transactions.accountId, financialAccounts.id),
+			)
 			.where(
 				and(
-					...buildDashboardAdminFilters({ userId, adminPagadorId }),
-					inArray(lancamentos.period, [period, previousPeriod]),
-					eq(lancamentos.transactionType, "Receita"),
-					eq(categorias.type, "receita"),
+					...buildDashboardAdminFilters({ userId, adminPayerId }),
+					inArray(transactions.period, [period, previousPeriod]),
+					eq(transactions.transactionType, "Receita"),
+					eq(categories.type, "receita"),
 					excludeAutoInvoiceEntries(),
 					excludeInitialBalanceWhenConfigured(),
 				),
 			)
 			.groupBy(
-				categorias.id,
-				categorias.name,
-				categorias.icon,
-				lancamentos.period,
+				categories.id,
+				categories.name,
+				categories.icon,
+				transactions.period,
 			),
 		db
 			.select({
-				categoriaId: orcamentos.categoriaId,
-				amount: orcamentos.amount,
+				categoryId: budgets.categoryId,
+				amount: budgets.amount,
 			})
-			.from(orcamentos)
-			.where(and(eq(orcamentos.userId, userId), eq(orcamentos.period, period))),
+			.from(budgets)
+			.where(and(eq(budgets.userId, userId), eq(budgets.period, period))),
 	]);
 
 	return buildCategoryBreakdownData({

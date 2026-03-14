@@ -1,28 +1,28 @@
-import type { LancamentoFormState } from "@/features/transactions/form-helpers";
-import type { LancamentoItem, SelectOption } from "../../types";
+import type { TransactionFormState } from "@/features/transactions/form-helpers";
+import type { SelectOption, TransactionItem } from "../../types";
 
-export type FormState = LancamentoFormState;
+export type FormState = TransactionFormState;
 
-export interface LancamentoDialogProps {
+export interface TransactionDialogProps {
 	mode: "create" | "update";
 	trigger?: React.ReactNode;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
-	pagadorOptions: SelectOption[];
-	splitPagadorOptions: SelectOption[];
-	defaultPagadorId?: string | null;
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
-	categoriaOptions: SelectOption[];
+	payerOptions: SelectOption[];
+	splitPayerOptions: SelectOption[];
+	defaultPayerId?: string | null;
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
+	categoryOptions: SelectOption[];
 	estabelecimentos: string[];
-	lancamento?: LancamentoItem;
+	transaction?: TransactionItem;
 	defaultPeriod?: string;
-	defaultCartaoId?: string | null;
+	defaultCardId?: string | null;
 	defaultPaymentMethod?: string | null;
 	defaultPurchaseDate?: string | null;
 	defaultName?: string | null;
 	defaultAmount?: string | null;
-	lockCartaoSelection?: boolean;
+	lockCardSelection?: boolean;
 	lockPaymentMethod?: boolean;
 	isImporting?: boolean;
 	defaultTransactionType?: "Despesa" | "Receita";
@@ -33,11 +33,11 @@ export interface LancamentoDialogProps {
 	onBulkEditRequest?: (data: {
 		id: string;
 		name: string;
-		categoriaId: string | undefined;
+		categoryId: string | undefined;
 		note: string;
-		pagadorId: string | undefined;
-		contaId: string | undefined;
-		cartaoId: string | undefined;
+		payerId: string | undefined;
+		accountId: string | undefined;
+		cardId: string | undefined;
 		amount: number;
 		dueDate: string | null;
 		boletoPaymentDate: string | null;
@@ -57,8 +57,8 @@ export interface BasicFieldsSectionProps extends BaseFieldSectionProps {
 }
 
 export interface CategorySectionProps extends BaseFieldSectionProps {
-	categoriaOptions: SelectOption[];
-	categoriaGroups: Array<{
+	categoryOptions: SelectOption[];
+	categoryGroups: Array<{
 		label: string;
 		options: SelectOption[];
 	}>;
@@ -70,18 +70,18 @@ export interface SplitAndSettlementSectionProps extends BaseFieldSectionProps {
 	showSettledToggle: boolean;
 }
 
-export interface PagadorSectionProps extends BaseFieldSectionProps {
-	pagadorOptions: SelectOption[];
-	secondaryPagadorOptions: SelectOption[];
+export interface PayerSectionProps extends BaseFieldSectionProps {
+	payerOptions: SelectOption[];
+	secondaryPayerOptions: SelectOption[];
 	totalAmount: number;
 }
 
 export interface PaymentMethodSectionProps extends BaseFieldSectionProps {
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
 	isUpdateMode: boolean;
 	disablePaymentMethod: boolean;
-	disableCartaoSelect: boolean;
+	disableCardSelect: boolean;
 }
 
 export interface BoletoFieldsSectionProps extends BaseFieldSectionProps {

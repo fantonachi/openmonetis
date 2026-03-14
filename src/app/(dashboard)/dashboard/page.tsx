@@ -10,8 +10,8 @@ import {
 	getSingleParam,
 } from "@/features/transactions/page-helpers";
 import {
-	fetchLancamentoFilterSources,
 	fetchRecentEstablishments,
+	fetchTransactionFilterSources,
 } from "@/features/transactions/queries";
 import MonthNavigation from "@/shared/components/month-picker/month-navigation";
 import { getUser } from "@/shared/lib/auth/server";
@@ -34,21 +34,21 @@ export default async function Page({ searchParams }: PageProps) {
 		await Promise.all([
 			fetchDashboardData(user.id, selectedPeriod),
 			fetchUserDashboardPreferences(user.id),
-			fetchLancamentoFilterSources(user.id),
+			fetchTransactionFilterSources(user.id),
 			fetchRecentEstablishments(user.id),
 		]);
 	const { dashboardWidgets } = preferences;
 	const sluggedFilters = buildSluggedFilters(filterSources);
 	const {
-		pagadorOptions,
-		splitPagadorOptions,
-		defaultPagadorId,
-		contaOptions,
-		cartaoOptions,
-		categoriaOptions,
+		payerOptions,
+		splitPayerOptions,
+		defaultPayerId,
+		accountOptions,
+		cardOptions,
+		categoryOptions,
 	} = buildOptionSets({
 		...sluggedFilters,
-		pagadorRows: filterSources.pagadorRows,
+		payerRows: filterSources.payerRows,
 	});
 
 	return (
@@ -61,12 +61,12 @@ export default async function Page({ searchParams }: PageProps) {
 				period={selectedPeriod}
 				initialPreferences={dashboardWidgets}
 				quickActionOptions={{
-					pagadorOptions,
-					splitPagadorOptions,
-					defaultPagadorId,
-					contaOptions,
-					cartaoOptions,
-					categoriaOptions,
+					payerOptions,
+					splitPayerOptions,
+					defaultPayerId,
+					accountOptions,
+					cardOptions,
+					categoryOptions,
 					estabelecimentos,
 				}}
 			/>

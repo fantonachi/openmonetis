@@ -79,25 +79,25 @@ import { formatDate } from "@/shared/utils/date";
 import { getConditionIcon, getPaymentMethodIcon } from "@/shared/utils/icons";
 import { cn } from "@/shared/utils/ui";
 import { EstabelecimentoLogo } from "../shared/establishment-logo";
-import { LancamentosExport } from "../transactions-export";
+import { TransactionsExport } from "../transactions-export";
 import type {
-	ContaCartaoFilterOption,
-	LancamentoFilterOption,
-	LancamentoItem,
+	AccountCardFilterOption,
+	TransactionFilterOption,
+	TransactionItem,
 } from "../types";
-import { LancamentosFilters } from "./transactions-filters";
+import { TransactionsFilters } from "./transactions-filters";
 
 type BuildColumnsArgs = {
 	currentUserId: string;
 	noteAsColumn: boolean;
-	onEdit?: (item: LancamentoItem) => void;
-	onCopy?: (item: LancamentoItem) => void;
-	onImport?: (item: LancamentoItem) => void;
-	onConfirmDelete?: (item: LancamentoItem) => void;
-	onViewDetails?: (item: LancamentoItem) => void;
-	onToggleSettlement?: (item: LancamentoItem) => void;
-	onAnticipate?: (item: LancamentoItem) => void;
-	onViewAnticipationHistory?: (item: LancamentoItem) => void;
+	onEdit?: (item: TransactionItem) => void;
+	onCopy?: (item: TransactionItem) => void;
+	onImport?: (item: TransactionItem) => void;
+	onConfirmDelete?: (item: TransactionItem) => void;
+	onViewDetails?: (item: TransactionItem) => void;
+	onToggleSettlement?: (item: TransactionItem) => void;
+	onAnticipate?: (item: TransactionItem) => void;
+	onViewAnticipationHistory?: (item: TransactionItem) => void;
 	isSettlementLoading: (id: string) => boolean;
 	showActions: boolean;
 };
@@ -115,7 +115,7 @@ const buildColumns = ({
 	onViewAnticipationHistory,
 	isSettlementLoading,
 	showActions,
-}: BuildColumnsArgs): ColumnDef<LancamentoItem>[] => {
+}: BuildColumnsArgs): ColumnDef<TransactionItem>[] => {
 	const noop = () => undefined;
 	const handleEdit = onEdit ?? noop;
 	const handleCopy = onCopy ?? noop;
@@ -126,7 +126,7 @@ const buildColumns = ({
 	const handleAnticipate = onAnticipate ?? noop;
 	const handleViewAnticipationHistory = onViewAnticipationHistory ?? noop;
 
-	const columns: ColumnDef<LancamentoItem>[] = [
+	const columns: ColumnDef<TransactionItem>[] = [
 		{
 			id: "select",
 			header: ({ table }) => (
@@ -380,7 +380,7 @@ const buildColumns = ({
 			accessorKey: "pagadorName",
 			header: "Pagador",
 			cell: ({ row }) => {
-				const { pagadorId, pagadorName, pagadorAvatar } = row.original;
+				const { payerId, pagadorName, pagadorAvatar } = row.original;
 
 				const label = pagadorName?.trim() || "Sem pagador";
 				const displayName = label.split(/\s+/)[0] ?? label;
@@ -398,7 +398,7 @@ const buildColumns = ({
 					</>
 				);
 
-				if (!pagadorId) {
+				if (!payerId) {
 					return (
 						<span className="inline-flex items-center gap-2">{content}</span>
 					);
@@ -406,7 +406,7 @@ const buildColumns = ({
 
 				return (
 					<Link
-						href={`/payers/${pagadorId}`}
+						href={`/payers/${payerId}`}
 						className="inline-flex items-center gap-2 hover:underline"
 						title={label}
 					>
@@ -424,17 +424,17 @@ const buildColumns = ({
 					contaName,
 					cartaoLogo,
 					contaLogo,
-					cartaoId,
-					contaId,
+					cardId,
+					accountId,
 					userId,
 				} = row.original;
 				const isCartao = Boolean(cartaoName);
 				const label = cartaoName ?? contaName;
 				const logoSrc = resolveLogoSrc(cartaoLogo ?? contaLogo);
-				const href = cartaoId
-					? `/cards/${cartaoId}/invoice`
-					: contaId
-						? `/accounts/${contaId}/statement`
+				const href = cardId
+					? `/cards/${cardId}/invoice`
+					: accountId
+						? `/accounts/${accountId}/statement`
 						: null;
 				const isOwnData = userId === currentUserId;
 
@@ -458,7 +458,7 @@ const buildColumns = ({
 						<Tooltip>
 							<TooltipTrigger asChild>{content}</TooltipTrigger>
 							<TooltipContent side="top">
-								{isCartao ? "Cartão" : "Conta"}: {label}
+								{isCartao ? "Cartão" : "FinancialAccount"}: {label}
 							</TooltipContent>
 						</Tooltip>
 					);
@@ -484,7 +484,7 @@ const buildColumns = ({
 							</Link>
 						</TooltipTrigger>
 						<TooltipContent side="top">
-							{isCartao ? "Cartão" : "Conta"}: {label}
+							{isCartao ? "Cartão" : "FinancialAccount"}: {label}
 						</TooltipContent>
 					</Tooltip>
 				);
@@ -493,8 +493,8 @@ const buildColumns = ({
 	];
 
 	if (noteAsColumn) {
-		const contaCartaoIndex = columns.findIndex((c) => c.id === "contaCartao");
-		const noteColumn: ColumnDef<LancamentoItem> = {
+		const accountCardIndex = columns.findIndex((c) => c.id === "contaCartao");
+		const noteColumn: ColumnDef<TransactionItem> = {
 			accessorKey: "note",
 			header: "Anotação",
 			cell: ({ row }) => {
@@ -511,7 +511,7 @@ const buildColumns = ({
 				);
 			},
 		};
-		columns.splice(contaCartaoIndex, 0, noteColumn);
+		columns.splice(accountCardIndex, 0, noteColumn);
 	}
 
 	if (showActions) {
@@ -607,7 +607,7 @@ const buildColumns = ({
 								row.original.userId !== currentUserId && (
 									<DropdownMenuItem onSelect={() => handleImport(row.original)}>
 										<RiFileCopyLine className="size-4" />
-										Importar para Minha Conta
+										Importar para Minha FinancialAccount
 									</DropdownMenuItem>
 								)}
 							{row.original.userId === currentUserId && (
@@ -669,7 +669,7 @@ const buildColumns = ({
 const FIXED_START_IDS = ["select", "purchaseDate"];
 const FIXED_END_IDS = ["actions"];
 
-function getColumnId(col: ColumnDef<LancamentoItem>): string {
+function getColumnId(col: ColumnDef<TransactionItem>): string {
 	const c = col as { id?: string; accessorKey?: string };
 	return c.id ?? c.accessorKey ?? "";
 }
@@ -686,15 +686,15 @@ function reorderColumnsByPreference<T>(
 	const fixedEnd: ColumnDef<T>[] = [];
 
 	for (const col of columns) {
-		const id = getColumnId(col as ColumnDef<LancamentoItem>);
+		const id = getColumnId(col as ColumnDef<TransactionItem>);
 		if (FIXED_START_IDS.includes(id)) fixedStart.push(col);
 		else if (FIXED_END_IDS.includes(id)) fixedEnd.push(col);
 		else reorderable.push(col);
 	}
 
 	const sorted = [...reorderable].sort((a, b) => {
-		const idA = getColumnId(a as ColumnDef<LancamentoItem>);
-		const idB = getColumnId(b as ColumnDef<LancamentoItem>);
+		const idA = getColumnId(a as ColumnDef<TransactionItem>);
+		const idB = getColumnId(b as ColumnDef<TransactionItem>);
 		const indexA = order.indexOf(idA);
 		const indexB = order.indexOf(idB);
 		if (indexA === -1 && indexB === -1) return 0;
@@ -707,39 +707,39 @@ function reorderColumnsByPreference<T>(
 }
 
 type LancamentosTableProps = {
-	data: LancamentoItem[];
+	data: TransactionItem[];
 	currentUserId: string;
 	noteAsColumn?: boolean;
 	columnOrder?: string[] | null;
-	pagadorFilterOptions?: LancamentoFilterOption[];
-	categoriaFilterOptions?: LancamentoFilterOption[];
-	contaCartaoFilterOptions?: ContaCartaoFilterOption[];
+	payerFilterOptions?: TransactionFilterOption[];
+	categoryFilterOptions?: TransactionFilterOption[];
+	accountCardFilterOptions?: AccountCardFilterOption[];
 	selectedPeriod?: string;
 	onCreate?: (type: "Despesa" | "Receita") => void;
 	onMassAdd?: () => void;
-	onEdit?: (item: LancamentoItem) => void;
-	onCopy?: (item: LancamentoItem) => void;
-	onImport?: (item: LancamentoItem) => void;
-	onConfirmDelete?: (item: LancamentoItem) => void;
-	onBulkDelete?: (items: LancamentoItem[]) => void;
-	onBulkImport?: (items: LancamentoItem[]) => void;
-	onViewDetails?: (item: LancamentoItem) => void;
-	onToggleSettlement?: (item: LancamentoItem) => void;
-	onAnticipate?: (item: LancamentoItem) => void;
-	onViewAnticipationHistory?: (item: LancamentoItem) => void;
+	onEdit?: (item: TransactionItem) => void;
+	onCopy?: (item: TransactionItem) => void;
+	onImport?: (item: TransactionItem) => void;
+	onConfirmDelete?: (item: TransactionItem) => void;
+	onBulkDelete?: (items: TransactionItem[]) => void;
+	onBulkImport?: (items: TransactionItem[]) => void;
+	onViewDetails?: (item: TransactionItem) => void;
+	onToggleSettlement?: (item: TransactionItem) => void;
+	onAnticipate?: (item: TransactionItem) => void;
+	onViewAnticipationHistory?: (item: TransactionItem) => void;
 	isSettlementLoading?: (id: string) => boolean;
 	showActions?: boolean;
 	showFilters?: boolean;
 };
 
-export function LancamentosTable({
+export function TransactionsTable({
 	data,
 	currentUserId,
 	noteAsColumn = false,
 	columnOrder: columnOrderPreference = null,
-	pagadorFilterOptions = [],
-	categoriaFilterOptions = [],
-	contaCartaoFilterOptions = [],
+	payerFilterOptions = [],
+	categoryFilterOptions = [],
+	accountCardFilterOptions = [],
 	selectedPeriod,
 	onCreate,
 	onMassAdd,
@@ -904,15 +904,15 @@ export function LancamentosTable({
 					)}
 
 					{showFilters ? (
-						<LancamentosFilters
-							pagadorOptions={pagadorFilterOptions}
-							categoriaOptions={categoriaFilterOptions}
-							contaCartaoOptions={contaCartaoFilterOptions}
+						<TransactionsFilters
+							payerOptions={payerFilterOptions}
+							categoryOptions={categoryFilterOptions}
+							accountCardOptions={accountCardFilterOptions}
 							className="w-full lg:flex-1 lg:justify-end"
 							hideAdvancedFilters={hasOtherUserData}
 							exportButton={
 								selectedPeriod ? (
-									<LancamentosExport
+									<TransactionsExport
 										lancamentos={data}
 										period={selectedPeriod}
 									/>

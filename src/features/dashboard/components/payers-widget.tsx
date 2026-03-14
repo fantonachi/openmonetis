@@ -21,7 +21,7 @@ import { getAvatarSrc } from "@/shared/lib/payers/utils";
 import { formatPercentage } from "@/shared/utils/percentage";
 
 type PayersWidgetProps = {
-	pagadores: DashboardPagador[];
+	payers: DashboardPagador[];
 };
 
 const buildInitials = (value: string) => {
@@ -38,10 +38,10 @@ const buildInitials = (value: string) => {
 	return `${firstChar}${secondChar}`.toUpperCase() || "??";
 };
 
-export function PayersWidget({ pagadores }: PayersWidgetProps) {
+export function PayersWidget({ payers }: PayersWidgetProps) {
 	return (
 		<CardContent className="flex flex-col gap-4 px-0">
-			{pagadores.length === 0 ? (
+			{payers.length === 0 ? (
 				<WidgetEmptyState
 					icon={<RiGroupLine className="size-6 text-muted-foreground" />}
 					title="Nenhum pagador para o período"
@@ -49,25 +49,25 @@ export function PayersWidget({ pagadores }: PayersWidgetProps) {
 				/>
 			) : (
 				<ul className="flex flex-col">
-					{pagadores.map((pagador) => {
-						const initials = buildInitials(pagador.name);
+					{payers.map((payer) => {
+						const initials = buildInitials(payer.name);
 						const hasValidPercentageChange =
-							typeof pagador.percentageChange === "number" &&
-							Number.isFinite(pagador.percentageChange);
+							typeof payer.percentageChange === "number" &&
+							Number.isFinite(payer.percentageChange);
 						const percentageChange = hasValidPercentageChange
-							? pagador.percentageChange
+							? payer.percentageChange
 							: null;
 
 						return (
 							<li
-								key={pagador.id}
+								key={payer.id}
 								className="flex items-center justify-between border-b border-dashed last:border-b-0 last:pb-0"
 							>
 								<div className="flex min-w-0 flex-1 items-center gap-2 py-2">
 									<Avatar className="size-10 shrink-0">
 										<AvatarImage
-											src={getAvatarSrc(pagador.avatarUrl)}
-											alt={`Avatar de ${pagador.name}`}
+											src={getAvatarSrc(payer.avatarUrl)}
+											alt={`Avatar de ${payer.name}`}
 										/>
 										<AvatarFallback>{initials}</AvatarFallback>
 									</Avatar>
@@ -75,13 +75,11 @@ export function PayersWidget({ pagadores }: PayersWidgetProps) {
 									<div className="min-w-0">
 										<Link
 											prefetch
-											href={`/payers/${pagador.id}`}
+											href={`/payers/${payer.id}`}
 											className="inline-flex max-w-full items-center gap-1 text-sm text-foreground underline-offset-2 hover:text-primary hover:underline"
 										>
-											<span className="truncate font-medium">
-												{pagador.name}
-											</span>
-											{pagador.isAdmin && (
+											<span className="truncate font-medium">{payer.name}</span>
+											{payer.isAdmin && (
 												<RiVerifiedBadgeFill
 													className="size-4 shrink-0 text-blue-500"
 													aria-hidden
@@ -93,13 +91,13 @@ export function PayersWidget({ pagadores }: PayersWidgetProps) {
 											/>
 										</Link>
 										<p className="truncate text-xs text-muted-foreground">
-											{pagador.email ?? "Sem email cadastrado"}
+											{payer.email ?? "Sem email cadastrado"}
 										</p>
 									</div>
 								</div>
 
 								<div className="flex shrink-0 flex-col items-end">
-									<MoneyValues amount={pagador.totalExpenses} />
+									<MoneyValues amount={payer.totalExpenses} />
 									{percentageChange !== null && (
 										<span
 											className={`flex items-center gap-0.5 text-xs ${

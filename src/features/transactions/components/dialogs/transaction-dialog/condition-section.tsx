@@ -1,6 +1,6 @@
 "use client";
 
-import { LANCAMENTO_CONDITIONS } from "@/features/transactions/constants";
+import { TRANSACTION_CONDITIONS } from "@/features/transactions/constants";
 import { Label } from "@/shared/components/ui/label";
 import {
 	Select,
@@ -64,7 +64,7 @@ export function ConditionSection({
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
-						{LANCAMENTO_CONDITIONS.map((condition) => (
+						{TRANSACTION_CONDITIONS.map((condition) => (
 							<SelectItem key={condition} value={condition}>
 								<ConditionSelectContent label={condition} />
 							</SelectItem>

@@ -29,7 +29,7 @@ interface AnticipationHistoryDialogProps {
 	lancamentoName: string;
 	open?: boolean;
 	onOpenChange?: (open: boolean) => void;
-	onViewLancamento?: (lancamentoId: string) => void;
+	onViewLancamento?: (transactionId: string) => void;
 }
 
 export function AnticipationHistoryDialog({

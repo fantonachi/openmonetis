@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { createLancamentoAction } from "@/features/transactions/actions";
-import { groupAndSortCategorias } from "@/features/transactions/categoria-helpers";
+import { createTransactionAction } from "@/features/transactions/actions";
+import { groupAndSortCategories } from "@/features/transactions/category-helpers";
 import { Button } from "@/shared/components/ui/button";
 import {
 	Dialog,
@@ -24,46 +24,46 @@ import {
 	SelectValue,
 } from "@/shared/components/ui/select";
 import {
-	CategoriaSelectContent,
-	ContaCartaoSelectContent,
-	PagadorSelectContent,
+	CategorySelectContent,
+	AccountCardSelectContent,
+	PayerSelectContent,
 } from "../select-items";
-import type { LancamentoItem, SelectOption } from "../types";
+import type { SelectOption, TransactionItem } from "../types";
 
 interface BulkImportDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	items: LancamentoItem[];
-	pagadorOptions: SelectOption[];
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
-	categoriaOptions: SelectOption[];
-	defaultPagadorId?: string | null;
+	items: TransactionItem[];
+	payerOptions: SelectOption[];
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
+	categoryOptions: SelectOption[];
+	defaultPayerId?: string | null;
 }
 
 export function BulkImportDialog({
 	open,
 	onOpenChange,
 	items,
-	pagadorOptions,
-	contaOptions,
-	cartaoOptions,
-	categoriaOptions,
-	defaultPagadorId,
+	payerOptions,
+	accountOptions,
+	cardOptions,
+	categoryOptions,
+	defaultPayerId,
 }: BulkImportDialogProps) {
-	const [pagadorId, setPagadorId] = useState<string | undefined>(
-		defaultPagadorId ?? undefined,
+	const [payerId, setPagadorId] = useState<string | undefined>(
+		defaultPayerId ?? undefined,
 	);
-	const [categoriaId, setCategoriaId] = useState<string | undefined>(undefined);
-	const [contaId, setContaId] = useState<string | undefined>(undefined);
-	const [cartaoId, setCartaoId] = useState<string | undefined>(undefined);
+	const [categoryId, setCategoriaId] = useState<string | undefined>(undefined);
+	const [accountId, setContaId] = useState<string | undefined>(undefined);
+	const [cardId, setCartaoId] = useState<string | undefined>(undefined);
 	const [isPending, startTransition] = useTransition();
-	type CreateLancamentoInput = Parameters<typeof createLancamentoAction>[0];
+	type CreateTransactionInput = Parameters<typeof createTransactionAction>[0];
 
 	// Reset form when dialog opens/closes
 	const handleOpenChange = (newOpen: boolean) => {
 		if (!newOpen) {
-			setPagadorId(defaultPagadorId ?? undefined);
+			setPagadorId(defaultPayerId ?? undefined);
 			setCategoriaId(undefined);
 			setContaId(undefined);
 			setCartaoId(undefined);
@@ -71,30 +71,30 @@ export function BulkImportDialog({
 		onOpenChange(newOpen);
 	};
 
-	const categoriaGroups = useMemo(() => {
+	const categoryGroups = useMemo(() => {
 		// Get unique transaction types from items
 		const transactionTypes = new Set(items.map((item) => item.transactionType));
 
 		// Filter categories based on transaction types
-		const filtered = categoriaOptions.filter((option) => {
+		const filtered = categoryOptions.filter((option) => {
 			if (!option.group) return false;
 			return Array.from(transactionTypes).some(
 				(type) => option.group?.toLowerCase() === type.toLowerCase(),
 			);
 		});
 
-		return groupAndSortCategorias(filtered);
-	}, [categoriaOptions, items]);
+		return groupAndSortCategories(filtered);
+	}, [categoryOptions, items]);
 
 	const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		event.preventDefault();
 
-		if (!pagadorId) {
+		if (!payerId) {
 			toast.error("Selecione o pagador.");
 			return;
 		}
 
-		if (!categoriaId) {
+		if (!categoryId) {
 			toast.error("Selecione a categoria.");
 			return;
 		}
@@ -110,32 +110,32 @@ export function BulkImportDialog({
 				const isCredit = item.paymentMethod === "Cartão de crédito";
 
 				// Validate payment method fields
-				if (isCredit && !cartaoId) {
+				if (isCredit && !cardId) {
 					toast.error("Selecione um cartão de crédito.");
 					return;
 				}
 
-				if (!isCredit && !contaId) {
+				if (!isCredit && !accountId) {
 					toast.error("Selecione uma conta.");
 					return;
 				}
 
-				const payload: CreateLancamentoInput = {
+				const payload: CreateTransactionInput = {
 					purchaseDate: item.purchaseDate,
 					period: item.period,
 					name: item.name,
 					transactionType:
-						item.transactionType as CreateLancamentoInput["transactionType"],
+						item.transactionType as CreateTransactionInput["transactionType"],
 					amount: sanitizedAmount,
-					condition: item.condition as CreateLancamentoInput["condition"],
+					condition: item.condition as CreateTransactionInput["condition"],
 					paymentMethod:
-						item.paymentMethod as CreateLancamentoInput["paymentMethod"],
-					pagadorId: pagadorId ?? null,
-					secondaryPagadorId: undefined,
+						item.paymentMethod as CreateTransactionInput["paymentMethod"],
+					payerId: payerId ?? null,
+					secondaryPayerId: undefined,
 					isSplit: false,
-					contaId: isCredit ? null : (contaId ?? null),
-					cartaoId: isCredit ? (cartaoId ?? null) : null,
-					categoriaId: categoriaId ?? null,
+					accountId: isCredit ? null : (accountId ?? null),
+					cardId: isCredit ? (cardId ?? null) : null,
+					categoryId: categoryId ?? null,
 					note: item.note ?? null,
 					isSettled: isCredit ? null : Boolean(item.isSettled),
 					installmentCount:
@@ -152,7 +152,7 @@ export function BulkImportDialog({
 							: undefined,
 				};
 
-				const result = await createLancamentoAction(payload);
+				const result = await createTransactionAction(payload);
 
 				if (result.success) {
 					successCount++;
@@ -203,17 +203,17 @@ export function BulkImportDialog({
 
 				<form className="space-y-4" onSubmit={handleSubmit}>
 					<div className="space-y-2">
-						<Label htmlFor="pagador">Pagador *</Label>
-						<Select value={pagadorId} onValueChange={setPagadorId}>
+						<Label htmlFor="pagador">Payer *</Label>
+						<Select value={payerId} onValueChange={setPagadorId}>
 							<SelectTrigger id="pagador" className="w-full">
 								<SelectValue placeholder="Selecione o pagador">
-									{pagadorId &&
+									{payerId &&
 										(() => {
-											const selectedOption = pagadorOptions.find(
-												(opt) => opt.value === pagadorId,
+											const selectedOption = payerOptions.find(
+												(opt) => opt.value === payerId,
 											);
 											return selectedOption ? (
-												<PagadorSelectContent
+												<PayerSelectContent
 													label={selectedOption.label}
 													avatarUrl={selectedOption.avatarUrl}
 												/>
@@ -222,9 +222,9 @@ export function BulkImportDialog({
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
-								{pagadorOptions.map((option) => (
+								{payerOptions.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
-										<PagadorSelectContent
+										<PayerSelectContent
 											label={option.label}
 											avatarUrl={option.avatarUrl}
 										/>
@@ -235,17 +235,17 @@ export function BulkImportDialog({
 					</div>
 
 					<div className="space-y-2">
-						<Label htmlFor="categoria">Categoria *</Label>
-						<Select value={categoriaId} onValueChange={setCategoriaId}>
+						<Label htmlFor="categoria">Category *</Label>
+						<Select value={categoryId} onValueChange={setCategoriaId}>
 							<SelectTrigger id="categoria" className="w-full">
 								<SelectValue placeholder="Selecione a categoria">
-									{categoriaId &&
+									{categoryId &&
 										(() => {
-											const selectedOption = categoriaOptions.find(
-												(opt) => opt.value === categoriaId,
+											const selectedOption = categoryOptions.find(
+												(opt) => opt.value === categoryId,
 											);
 											return selectedOption ? (
-												<CategoriaSelectContent
+												<CategorySelectContent
 													label={selectedOption.label}
 													icon={selectedOption.icon}
 												/>
@@ -254,12 +254,12 @@ export function BulkImportDialog({
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
-								{categoriaGroups.map((group) => (
+								{categoryGroups.map((group) => (
 									<SelectGroup key={group.label}>
 										<SelectLabel>{group.label}</SelectLabel>
 										{group.options.map((option) => (
 											<SelectItem key={option.value} value={option.value}>
-												<CategoriaSelectContent
+												<CategorySelectContent
 													label={option.label}
 													icon={option.icon}
 												/>
@@ -274,18 +274,18 @@ export function BulkImportDialog({
 					{hasNonCredit && (
 						<div className="space-y-2">
 							<Label htmlFor="conta">
-								Conta {hasCredit ? "(para não cartão)" : "*"}
+								FinancialAccount {hasCredit ? "(para não cartão)" : "*"}
 							</Label>
-							<Select value={contaId} onValueChange={setContaId}>
+							<Select value={accountId} onValueChange={setContaId}>
 								<SelectTrigger id="conta" className="w-full">
 									<SelectValue placeholder="Selecione a conta">
-										{contaId &&
+										{accountId &&
 											(() => {
-												const selectedOption = contaOptions.find(
-													(opt) => opt.value === contaId,
+												const selectedOption = accountOptions.find(
+													(opt) => opt.value === accountId,
 												);
 												return selectedOption ? (
-													<ContaCartaoSelectContent
+													<AccountCardSelectContent
 														label={selectedOption.label}
 														logo={selectedOption.logo}
 														isCartao={false}
@@ -295,9 +295,9 @@ export function BulkImportDialog({
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
-									{contaOptions.map((option) => (
+									{accountOptions.map((option) => (
 										<SelectItem key={option.value} value={option.value}>
-											<ContaCartaoSelectContent
+											<AccountCardSelectContent
 												label={option.label}
 												logo={option.logo}
 												isCartao={false}
@@ -314,16 +314,16 @@ export function BulkImportDialog({
 							<Label htmlFor="cartao">
 								Cartão {hasNonCredit ? "(para cartão de crédito)" : "*"}
 							</Label>
-							<Select value={cartaoId} onValueChange={setCartaoId}>
+							<Select value={cardId} onValueChange={setCartaoId}>
 								<SelectTrigger id="cartao" className="w-full">
 									<SelectValue placeholder="Selecione o cartão">
-										{cartaoId &&
+										{cardId &&
 											(() => {
-												const selectedOption = cartaoOptions.find(
-													(opt) => opt.value === cartaoId,
+												const selectedOption = cardOptions.find(
+													(opt) => opt.value === cardId,
 												);
 												return selectedOption ? (
-													<ContaCartaoSelectContent
+													<AccountCardSelectContent
 														label={selectedOption.label}
 														logo={selectedOption.logo}
 														isCartao={true}
@@ -333,9 +333,9 @@ export function BulkImportDialog({
 									</SelectValue>
 								</SelectTrigger>
 								<SelectContent>
-									{cartaoOptions.map((option) => (
+									{cardOptions.map((option) => (
 										<SelectItem key={option.value} value={option.value}>
-											<ContaCartaoSelectContent
+											<AccountCardSelectContent
 												label={option.label}
 												logo={option.logo}
 												isCartao={true}

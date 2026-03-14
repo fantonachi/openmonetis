@@ -4,7 +4,7 @@ import { PeriodFilterButtons } from "@/features/reports/components/establishment
 import { SummaryCards } from "@/features/reports/components/establishments/summary-cards";
 import { TopCategories } from "@/features/reports/components/establishments/top-categories";
 import {
-	fetchTopEstabelecimentosData,
+	fetchTopEstablishmentsData,
 	type PeriodFilter,
 } from "@/features/reports/establishments/queries";
 import { Card } from "@/shared/components/ui/card";
@@ -44,7 +44,7 @@ export default async function TopEstabelecimentosPage({
 	const { period: currentPeriod } = parsePeriodParam(periodoParam);
 	const periodFilter = validatePeriodFilter(mesesParam);
 
-	const data = await fetchTopEstabelecimentosData(
+	const data = await fetchTopEstablishmentsData(
 		user.id,
 		currentPeriod,
 		periodFilter,

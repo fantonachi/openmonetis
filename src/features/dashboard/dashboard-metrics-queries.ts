@@ -1,12 +1,12 @@
 import { and, asc, eq, gte, lte, ne, sum } from "drizzle-orm";
-import { contas, lancamentos } from "@/db/schema";
+import { financialAccounts, transactions } from "@/db/schema";
 import {
 	buildDashboardAdminFilters,
 	excludeAutoInvoiceEntries,
 	excludeInitialBalanceWhenConfigured,
-} from "@/features/dashboard/lancamento-filters";
+} from "@/features/dashboard/transaction-filters";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber } from "@/shared/utils/number";
 import {
 	addMonthsToPeriod,
@@ -71,8 +71,8 @@ export async function fetchDashboardCardMetrics(
 ): Promise<DashboardCardMetrics> {
 	const previousPeriod = getPreviousPeriod(period);
 
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return {
 			period,
 			previousPeriod,
@@ -88,24 +88,27 @@ export async function fetchDashboardCardMetrics(
 
 	const rows = await db
 		.select({
-			period: lancamentos.period,
-			transactionType: lancamentos.transactionType,
-			totalAmount: sum(lancamentos.amount).as("total"),
+			period: transactions.period,
+			transactionType: transactions.transactionType,
+			totalAmount: sum(transactions.amount).as("total"),
 		})
-		.from(lancamentos)
-		.leftJoin(contas, eq(lancamentos.contaId, contas.id))
+		.from(transactions)
+		.leftJoin(
+			financialAccounts,
+			eq(transactions.accountId, financialAccounts.id),
+		)
 		.where(
 			and(
-				...buildDashboardAdminFilters({ userId, adminPagadorId }),
-				gte(lancamentos.period, startPeriod),
-				lte(lancamentos.period, period),
-				ne(lancamentos.transactionType, TRANSFERENCIA),
+				...buildDashboardAdminFilters({ userId, adminPayerId }),
+				gte(transactions.period, startPeriod),
+				lte(transactions.period, period),
+				ne(transactions.transactionType, TRANSFERENCIA),
 				excludeAutoInvoiceEntries(),
 				excludeInitialBalanceWhenConfigured(),
 			),
 		)
-		.groupBy(lancamentos.period, lancamentos.transactionType)
-		.orderBy(asc(lancamentos.period), asc(lancamentos.transactionType));
+		.groupBy(transactions.period, transactions.transactionType)
+		.orderBy(asc(transactions.period), asc(transactions.transactionType));
 
 	const periodTotals = new Map<string, PeriodTotals>();
 

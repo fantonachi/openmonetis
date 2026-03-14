@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import type { Categoria } from "@/db/schema";
+import type { Category } from "@/db/schema";
 import { fetchCategoryChartData } from "@/features/reports/category-chart-queries";
 import { fetchCategoryReport } from "@/features/reports/category-report-queries";
 import { fetchUserCategories } from "@/features/reports/category-trends-queries";
@@ -38,7 +38,7 @@ export default async function Page({ searchParams }: PageProps) {
 	// Extract query params
 	const inicioParam = getSingleParam(resolvedSearchParams, "inicio");
 	const fimParam = getSingleParam(resolvedSearchParams, "fim");
-	const categoriasParam = getSingleParam(resolvedSearchParams, "categorias");
+	const categoriasParam = getSingleParam(resolvedSearchParams, "categories");
 
 	// Calculate default period (last 6 months)
 	const currentPeriod = getCurrentPeriod();
@@ -63,11 +63,11 @@ export default async function Page({ searchParams }: PageProps) {
 	}
 
 	// Fetch all categories for the user
-	const categoriaRows = await fetchUserCategories(userId);
+	const categoryRows = await fetchUserCategories(userId);
 
 	// Map to CategoryOption format
-	const categoryOptions: CategoryOption[] = categoriaRows.map(
-		(cat: Categoria): CategoryOption => ({
+	const categoryOptions: CategoryOption[] = categoryRows.map(
+		(cat: Category): CategoryOption => ({
 			id: cat.id,
 			name: cat.name,
 			icon: cat.icon,

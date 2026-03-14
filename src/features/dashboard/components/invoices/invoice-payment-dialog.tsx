@@ -146,7 +146,7 @@ export function InvoicePaymentDialog({
 										<div className="mb-2 flex items-center gap-2 text-muted-foreground">
 											<RiMoneyDollarCircleLine className="size-4" />
 											<span className="text-xs font-semibold uppercase">
-												Valor da Fatura
+												Valor da Invoice
 											</span>
 										</div>
 										<MoneyValues

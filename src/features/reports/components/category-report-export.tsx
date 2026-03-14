@@ -54,7 +54,7 @@ export function CategoryReportExport({
 
 			// Build CSV content
 			const headers = [
-				"Categoria",
+				"Category",
 				...data.periods.map(formatPeriodLabel),
 				"Total",
 			];
@@ -129,7 +129,7 @@ export function CategoryReportExport({
 
 			// Build data array
 			const headers = [
-				"Categoria",
+				"Category",
 				...data.periods.map(formatPeriodLabel),
 				"Total",
 			];
@@ -175,7 +175,7 @@ export function CategoryReportExport({
 
 			// Set column widths
 			ws["!cols"] = [
-				{ wch: 20 }, // Categoria
+				{ wch: 20 }, // Category
 				...data.periods.map(() => ({ wch: 15 })), // Periods
 				{ wch: 15 }, // Total
 			];
@@ -249,7 +249,7 @@ export function CategoryReportExport({
 
 			// Build table data
 			const headers = [
-				["Categoria", ...data.periods.map(formatPeriodLabel), "Total"],
+				["Category", ...data.periods.map(formatPeriodLabel), "Total"],
 			];
 			const body: string[][] = [];
 
@@ -310,7 +310,7 @@ export function CategoryReportExport({
 					fontStyle: "bold",
 				},
 				columnStyles: {
-					0: { cellWidth: 35 }, // Categoria column wider
+					0: { cellWidth: 35 }, // Category column wider
 				},
 				didParseCell: (cellData) => {
 					// Style totals row

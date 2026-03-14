@@ -3,12 +3,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import {
-	createMassLancamentosAction,
-	deleteLancamentoAction,
-	deleteLancamentoBulkAction,
-	deleteMultipleLancamentosAction,
-	toggleLancamentoSettlementAction,
-	updateLancamentoBulkAction,
+	createMassTransactionsAction,
+	deleteMultipleTransactionsAction,
+	deleteTransactionAction,
+	deleteTransactionBulkAction,
+	toggleTransactionSettlementAction,
+	updateTransactionBulkAction,
 } from "@/features/transactions/actions";
 import { ConfirmActionDialog } from "@/shared/components/confirm-action-dialog";
 
@@ -23,88 +23,88 @@ import {
 	MassAddDialog,
 	type MassAddFormData,
 } from "../dialogs/mass-add-dialog";
-import { LancamentoDetailsDialog } from "../dialogs/transaction-details-dialog";
-import { LancamentoDialog } from "../dialogs/transaction-dialog/transaction-dialog";
-import { LancamentosTable } from "../table/transactions-table";
+import { TransactionDetailsDialog } from "../dialogs/transaction-details-dialog";
+import { TransactionDialog } from "../dialogs/transaction-dialog/transaction-dialog";
+import { TransactionsTable } from "../table/transactions-table";
 import type {
-	ContaCartaoFilterOption,
-	LancamentoFilterOption,
-	LancamentoItem,
+	AccountCardFilterOption,
 	SelectOption,
+	TransactionFilterOption,
+	TransactionItem,
 } from "../types";
 
-interface LancamentosPageProps {
+interface TransactionsPageProps {
 	currentUserId: string;
-	lancamentos: LancamentoItem[];
-	pagadorOptions: SelectOption[];
-	splitPagadorOptions: SelectOption[];
-	defaultPagadorId: string | null;
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
-	categoriaOptions: SelectOption[];
-	pagadorFilterOptions: LancamentoFilterOption[];
-	categoriaFilterOptions: LancamentoFilterOption[];
-	contaCartaoFilterOptions: ContaCartaoFilterOption[];
+	transactions: TransactionItem[];
+	payerOptions: SelectOption[];
+	splitPayerOptions: SelectOption[];
+	defaultPayerId: string | null;
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
+	categoryOptions: SelectOption[];
+	payerFilterOptions: TransactionFilterOption[];
+	categoryFilterOptions: TransactionFilterOption[];
+	accountCardFilterOptions: AccountCardFilterOption[];
 	selectedPeriod: string;
 	estabelecimentos: string[];
 	allowCreate?: boolean;
 	noteAsColumn?: boolean;
 	columnOrder?: string[] | null;
-	defaultCartaoId?: string | null;
+	defaultCardId?: string | null;
 	defaultPaymentMethod?: string | null;
-	lockCartaoSelection?: boolean;
+	lockCardSelection?: boolean;
 	lockPaymentMethod?: boolean;
 	// Opções específicas para o dialog de importação (quando visualizando dados de outro usuário)
-	importPagadorOptions?: SelectOption[];
-	importSplitPagadorOptions?: SelectOption[];
-	importDefaultPagadorId?: string | null;
-	importContaOptions?: SelectOption[];
-	importCartaoOptions?: SelectOption[];
-	importCategoriaOptions?: SelectOption[];
+	importPayerOptions?: SelectOption[];
+	importSplitPayerOptions?: SelectOption[];
+	importDefaultPayerId?: string | null;
+	importAccountOptions?: SelectOption[];
+	importCardOptions?: SelectOption[];
+	importCategoryOptions?: SelectOption[];
 }
 
-export function LancamentosPage({
+export function TransactionsPage({
 	currentUserId,
-	lancamentos,
-	pagadorOptions,
-	splitPagadorOptions,
-	defaultPagadorId,
-	contaOptions,
-	cartaoOptions,
-	categoriaOptions,
-	pagadorFilterOptions,
-	categoriaFilterOptions,
-	contaCartaoFilterOptions,
+	transactions: transactionList,
+	payerOptions,
+	splitPayerOptions,
+	defaultPayerId,
+	accountOptions,
+	cardOptions,
+	categoryOptions,
+	payerFilterOptions,
+	categoryFilterOptions,
+	accountCardFilterOptions,
 	selectedPeriod,
 	estabelecimentos,
 	allowCreate = true,
 	noteAsColumn = false,
 	columnOrder = null,
-	defaultCartaoId,
+	defaultCardId,
 	defaultPaymentMethod,
-	lockCartaoSelection,
+	lockCardSelection,
 	lockPaymentMethod,
-	importPagadorOptions,
-	importSplitPagadorOptions,
-	importDefaultPagadorId,
-	importContaOptions,
-	importCartaoOptions,
-	importCategoriaOptions,
-}: LancamentosPageProps) {
-	const [selectedLancamento, setSelectedLancamento] =
-		useState<LancamentoItem | null>(null);
+	importPayerOptions,
+	importSplitPayerOptions,
+	importDefaultPayerId,
+	importAccountOptions,
+	importCardOptions,
+	importCategoryOptions,
+}: TransactionsPageProps) {
+	const [selectedTransaction, setSelectedTransaction] =
+		useState<TransactionItem | null>(null);
 	const [editOpen, setEditOpen] = useState(false);
 	const [createOpen, setCreateOpen] = useState(false);
 	const [copyOpen, setCopyOpen] = useState(false);
-	const [lancamentoToCopy, setLancamentoToCopy] =
-		useState<LancamentoItem | null>(null);
+	const [transactionToCopy, setTransactionToCopy] =
+		useState<TransactionItem | null>(null);
 	const [importOpen, setImportOpen] = useState(false);
-	const [lancamentoToImport, setLancamentoToImport] =
-		useState<LancamentoItem | null>(null);
+	const [transactionToImport, setTransactionToImport] =
+		useState<TransactionItem | null>(null);
 	const [massAddOpen, setMassAddOpen] = useState(false);
 	const [deleteOpen, setDeleteOpen] = useState(false);
-	const [lancamentoToDelete, setLancamentoToDelete] =
-		useState<LancamentoItem | null>(null);
+	const [transactionToDelete, setTransactionToDelete] =
+		useState<TransactionItem | null>(null);
 	const [detailsOpen, setDetailsOpen] = useState(false);
 	const [settlementLoadingId, setSettlementLoadingId] = useState<string | null>(
 		null,
@@ -114,32 +114,32 @@ export function LancamentosPage({
 	const [pendingEditData, setPendingEditData] = useState<{
 		id: string;
 		name: string;
-		categoriaId: string | undefined;
+		categoryId: string | undefined;
 		note: string;
-		pagadorId: string | undefined;
-		contaId: string | undefined;
-		cartaoId: string | undefined;
+		payerId: string | undefined;
+		accountId: string | undefined;
+		cardId: string | undefined;
 		amount: number;
 		dueDate: string | null;
 		boletoPaymentDate: string | null;
-		lancamento: LancamentoItem;
+		transaction: TransactionItem;
 	} | null>(null);
 	const [pendingDeleteData, setPendingDeleteData] =
-		useState<LancamentoItem | null>(null);
+		useState<TransactionItem | null>(null);
 	const [multipleBulkDeleteOpen, setMultipleBulkDeleteOpen] = useState(false);
 	const [pendingMultipleDeleteData, setPendingMultipleDeleteData] = useState<
-		LancamentoItem[]
+		TransactionItem[]
 	>([]);
 	const [anticipateOpen, setAnticipateOpen] = useState(false);
 	const [anticipationHistoryOpen, setAnticipationHistoryOpen] = useState(false);
 	const [selectedForAnticipation, setSelectedForAnticipation] =
-		useState<LancamentoItem | null>(null);
+		useState<TransactionItem | null>(null);
 	const [bulkImportOpen, setBulkImportOpen] = useState(false);
-	const [lancamentosToImport, setLancamentosToImport] = useState<
-		LancamentoItem[]
+	const [transactionsToImport, setTransactionsToImport] = useState<
+		TransactionItem[]
 	>([]);
 
-	const handleToggleSettlement = async (item: LancamentoItem) => {
+	const handleToggleSettlement = async (item: TransactionItem) => {
 		if (item.paymentMethod === "Cartão de crédito") {
 			toast.info(
 				"Pagamentos com cartão são conciliados automaticamente. Ajuste pelo cartão.",
@@ -163,7 +163,7 @@ export function LancamentosPage({
 
 		try {
 			setSettlementLoadingId(item.id);
-			const result = await toggleLancamentoSettlementAction({
+			const result = await toggleTransactionSettlementAction({
 				id: item.id,
 				value: nextValue,
 			});
@@ -185,12 +185,12 @@ export function LancamentosPage({
 	};
 
 	const handleDelete = async () => {
-		if (!lancamentoToDelete) {
+		if (!transactionToDelete) {
 			return;
 		}
 
-		const result = await deleteLancamentoAction({
-			id: lancamentoToDelete.id,
+		const result = await deleteTransactionAction({
+			id: transactionToDelete.id,
 		});
 
 		if (!result.success) {
@@ -207,7 +207,7 @@ export function LancamentosPage({
 			return;
 		}
 
-		const result = await deleteLancamentoBulkAction({
+		const result = await deleteTransactionBulkAction({
 			id: pendingDeleteData.id,
 			scope,
 		});
@@ -225,22 +225,22 @@ export function LancamentosPage({
 	const handleBulkEditRequest = (data: {
 		id: string;
 		name: string;
-		categoriaId: string | undefined;
+		categoryId: string | undefined;
 		note: string;
-		pagadorId: string | undefined;
-		contaId: string | undefined;
-		cartaoId: string | undefined;
+		payerId: string | undefined;
+		accountId: string | undefined;
+		cardId: string | undefined;
 		amount: number;
 		dueDate: string | null;
 		boletoPaymentDate: string | null;
 	}) => {
-		if (!selectedLancamento) {
+		if (!selectedTransaction) {
 			return;
 		}
 
 		setPendingEditData({
 			...data,
-			lancamento: selectedLancamento,
+			transaction: selectedTransaction,
 		});
 		setEditOpen(false);
 		setBulkEditOpen(true);
@@ -251,15 +251,15 @@ export function LancamentosPage({
 			return;
 		}
 
-		const result = await updateLancamentoBulkAction({
+		const result = await updateTransactionBulkAction({
 			id: pendingEditData.id,
 			scope,
 			name: pendingEditData.name,
-			categoriaId: pendingEditData.categoriaId,
+			categoryId: pendingEditData.categoryId,
 			note: pendingEditData.note,
-			pagadorId: pendingEditData.pagadorId,
-			contaId: pendingEditData.contaId,
-			cartaoId: pendingEditData.cartaoId,
+			payerId: pendingEditData.payerId,
+			accountId: pendingEditData.accountId,
+			cardId: pendingEditData.cardId,
 			amount: pendingEditData.amount,
 			dueDate: pendingEditData.dueDate,
 			boletoPaymentDate: pendingEditData.boletoPaymentDate,
@@ -276,7 +276,7 @@ export function LancamentosPage({
 	};
 
 	const handleMassAddSubmit = async (data: MassAddFormData) => {
-		const result = await createMassLancamentosAction(data);
+		const result = await createMassTransactionsAction(data);
 
 		if (!result.success) {
 			toast.error(result.error);
@@ -286,7 +286,7 @@ export function LancamentosPage({
 		toast.success(result.message);
 	};
 
-	const handleMultipleBulkDelete = (items: LancamentoItem[]) => {
+	const handleMultipleBulkDelete = (items: TransactionItem[]) => {
 		// Se todos os selecionados são da mesma série (parcelado/recorrente), abrir dialog de escopo
 		const withSeries = items.filter((i) => i.seriesId);
 		const sameSeries =
@@ -308,7 +308,7 @@ export function LancamentosPage({
 		}
 
 		const ids = pendingMultipleDeleteData.map((item) => item.id);
-		const result = await deleteMultipleLancamentosAction({ ids });
+		const result = await deleteMultipleTransactionsAction({ ids });
 
 		if (!result.success) {
 			toast.error(result.error);
@@ -333,61 +333,61 @@ export function LancamentosPage({
 		setMassAddOpen(true);
 	};
 
-	const handleEdit = (item: LancamentoItem) => {
-		setSelectedLancamento(item);
+	const handleEdit = (item: TransactionItem) => {
+		setSelectedTransaction(item);
 		setEditOpen(true);
 	};
 
-	const handleCopy = (item: LancamentoItem) => {
-		setLancamentoToCopy(item);
+	const handleCopy = (item: TransactionItem) => {
+		setTransactionToCopy(item);
 		setCopyOpen(true);
 	};
 
-	const handleImport = (item: LancamentoItem) => {
-		setLancamentoToImport(item);
+	const handleImport = (item: TransactionItem) => {
+		setTransactionToImport(item);
 		setImportOpen(true);
 	};
 
-	const handleBulkImport = (items: LancamentoItem[]) => {
-		setLancamentosToImport(items);
+	const handleBulkImport = (items: TransactionItem[]) => {
+		setTransactionsToImport(items);
 		setBulkImportOpen(true);
 	};
 
-	const handleConfirmDelete = (item: LancamentoItem) => {
+	const handleConfirmDelete = (item: TransactionItem) => {
 		if (item.seriesId) {
 			setPendingDeleteData(item);
 			setBulkDeleteOpen(true);
 		} else {
-			setLancamentoToDelete(item);
+			setTransactionToDelete(item);
 			setDeleteOpen(true);
 		}
 	};
 
-	const handleViewDetails = (item: LancamentoItem) => {
-		setSelectedLancamento(item);
+	const handleViewDetails = (item: TransactionItem) => {
+		setSelectedTransaction(item);
 		setDetailsOpen(true);
 	};
 
-	const handleAnticipate = (item: LancamentoItem) => {
+	const handleAnticipate = (item: TransactionItem) => {
 		setSelectedForAnticipation(item);
 		setAnticipateOpen(true);
 	};
 
-	const handleViewAnticipationHistory = (item: LancamentoItem) => {
+	const handleViewAnticipationHistory = (item: TransactionItem) => {
 		setSelectedForAnticipation(item);
 		setAnticipationHistoryOpen(true);
 	};
 
 	return (
 		<>
-			<LancamentosTable
-				data={lancamentos}
+			<TransactionsTable
+				data={transactionList}
 				currentUserId={currentUserId}
 				noteAsColumn={noteAsColumn}
 				columnOrder={columnOrder}
-				pagadorFilterOptions={pagadorFilterOptions}
-				categoriaFilterOptions={categoriaFilterOptions}
-				contaCartaoFilterOptions={contaCartaoFilterOptions}
+				payerFilterOptions={payerFilterOptions}
+				categoryFilterOptions={categoryFilterOptions}
+				accountCardFilterOptions={accountCardFilterOptions}
 				selectedPeriod={selectedPeriod}
 				onCreate={allowCreate ? handleCreate : undefined}
 				onMassAdd={allowCreate ? handleMassAdd : undefined}
@@ -405,111 +405,111 @@ export function LancamentosPage({
 			/>
 
 			{allowCreate ? (
-				<LancamentoDialog
+				<TransactionDialog
 					mode="create"
 					open={createOpen}
 					onOpenChange={setCreateOpen}
-					pagadorOptions={pagadorOptions}
-					splitPagadorOptions={splitPagadorOptions}
-					defaultPagadorId={defaultPagadorId}
-					contaOptions={contaOptions}
-					cartaoOptions={cartaoOptions}
-					categoriaOptions={categoriaOptions}
+					payerOptions={payerOptions}
+					splitPayerOptions={splitPayerOptions}
+					defaultPayerId={defaultPayerId}
+					accountOptions={accountOptions}
+					cardOptions={cardOptions}
+					categoryOptions={categoryOptions}
 					estabelecimentos={estabelecimentos}
 					defaultPeriod={selectedPeriod}
-					defaultCartaoId={defaultCartaoId}
+					defaultCardId={defaultCardId}
 					defaultPaymentMethod={defaultPaymentMethod}
-					lockCartaoSelection={lockCartaoSelection}
+					lockCardSelection={lockCardSelection}
 					lockPaymentMethod={lockPaymentMethod}
 					defaultTransactionType={transactionTypeForCreate ?? undefined}
 				/>
 			) : null}
 
-			<LancamentoDialog
+			<TransactionDialog
 				mode="create"
-				open={copyOpen && !!lancamentoToCopy}
+				open={copyOpen && !!transactionToCopy}
 				onOpenChange={(open) => {
 					setCopyOpen(open);
 					if (!open) {
-						setLancamentoToCopy(null);
+						setTransactionToCopy(null);
 					}
 				}}
-				pagadorOptions={pagadorOptions}
-				splitPagadorOptions={splitPagadorOptions}
-				defaultPagadorId={defaultPagadorId}
-				contaOptions={contaOptions}
-				cartaoOptions={cartaoOptions}
-				categoriaOptions={categoriaOptions}
+				payerOptions={payerOptions}
+				splitPayerOptions={splitPayerOptions}
+				defaultPayerId={defaultPayerId}
+				accountOptions={accountOptions}
+				cardOptions={cardOptions}
+				categoryOptions={categoryOptions}
 				estabelecimentos={estabelecimentos}
-				lancamento={lancamentoToCopy ?? undefined}
+				transaction={transactionToCopy ?? undefined}
 				defaultPeriod={selectedPeriod}
 			/>
 
-			<LancamentoDialog
+			<TransactionDialog
 				mode="create"
-				open={importOpen && !!lancamentoToImport}
+				open={importOpen && !!transactionToImport}
 				onOpenChange={(open) => {
 					setImportOpen(open);
 					if (!open) {
-						setLancamentoToImport(null);
+						setTransactionToImport(null);
 					}
 				}}
-				pagadorOptions={importPagadorOptions ?? pagadorOptions}
-				splitPagadorOptions={importSplitPagadorOptions ?? splitPagadorOptions}
-				defaultPagadorId={importDefaultPagadorId ?? defaultPagadorId}
-				contaOptions={importContaOptions ?? contaOptions}
-				cartaoOptions={importCartaoOptions ?? cartaoOptions}
-				categoriaOptions={importCategoriaOptions ?? categoriaOptions}
+				payerOptions={importPayerOptions ?? payerOptions}
+				splitPayerOptions={importSplitPayerOptions ?? splitPayerOptions}
+				defaultPayerId={importDefaultPayerId ?? defaultPayerId}
+				accountOptions={importAccountOptions ?? accountOptions}
+				cardOptions={importCardOptions ?? cardOptions}
+				categoryOptions={importCategoryOptions ?? categoryOptions}
 				estabelecimentos={estabelecimentos}
-				lancamento={lancamentoToImport ?? undefined}
+				transaction={transactionToImport ?? undefined}
 				defaultPeriod={selectedPeriod}
 				isImporting={true}
 			/>
 
 			<BulkImportDialog
-				open={bulkImportOpen && lancamentosToImport.length > 0}
+				open={bulkImportOpen && transactionsToImport.length > 0}
 				onOpenChange={setBulkImportOpen}
-				items={lancamentosToImport}
-				pagadorOptions={importPagadorOptions ?? pagadorOptions}
-				contaOptions={importContaOptions ?? contaOptions}
-				cartaoOptions={importCartaoOptions ?? cartaoOptions}
-				categoriaOptions={importCategoriaOptions ?? categoriaOptions}
-				defaultPagadorId={importDefaultPagadorId ?? defaultPagadorId}
+				items={transactionsToImport}
+				payerOptions={importPayerOptions ?? payerOptions}
+				accountOptions={importAccountOptions ?? accountOptions}
+				cardOptions={importCardOptions ?? cardOptions}
+				categoryOptions={importCategoryOptions ?? categoryOptions}
+				defaultPayerId={importDefaultPayerId ?? defaultPayerId}
 			/>
 
-			<LancamentoDialog
+			<TransactionDialog
 				mode="update"
-				open={editOpen && !!selectedLancamento}
+				open={editOpen && !!selectedTransaction}
 				onOpenChange={setEditOpen}
-				pagadorOptions={pagadorOptions}
-				splitPagadorOptions={splitPagadorOptions}
-				defaultPagadorId={defaultPagadorId}
-				contaOptions={contaOptions}
-				cartaoOptions={cartaoOptions}
-				categoriaOptions={categoriaOptions}
+				payerOptions={payerOptions}
+				splitPayerOptions={splitPayerOptions}
+				defaultPayerId={defaultPayerId}
+				accountOptions={accountOptions}
+				cardOptions={cardOptions}
+				categoryOptions={categoryOptions}
 				estabelecimentos={estabelecimentos}
-				lancamento={selectedLancamento ?? undefined}
+				transaction={selectedTransaction ?? undefined}
 				defaultPeriod={selectedPeriod}
 				onBulkEditRequest={handleBulkEditRequest}
 			/>
 
-			<LancamentoDetailsDialog
-				open={detailsOpen && !!selectedLancamento}
+			<TransactionDetailsDialog
+				open={detailsOpen && !!selectedTransaction}
 				onOpenChange={(open) => {
 					setDetailsOpen(open);
 					if (!open) {
-						setSelectedLancamento(null);
+						setSelectedTransaction(null);
 					}
 				}}
-				lancamento={detailsOpen ? selectedLancamento : null}
+				transaction={detailsOpen ? selectedTransaction : null}
 			/>
 
 			<ConfirmActionDialog
-				open={deleteOpen && !!lancamentoToDelete}
+				open={deleteOpen && !!transactionToDelete}
 				onOpenChange={setDeleteOpen}
 				title={
-					lancamentoToDelete
-						? `Remover lançamento "${lancamentoToDelete.name}"?`
+					transactionToDelete
+						? `Remover lançamento "${transactionToDelete.name}"?`
 						: "Remover lançamento?"
 				}
 				description="Essa ação é irreversível e removerá o lançamento de forma permanente."
@@ -517,7 +517,7 @@ export function LancamentosPage({
 				pendingLabel="Removendo..."
 				confirmVariant="destructive"
 				onConfirm={handleDelete}
-				disabled={!lancamentoToDelete}
+				disabled={!transactionToDelete}
 			/>
 
 			<BulkActionDialog
@@ -543,16 +543,16 @@ export function LancamentosPage({
 				onOpenChange={setBulkEditOpen}
 				actionType="edit"
 				seriesType={
-					pendingEditData?.lancamento.condition === "Parcelado"
+					pendingEditData?.transaction.condition === "Parcelado"
 						? "installment"
 						: "recurring"
 				}
 				currentNumber={
-					pendingEditData?.lancamento.currentInstallment ?? undefined
+					pendingEditData?.transaction.currentInstallment ?? undefined
 				}
 				totalCount={
-					pendingEditData?.lancamento.installmentCount ??
-					pendingEditData?.lancamento.recurrenceCount ??
+					pendingEditData?.transaction.installmentCount ??
+					pendingEditData?.transaction.recurrenceCount ??
 					undefined
 				}
 				onConfirm={handleBulkEdit}
@@ -563,14 +563,14 @@ export function LancamentosPage({
 					open={massAddOpen}
 					onOpenChange={setMassAddOpen}
 					onSubmit={handleMassAddSubmit}
-					pagadorOptions={pagadorOptions}
-					contaOptions={contaOptions}
-					cartaoOptions={cartaoOptions}
-					categoriaOptions={categoriaOptions}
+					payerOptions={payerOptions}
+					accountOptions={accountOptions}
+					cardOptions={cardOptions}
+					categoryOptions={categoryOptions}
 					estabelecimentos={estabelecimentos}
 					selectedPeriod={selectedPeriod}
-					defaultPagadorId={defaultPagadorId}
-					defaultCartaoId={defaultCartaoId}
+					defaultPayerId={defaultPayerId}
+					defaultCardId={defaultCardId}
 				/>
 			) : null}
 
@@ -595,12 +595,12 @@ export function LancamentosPage({
 					onOpenChange={setAnticipateOpen}
 					seriesId={selectedForAnticipation.seriesId as string}
 					lancamentoName={selectedForAnticipation.name}
-					categorias={categoriaOptions.map((c) => ({
+					categorias={categoryOptions.map((c) => ({
 						id: c.value,
 						name: c.label,
 						icon: c.icon ?? null,
 					}))}
-					pagadores={pagadorOptions.map((p) => ({
+					pagadores={payerOptions.map((p) => ({
 						id: p.value,
 						name: p.label,
 					}))}
@@ -614,10 +614,12 @@ export function LancamentosPage({
 					onOpenChange={setAnticipationHistoryOpen}
 					seriesId={selectedForAnticipation.seriesId as string}
 					lancamentoName={selectedForAnticipation.name}
-					onViewLancamento={(lancamentoId) => {
-						const lancamento = lancamentos.find((l) => l.id === lancamentoId);
-						if (lancamento) {
-							setSelectedLancamento(lancamento);
+					onViewLancamento={(transactionId) => {
+						const transaction = transactionList.find(
+							(l) => l.id === transactionId,
+						);
+						if (transaction) {
+							setSelectedTransaction(transaction);
 							setDetailsOpen(true);
 							setAnticipationHistoryOpen(false);
 						}

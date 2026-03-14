@@ -9,16 +9,16 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/shared/components/ui/select";
-import { PagadorSelectContent } from "../../select-items";
-import type { PagadorSectionProps } from "./transaction-dialog-types";
+import { PayerSelectContent } from "../../select-items";
+import type { PayerSectionProps } from "./transaction-dialog-types";
 
-export function PagadorSection({
+export function PayerSection({
 	formState,
 	onFieldChange,
-	pagadorOptions,
-	secondaryPagadorOptions,
+	payerOptions,
+	secondaryPayerOptions,
 	totalAmount,
-}: PagadorSectionProps) {
+}: PayerSectionProps) {
 	const handlePrimaryAmountChange = (value: string) => {
 		onFieldChange("primarySplitAmount", value);
 		const numericValue = Number.parseFloat(value) || 0;
@@ -36,24 +36,24 @@ export function PagadorSection({
 	return (
 		<div className="flex w-full flex-col gap-2 md:flex-row">
 			<div className="w-full space-y-1">
-				<Label htmlFor="pagador">Pagador</Label>
+				<Label htmlFor="payer">Payer</Label>
 				<div className="flex gap-2">
 					<Select
-						value={formState.pagadorId}
-						onValueChange={(value) => onFieldChange("pagadorId", value)}
+						value={formState.payerId}
+						onValueChange={(value) => onFieldChange("payerId", value)}
 					>
 						<SelectTrigger
-							id="pagador"
+							id="payer"
 							className={formState.isSplit ? "w-[55%]" : "w-full"}
 						>
 							<SelectValue placeholder="Selecione">
-								{formState.pagadorId &&
+								{formState.payerId &&
 									(() => {
-										const selectedOption = pagadorOptions.find(
-											(opt) => opt.value === formState.pagadorId,
+										const selectedOption = payerOptions.find(
+											(opt) => opt.value === formState.payerId,
 										);
 										return selectedOption ? (
-											<PagadorSelectContent
+											<PayerSelectContent
 												label={selectedOption.label}
 												avatarUrl={selectedOption.avatarUrl}
 											/>
@@ -62,9 +62,9 @@ export function PagadorSection({
 							</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
-							{pagadorOptions.map((option) => (
+							{payerOptions.map((option) => (
 								<SelectItem key={option.value} value={option.value}>
-									<PagadorSelectContent
+									<PayerSelectContent
 										label={option.label}
 										avatarUrl={option.avatarUrl}
 									/>
@@ -85,27 +85,27 @@ export function PagadorSection({
 
 			{formState.isSplit ? (
 				<div className="w-full space-y-1 mb-1">
-					<Label htmlFor="secondaryPagador">Dividir com</Label>
+					<Label htmlFor="secondaryPayer">Dividir com</Label>
 					<div className="flex gap-2">
 						<Select
-							value={formState.secondaryPagadorId}
+							value={formState.secondaryPayerId}
 							onValueChange={(value) =>
-								onFieldChange("secondaryPagadorId", value)
+								onFieldChange("secondaryPayerId", value)
 							}
 						>
 							<SelectTrigger
-								id="secondaryPagador"
-								disabled={secondaryPagadorOptions.length === 0}
+								id="secondaryPayer"
+								disabled={secondaryPayerOptions.length === 0}
 								className="w-[55%]"
 							>
 								<SelectValue placeholder="Selecione">
-									{formState.secondaryPagadorId &&
+									{formState.secondaryPayerId &&
 										(() => {
-											const selectedOption = secondaryPagadorOptions.find(
-												(opt) => opt.value === formState.secondaryPagadorId,
+											const selectedOption = secondaryPayerOptions.find(
+												(opt) => opt.value === formState.secondaryPayerId,
 											);
 											return selectedOption ? (
-												<PagadorSelectContent
+												<PayerSelectContent
 													label={selectedOption.label}
 													avatarUrl={selectedOption.avatarUrl}
 												/>
@@ -114,9 +114,9 @@ export function PagadorSection({
 								</SelectValue>
 							</SelectTrigger>
 							<SelectContent>
-								{secondaryPagadorOptions.map((option) => (
+								{secondaryPayerOptions.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
-										<PagadorSelectContent
+										<PayerSelectContent
 											label={option.label}
 											avatarUrl={option.avatarUrl}
 										/>

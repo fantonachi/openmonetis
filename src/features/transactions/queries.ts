@@ -1,69 +1,73 @@
 import { and, desc, eq, gte, isNull, ne, or, type SQL } from "drizzle-orm";
 import {
-	cartoes,
-	categorias,
-	contas,
-	lancamentos,
-	pagadores,
+	cards,
+	categories,
+	financialAccounts,
+	payers,
+	transactions,
 } from "@/db/schema";
 import { INITIAL_BALANCE_NOTE } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
 
-export async function fetchLancamentoFilterSources(userId: string) {
-	const [pagadorRows, contaRows, cartaoRows, categoriaRows] = await Promise.all(
-		[
-			db.query.pagadores.findMany({
-				where: eq(pagadores.userId, userId),
-			}),
-			db.query.contas.findMany({
-				where: and(eq(contas.userId, userId), eq(contas.status, "Ativa")),
-			}),
-			db.query.cartoes.findMany({
-				where: and(eq(cartoes.userId, userId), eq(cartoes.status, "Ativo")),
-			}),
-			db.query.categorias.findMany({
-				where: eq(categorias.userId, userId),
-			}),
-		],
-	);
+export async function fetchTransactionFilterSources(userId: string) {
+	const [payerRows, accountRows, cardRows, categoryRows] = await Promise.all([
+		db.query.payers.findMany({
+			where: eq(payers.userId, userId),
+		}),
+		db.query.financialAccounts.findMany({
+			where: and(
+				eq(financialAccounts.userId, userId),
+				eq(financialAccounts.status, "Ativa"),
+			),
+		}),
+		db.query.cards.findMany({
+			where: and(eq(cards.userId, userId), eq(cards.status, "Ativo")),
+		}),
+		db.query.categories.findMany({
+			where: eq(categories.userId, userId),
+		}),
+	]);
 
-	return { pagadorRows, contaRows, cartaoRows, categoriaRows };
+	return { payerRows, accountRows, cardRows, categoryRows };
 }
 
-export async function fetchLancamentos(filters: SQL[]) {
-	const lancamentoRows = await db
+export async function fetchTransactions(filters: SQL[]) {
+	const transactionRows = await db
 		.select({
-			lancamento: lancamentos,
-			pagador: pagadores,
-			conta: contas,
-			cartao: cartoes,
-			categoria: categorias,
+			transaction: transactions,
+			payer: payers,
+			financialAccount: financialAccounts,
+			card: cards,
+			category: categories,
 		})
-		.from(lancamentos)
-		.leftJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
-		.leftJoin(contas, eq(lancamentos.contaId, contas.id))
-		.leftJoin(cartoes, eq(lancamentos.cartaoId, cartoes.id))
-		.leftJoin(categorias, eq(lancamentos.categoriaId, categorias.id))
+		.from(transactions)
+		.leftJoin(payers, eq(transactions.payerId, payers.id))
+		.leftJoin(
+			financialAccounts,
+			eq(transactions.accountId, financialAccounts.id),
+		)
+		.leftJoin(cards, eq(transactions.cardId, cards.id))
+		.leftJoin(categories, eq(transactions.categoryId, categories.id))
 		.where(
 			and(
 				...filters,
-				// Excluir saldos iniciais de contas que têm excludeInitialBalanceFromIncome = true
+				// Excluir saldos iniciais de financialAccounts que têm excludeInitialBalanceFromIncome = true
 				or(
-					ne(lancamentos.note, INITIAL_BALANCE_NOTE),
-					isNull(contas.excludeInitialBalanceFromIncome),
-					eq(contas.excludeInitialBalanceFromIncome, false),
+					ne(transactions.note, INITIAL_BALANCE_NOTE),
+					isNull(financialAccounts.excludeInitialBalanceFromIncome),
+					eq(financialAccounts.excludeInitialBalanceFromIncome, false),
 				),
 			),
 		)
-		.orderBy(desc(lancamentos.purchaseDate), desc(lancamentos.createdAt));
+		.orderBy(desc(transactions.purchaseDate), desc(transactions.createdAt));
 
 	// Transformar resultado para o formato esperado
-	return lancamentoRows.map((row) => ({
-		...row.lancamento,
-		pagador: row.pagador,
-		conta: row.conta,
-		cartao: row.cartao,
-		categoria: row.categoria,
+	return transactionRows.map((row) => ({
+		...row.transaction,
+		payer: row.payer,
+		financialAccount: row.financialAccount,
+		card: row.card,
+		category: row.category,
 	}));
 }
 
@@ -74,15 +78,15 @@ export async function fetchRecentEstablishments(
 	threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
 	const results = await db
-		.select({ name: lancamentos.name })
-		.from(lancamentos)
+		.select({ name: transactions.name })
+		.from(transactions)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				gte(lancamentos.purchaseDate, threeMonthsAgo),
+				eq(transactions.userId, userId),
+				gte(transactions.purchaseDate, threeMonthsAgo),
 			),
 		)
-		.orderBy(desc(lancamentos.purchaseDate));
+		.orderBy(desc(transactions.purchaseDate));
 
 	const uniqueNames = Array.from(
 		new Set<string>(

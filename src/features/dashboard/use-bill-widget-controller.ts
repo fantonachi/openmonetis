@@ -10,7 +10,7 @@ import {
 	type PaymentDialogController,
 	usePaymentDialogController,
 } from "@/features/dashboard/use-payment-dialog-controller";
-import { toggleLancamentoSettlementAction } from "@/features/transactions/actions";
+import { toggleTransactionSettlementAction } from "@/features/transactions/actions";
 
 const EMPTY_BILLS: DashboardBill[] = [];
 
@@ -31,7 +31,7 @@ export function useBillWidgetController(
 		getItemId: (bill) => bill.id,
 		isItemConfirmed: (bill) => bill.isSettled,
 		executeConfirm: (bill) =>
-			toggleLancamentoSettlementAction({
+			toggleTransactionSettlementAction({
 				id: bill.id,
 				value: true,
 			}),

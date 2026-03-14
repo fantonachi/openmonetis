@@ -1,4 +1,4 @@
-export type LancamentoItem = {
+export type TransactionItem = {
 	id: string;
 	userId: string;
 	name: string;
@@ -8,17 +8,17 @@ export type LancamentoItem = {
 	amount: number;
 	condition: string;
 	paymentMethod: string;
-	pagadorId: string | null;
+	payerId: string | null;
 	pagadorName: string | null;
 	pagadorAvatar: string | null;
 	pagadorRole: string | null;
-	contaId: string | null;
+	accountId: string | null;
 	contaName: string | null;
 	contaLogo: string | null;
-	cartaoId: string | null;
+	cardId: string | null;
 	cartaoName: string | null;
 	cartaoLogo: string | null;
-	categoriaId: string | null;
+	categoryId: string | null;
 	categoriaName: string | null;
 	categoriaType: string | null;
 	categoriaIcon: string | null;
@@ -50,14 +50,14 @@ export type SelectOption = {
 	dueDay?: string | null;
 };
 
-export type LancamentoFilterOption = {
+export type TransactionFilterOption = {
 	slug: string;
 	label: string;
 	icon?: string | null;
 	avatarUrl?: string | null;
 };
 
-export type ContaCartaoFilterOption = LancamentoFilterOption & {
+export type AccountCardFilterOption = TransactionFilterOption & {
 	kind: "conta" | "cartao";
 	logo?: string | null;
 };

@@ -1,8 +1,8 @@
 import type {
-	AntecipacaoParcela,
-	Categoria,
-	Lancamento,
-	Pagador,
+	Category,
+	InstallmentAnticipation,
+	Payer,
+	Transaction,
 } from "@/db/schema";
 
 /**
@@ -18,17 +18,17 @@ export type EligibleInstallment = {
 	currentInstallment: number | null;
 	installmentCount: number | null;
 	paymentMethod: string;
-	categoriaId: string | null;
-	pagadorId: string | null;
+	categoryId: string | null;
+	payerId: string | null;
 };
 
 /**
  * Antecipação com dados completos
  */
-export type InstallmentAnticipationWithRelations = AntecipacaoParcela & {
-	lancamento: Lancamento;
-	pagador: Pagador | null;
-	categoria: Categoria | null;
+export type InstallmentAnticipationWithRelations = InstallmentAnticipation & {
+	transaction: Transaction;
+	payer: Payer | null;
+	category: Category | null;
 };
 
 /**
@@ -39,8 +39,8 @@ export type CreateAnticipationInput = {
 	installmentIds: string[];
 	anticipationPeriod: string;
 	discount?: number;
-	pagadorId?: string;
-	categoriaId?: string;
+	payerId?: string;
+	categoryId?: string;
 	note?: string;
 };
 

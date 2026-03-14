@@ -11,15 +11,9 @@ import {
 	sql,
 	sum,
 } from "drizzle-orm";
-import {
-	cartoes,
-	categorias,
-	faturas,
-	lancamentos,
-	pagadores,
-} from "@/db/schema";
+import { cards, categories, invoices, payers, transactions } from "@/db/schema";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import { formatDateOnly } from "@/shared/utils/date";
 import { safeToNumber } from "@/shared/utils/number";
 import {
@@ -90,7 +84,7 @@ type CardRow = {
 };
 
 type CardUsageRow = {
-	cartaoId: string | null;
+	cardId: string | null;
 	totalAmount: unknown;
 };
 
@@ -100,7 +94,7 @@ type MonthlyUsageRow = {
 };
 
 type CategoryAmountRow = {
-	categoriaId: string | null;
+	categoryId: string | null;
 	totalAmount: unknown;
 };
 
@@ -115,7 +109,7 @@ type TopExpenseRow = {
 	name: string;
 	amount: unknown;
 	purchaseDate: Date | string | null;
-	categoriaId: string | null;
+	categoryId: string | null;
 };
 
 type InvoiceStatusRow = {
@@ -133,16 +127,16 @@ export async function fetchCartoesReportData(
 	// Fetch all active cards (not inactive)
 	const allCards = (await db
 		.select({
-			id: cartoes.id,
-			name: cartoes.name,
-			brand: cartoes.brand,
-			logo: cartoes.logo,
-			limit: cartoes.limit,
-			status: cartoes.status,
+			id: cards.id,
+			name: cards.name,
+			brand: cards.brand,
+			logo: cards.logo,
+			limit: cards.limit,
+			status: cards.status,
 		})
-		.from(cartoes)
+		.from(cards)
 		.where(
-			and(eq(cartoes.userId, userId), not(ilike(cartoes.status, "inativo"))),
+			and(eq(cards.userId, userId), not(ilike(cards.status, "inativo"))),
 		)) as CardRow[];
 
 	if (allCards.length === 0) {
@@ -160,67 +154,61 @@ export async function fetchCartoesReportData(
 	// Fetch current period usage by card (recorrente só conta quando a data da ocorrência já passou)
 	const currentUsageData = (await db
 		.select({
-			cartaoId: lancamentos.cartaoId,
-			totalAmount: sum(lancamentos.amount).as("total"),
+			cardId: transactions.cardId,
+			totalAmount: sum(transactions.amount).as("total"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
-				inArray(lancamentos.cartaoId, cardIds),
+				eq(transactions.userId, userId),
+				eq(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
+				inArray(transactions.cardId, cardIds),
 				or(
-					ne(lancamentos.condition, "Recorrente"),
-					sql`${lancamentos.purchaseDate} <= current_date`,
+					ne(transactions.condition, "Recorrente"),
+					sql`${transactions.purchaseDate} <= current_date`,
 				),
 			),
 		)
-		.groupBy(lancamentos.cartaoId)) as CardUsageRow[];
+		.groupBy(transactions.cardId)) as CardUsageRow[];
 
 	// Fetch previous period usage by card
 	const previousUsageData = (await db
 		.select({
-			cartaoId: lancamentos.cartaoId,
-			totalAmount: sum(lancamentos.amount).as("total"),
+			cardId: transactions.cardId,
+			totalAmount: sum(transactions.amount).as("total"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, previousPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
-				inArray(lancamentos.cartaoId, cardIds),
+				eq(transactions.userId, userId),
+				eq(transactions.period, previousPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
+				inArray(transactions.cardId, cardIds),
 			),
 		)
-		.groupBy(lancamentos.cartaoId)) as CardUsageRow[];
+		.groupBy(transactions.cardId)) as CardUsageRow[];
 
 	const currentUsageMap = new Map<string, number>();
 	for (const row of currentUsageData) {
-		if (row.cartaoId) {
-			currentUsageMap.set(
-				row.cartaoId,
-				Math.abs(safeToNumber(row.totalAmount)),
-			);
+		if (row.cardId) {
+			currentUsageMap.set(row.cardId, Math.abs(safeToNumber(row.totalAmount)));
 		}
 	}
 
 	const previousUsageMap = new Map<string, number>();
 	for (const row of previousUsageData) {
-		if (row.cartaoId) {
-			previousUsageMap.set(
-				row.cartaoId,
-				Math.abs(safeToNumber(row.totalAmount)),
-			);
+		if (row.cardId) {
+			previousUsageMap.set(row.cardId, Math.abs(safeToNumber(row.totalAmount)));
 		}
 	}
 
 	// Build card summaries
-	const cards: CardSummary[] = allCards.map((card) => {
+	const cardSummaries: CardSummary[] = allCards.map((card) => {
 		const limit = safeToNumber(card.limit);
 		const currentUsage = currentUsageMap.get(card.id) || 0;
 		const previousUsage = previousUsageMap.get(card.id) || 0;
@@ -252,22 +240,22 @@ export async function fetchCartoesReportData(
 		};
 	});
 
-	// Sort cards by usage (descending)
-	cards.sort((a, b) => b.currentUsage - a.currentUsage);
+	// Sort cardSummaries by usage (descending)
+	cardSummaries.sort((a, b) => b.currentUsage - a.currentUsage);
 
 	// Calculate totals
-	const totalLimit = cards.reduce((acc, c) => acc + c.limit, 0);
-	const totalUsage = cards.reduce((acc, c) => acc + c.currentUsage, 0);
+	const totalLimit = cardSummaries.reduce((acc, c) => acc + c.limit, 0);
+	const totalUsage = cardSummaries.reduce((acc, c) => acc + c.currentUsage, 0);
 	const totalUsagePercent =
 		totalLimit > 0 ? (totalUsage / totalLimit) * 100 : 0;
 
 	// Fetch selected card details if provided
 	let selectedCard: CardDetailData | null = null;
 	const targetCardId =
-		selectedCartaoId || (cards.length > 0 ? cards[0].id : null);
+		selectedCartaoId || (cardSummaries.length > 0 ? cardSummaries[0].id : null);
 
 	if (targetCardId) {
-		const cardSummary = cards.find((c) => c.id === targetCardId);
+		const cardSummary = cardSummaries.find((c) => c.id === targetCardId);
 		if (cardSummary) {
 			selectedCard = await fetchCardDetail(
 				userId,
@@ -279,7 +267,7 @@ export async function fetchCartoesReportData(
 	}
 
 	return {
-		cards,
+		cards: cardSummaries,
 		totalLimit,
 		totalUsage,
 		totalUsagePercent,
@@ -301,23 +289,23 @@ async function fetchCardDetail(
 	// Fetch monthly usage
 	const monthlyData = (await db
 		.select({
-			period: lancamentos.period,
-			totalAmount: sum(lancamentos.amount).as("total"),
+			period: transactions.period,
+			totalAmount: sum(transactions.amount).as("total"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.cartaoId, cardId),
-				gte(lancamentos.period, startPeriod),
-				lte(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
+				eq(transactions.userId, userId),
+				eq(transactions.cardId, cardId),
+				gte(transactions.period, startPeriod),
+				lte(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
 			),
 		)
-		.groupBy(lancamentos.period)
-		.orderBy(lancamentos.period)) as MonthlyUsageRow[];
+		.groupBy(transactions.period)
+		.orderBy(transactions.period)) as MonthlyUsageRow[];
 
 	const monthlyUsage = periods.map((period) => {
 		const data = monthlyData.find((d) => d.period === period);
@@ -331,37 +319,37 @@ async function fetchCardDetail(
 	// Fetch category breakdown for current period
 	const categoryData = (await db
 		.select({
-			categoriaId: lancamentos.categoriaId,
-			totalAmount: sum(lancamentos.amount).as("total"),
+			categoryId: transactions.categoryId,
+			totalAmount: sum(transactions.amount).as("total"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.cartaoId, cardId),
-				eq(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
+				eq(transactions.userId, userId),
+				eq(transactions.cardId, cardId),
+				eq(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
 			),
 		)
-		.groupBy(lancamentos.categoriaId)) as CategoryAmountRow[];
+		.groupBy(transactions.categoryId)) as CategoryAmountRow[];
 
 	// Fetch category names
 	const categoryIds = categoryData
-		.map((c) => c.categoriaId)
+		.map((c) => c.categoryId)
 		.filter((id): id is string => id !== null);
 
 	const categoryNames =
 		categoryIds.length > 0
 			? ((await db
 					.select({
-						id: categorias.id,
-						name: categorias.name,
-						icon: categorias.icon,
+						id: categories.id,
+						name: categories.name,
+						icon: categories.icon,
 					})
-					.from(categorias)
-					.where(inArray(categorias.id, categoryIds))) as CategoryInfoRow[])
+					.from(categories)
+					.where(inArray(categories.id, categoryIds))) as CategoryInfoRow[])
 			: ([] as CategoryInfoRow[]);
 
 	const categoryNameMap = new Map(categoryNames.map((c) => [c.id, c]));
@@ -374,11 +362,11 @@ async function fetchCardDetail(
 	const categoryBreakdown = categoryData
 		.map((cat) => {
 			const amount = Math.abs(safeToNumber(cat.totalAmount));
-			const catInfo = cat.categoriaId
-				? categoryNameMap.get(cat.categoriaId)
+			const catInfo = cat.categoryId
+				? categoryNameMap.get(cat.categoryId)
 				: null;
 			return {
-				id: cat.categoriaId || "sem-categoria",
+				id: cat.categoryId || "sem-categoria",
 				name: catInfo?.name || "Sem categoria",
 				icon: catInfo?.icon || null,
 				amount,
@@ -392,29 +380,29 @@ async function fetchCardDetail(
 	// Fetch top expenses for current period
 	const topExpensesData = (await db
 		.select({
-			id: lancamentos.id,
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			purchaseDate: lancamentos.purchaseDate,
-			categoriaId: lancamentos.categoriaId,
+			id: transactions.id,
+			name: transactions.name,
+			amount: transactions.amount,
+			purchaseDate: transactions.purchaseDate,
+			categoryId: transactions.categoryId,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.cartaoId, cardId),
-				eq(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
+				eq(transactions.userId, userId),
+				eq(transactions.cardId, cardId),
+				eq(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
 			),
 		)
-		.orderBy(lancamentos.amount)
+		.orderBy(transactions.amount)
 		.limit(10)) as TopExpenseRow[];
 
 	const topExpenses = topExpensesData.map((expense) => {
-		const catInfo = expense.categoriaId
-			? categoryNameMap.get(expense.categoriaId)
+		const catInfo = expense.categoryId
+			? categoryNameMap.get(expense.categoryId)
 			: null;
 		return {
 			id: expense.id,
@@ -433,19 +421,19 @@ async function fetchCardDetail(
 	// Fetch invoice status for last 6 months
 	const invoiceData = (await db
 		.select({
-			period: faturas.period,
-			status: faturas.paymentStatus,
+			period: invoices.period,
+			status: invoices.paymentStatus,
 		})
-		.from(faturas)
+		.from(invoices)
 		.where(
 			and(
-				eq(faturas.userId, userId),
-				eq(faturas.cartaoId, cardId),
-				gte(faturas.period, startPeriod),
-				lte(faturas.period, currentPeriod),
+				eq(invoices.userId, userId),
+				eq(invoices.cardId, cardId),
+				gte(invoices.period, startPeriod),
+				lte(invoices.period, currentPeriod),
 			),
 		)
-		.orderBy(faturas.period)) as InvoiceStatusRow[];
+		.orderBy(invoices.period)) as InvoiceStatusRow[];
 
 	const invoiceStatus = periods.map((period) => {
 		const invoice = invoiceData.find((i) => i.period === period);

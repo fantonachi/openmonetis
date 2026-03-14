@@ -25,14 +25,14 @@ import {
 	loadExportLogoDataUrl,
 } from "@/shared/utils/export-branding";
 import { displayPeriod } from "@/shared/utils/period";
-import type { LancamentoItem } from "./types";
+import type { TransactionItem } from "./types";
 
 interface LancamentosExportProps {
-	lancamentos: LancamentoItem[];
+	lancamentos: TransactionItem[];
 	period: string;
 }
 
-export function LancamentosExport({
+export function TransactionsExport({
 	lancamentos,
 	period,
 }: LancamentosExportProps) {
@@ -52,21 +52,21 @@ export function LancamentosExport({
 		);
 	};
 
-	const getContaCartaoName = (lancamento: LancamentoItem) => {
-		if (lancamento.contaName) return lancamento.contaName;
-		if (lancamento.cartaoName) return lancamento.cartaoName;
+	const getContaCartaoName = (transaction: TransactionItem) => {
+		if (transaction.contaName) return transaction.contaName;
+		if (transaction.cartaoName) return transaction.cartaoName;
 		return "-";
 	};
 
-	const getNameWithInstallment = (lancamento: LancamentoItem) => {
+	const getNameWithInstallment = (transaction: TransactionItem) => {
 		const isInstallment =
-			lancamento.condition.trim().toLowerCase() === "parcelado";
+			transaction.condition.trim().toLowerCase() === "parcelado";
 
-		if (!isInstallment || !lancamento.installmentCount) {
-			return lancamento.name;
+		if (!isInstallment || !transaction.installmentCount) {
+			return transaction.name;
 		}
 
-		return `${lancamento.name} (${lancamento.currentInstallment ?? 1}/${lancamento.installmentCount})`;
+		return `${transaction.name} (${transaction.currentInstallment ?? 1}/${transaction.installmentCount})`;
 	};
 
 	const exportToCSV = () => {
@@ -80,9 +80,9 @@ export function LancamentosExport({
 				"Condição",
 				"Pagamento",
 				"Valor",
-				"Categoria",
+				"Category",
 				"Conta/Cartão",
-				"Pagador",
+				"Payer",
 			];
 			const rows: string[][] = [];
 
@@ -138,9 +138,9 @@ export function LancamentosExport({
 				"Condição",
 				"Pagamento",
 				"Valor",
-				"Categoria",
+				"Category",
 				"Conta/Cartão",
-				"Pagador",
+				"Payer",
 			];
 			const rows: (string | number)[][] = [];
 
@@ -168,9 +168,9 @@ export function LancamentosExport({
 				{ wch: 15 }, // Condição
 				{ wch: 20 }, // Pagamento
 				{ wch: 15 }, // Valor
-				{ wch: 20 }, // Categoria
+				{ wch: 20 }, // Category
 				{ wch: 20 }, // Conta/Cartão
-				{ wch: 20 }, // Pagador
+				{ wch: 20 }, // Payer
 			];
 
 			const wb = XLSX.utils.book_new();
@@ -241,7 +241,7 @@ export function LancamentosExport({
 					"Valor",
 					"Categoria",
 					"Conta/Cartão",
-					"Pagador",
+					"Payer",
 				],
 			];
 
@@ -281,7 +281,7 @@ export function LancamentosExport({
 					5: { cellWidth: 24 }, // Valor
 					6: { cellWidth: 30 }, // Categoria
 					7: { cellWidth: 30 }, // Conta/Cartão
-					8: { cellWidth: 31 }, // Pagador
+					8: { cellWidth: 31 }, // Payer
 				},
 				didParseCell: (cellData) => {
 					if (cellData.section === "body" && cellData.column.index === 5) {

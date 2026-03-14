@@ -7,7 +7,7 @@ export const mapDashboardNoteToNote = (note: DashboardNote): Note => ({
 	description: note.description,
 	type: note.type,
 	tasks: note.tasks,
-	arquivada: note.arquivada,
+	archived: note.archived,
 	createdAt: note.createdAt,
 });
 

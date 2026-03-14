@@ -76,7 +76,7 @@ export function InvoiceListItem({ invoice, onPay }: InvoiceListItemProps) {
 									{breakdown.map((share, index) => (
 										<li
 											key={`${invoice.id}-${
-												share.pagadorId ?? share.pagadorName ?? index
+												share.payerId ?? share.pagadorName ?? index
 											}`}
 											className="flex items-center gap-3"
 										>

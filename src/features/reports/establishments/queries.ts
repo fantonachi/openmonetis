@@ -13,13 +13,18 @@ import {
 	sql,
 	sum,
 } from "drizzle-orm";
-import { categorias, contas, lancamentos, pagadores } from "@/db/schema";
+import {
+	categories,
+	financialAccounts,
+	payers,
+	transactions,
+} from "@/db/schema";
 import {
 	ACCOUNT_AUTO_INVOICE_NOTE_PREFIX,
 	INITIAL_BALANCE_NOTE,
 } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import { safeToNumber } from "@/shared/utils/number";
 import { getPreviousPeriod } from "@/shared/utils/period";
 
@@ -68,7 +73,7 @@ function buildPeriodRange(currentPeriod: string, months: number): string[] {
 	return periods;
 }
 
-export async function fetchTopEstabelecimentosData(
+export async function fetchTopEstablishmentsData(
 	userId: string,
 	currentPeriod: string,
 	periodFilter: PeriodFilter = "6",
@@ -80,33 +85,36 @@ export async function fetchTopEstabelecimentosData(
 	// Fetch establishments with transaction count and total amount
 	const establishmentsData = await db
 		.select({
-			name: lancamentos.name,
+			name: transactions.name,
 			count: count().as("count"),
-			totalAmount: sum(lancamentos.amount).as("total"),
+			totalAmount: sum(transactions.amount).as("total"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
-		.leftJoin(contas, eq(lancamentos.contaId, contas.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
+		.leftJoin(
+			financialAccounts,
+			eq(transactions.accountId, financialAccounts.id),
+		)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				gte(lancamentos.period, startPeriod),
-				lte(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
-				ne(lancamentos.transactionType, TRANSFERENCIA),
+				eq(transactions.userId, userId),
+				gte(transactions.period, startPeriod),
+				lte(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
+				ne(transactions.transactionType, TRANSFERENCIA),
 				or(
-					isNull(lancamentos.note),
-					not(ilike(lancamentos.note, `${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`)),
+					isNull(transactions.note),
+					not(ilike(transactions.note, `${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`)),
 				),
 				or(
-					ne(lancamentos.note, INITIAL_BALANCE_NOTE),
-					isNull(contas.excludeInitialBalanceFromIncome),
-					eq(contas.excludeInitialBalanceFromIncome, false),
+					ne(transactions.note, INITIAL_BALANCE_NOTE),
+					isNull(financialAccounts.excludeInitialBalanceFromIncome),
+					eq(financialAccounts.excludeInitialBalanceFromIncome, false),
 				),
 			),
 		)
-		.groupBy(lancamentos.name)
+		.groupBy(transactions.name)
 		.orderBy(desc(sql`count`))
 		.limit(50);
 
@@ -117,32 +125,32 @@ export async function fetchTopEstabelecimentosData(
 
 	const categoriesByEstablishment = await db
 		.select({
-			establishmentName: lancamentos.name,
-			categoriaId: lancamentos.categoriaId,
+			establishmentName: transactions.name,
+			categoryId: transactions.categoryId,
 			count: count().as("count"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				gte(lancamentos.period, startPeriod),
-				lte(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
+				eq(transactions.userId, userId),
+				gte(transactions.period, startPeriod),
+				lte(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
 			),
 		)
-		.groupBy(lancamentos.name, lancamentos.categoriaId);
+		.groupBy(transactions.name, transactions.categoryId);
 
 	// Fetch all category names
 	const allCategories = await db
 		.select({
-			id: categorias.id,
-			name: categorias.name,
-			icon: categorias.icon,
+			id: categories.id,
+			name: categories.name,
+			icon: categories.icon,
 		})
-		.from(categorias)
-		.where(eq(categorias.userId, userId));
+		.from(categories)
+		.where(eq(categories.userId, userId));
 
 	type CategoryInfo = { id: string; name: string; icon: string | null };
 	const categoryMap = new Map<string, CategoryInfo>(
@@ -161,11 +169,11 @@ export async function fetchTopEstabelecimentosData(
 			const estCategories = categoriesByEstablishment
 				.filter(
 					(c: CategoryByEstRow) =>
-						c.establishmentName === est.name && c.categoriaId,
+						c.establishmentName === est.name && c.categoryId,
 				)
 				.map((c: CategoryByEstRow) => ({
 					name:
-						categoryMap.get(c.categoriaId as string)?.name || "Sem categoria",
+						categoryMap.get(c.categoryId as string)?.name || "Sem categoria",
 					count: Number(c.count) || 0,
 				}))
 				.sort(
@@ -189,43 +197,46 @@ export async function fetchTopEstabelecimentosData(
 	// Fetch top categories by spending
 	const topCategoriesData = await db
 		.select({
-			categoriaId: lancamentos.categoriaId,
-			totalAmount: sum(lancamentos.amount).as("total"),
+			categoryId: transactions.categoryId,
+			totalAmount: sum(transactions.amount).as("total"),
 			count: count().as("count"),
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
-		.leftJoin(contas, eq(lancamentos.contaId, contas.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
+		.leftJoin(
+			financialAccounts,
+			eq(transactions.accountId, financialAccounts.id),
+		)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				gte(lancamentos.period, startPeriod),
-				lte(lancamentos.period, currentPeriod),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
-				eq(lancamentos.transactionType, DESPESA),
+				eq(transactions.userId, userId),
+				gte(transactions.period, startPeriod),
+				lte(transactions.period, currentPeriod),
+				eq(payers.role, PAYER_ROLE_ADMIN),
+				eq(transactions.transactionType, DESPESA),
 				or(
-					isNull(lancamentos.note),
-					not(ilike(lancamentos.note, `${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`)),
+					isNull(transactions.note),
+					not(ilike(transactions.note, `${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`)),
 				),
 				or(
-					ne(lancamentos.note, INITIAL_BALANCE_NOTE),
-					isNull(contas.excludeInitialBalanceFromIncome),
-					eq(contas.excludeInitialBalanceFromIncome, false),
+					ne(transactions.note, INITIAL_BALANCE_NOTE),
+					isNull(financialAccounts.excludeInitialBalanceFromIncome),
+					eq(financialAccounts.excludeInitialBalanceFromIncome, false),
 				),
 			),
 		)
-		.groupBy(lancamentos.categoriaId)
+		.groupBy(transactions.categoryId)
 		.orderBy(sql`total ASC`)
 		.limit(10);
 
 	type TopCategoryRow = (typeof topCategoriesData)[0];
 
 	const topCategories: TopCategoryData[] = topCategoriesData
-		.filter((c: TopCategoryRow) => c.categoriaId)
+		.filter((c: TopCategoryRow) => c.categoryId)
 		.map((cat: TopCategoryRow) => {
-			const catInfo = categoryMap.get(cat.categoriaId as string);
+			const catInfo = categoryMap.get(cat.categoryId as string);
 			return {
-				id: cat.categoriaId as string,
+				id: cat.categoryId as string,
 				name: catInfo?.name || "Sem categoria",
 				icon: catInfo?.icon || null,
 				totalAmount: Math.abs(safeToNumber(cat.totalAmount)),

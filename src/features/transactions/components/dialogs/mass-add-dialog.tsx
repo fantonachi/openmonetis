@@ -3,10 +3,10 @@
 import { RiAddLine, RiDeleteBinLine } from "@remixicon/react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { groupAndSortCategorias } from "@/features/transactions/categoria-helpers";
+import { groupAndSortCategories } from "@/features/transactions/category-helpers";
 import {
-	LANCAMENTO_PAYMENT_METHODS,
-	type LANCAMENTO_TRANSACTION_TYPES,
+	PAYMENT_METHODS,
+	type TRANSACTION_TYPES,
 } from "@/features/transactions/constants";
 import { Button } from "@/shared/components/ui/button";
 import { CurrencyInput } from "@/shared/components/ui/currency-input";
@@ -44,9 +44,9 @@ import {
 	periodToDate,
 } from "@/shared/utils/period";
 import {
-	CategoriaSelectContent,
-	ContaCartaoSelectContent,
-	PagadorSelectContent,
+	CategorySelectContent,
+	AccountCardSelectContent,
+	PayerSelectContent,
 	PaymentMethodSelectContent,
 	TransactionTypeSelectContent,
 } from "../select-items";
@@ -54,11 +54,9 @@ import { EstabelecimentoInput } from "../shared/establishment-input";
 import type { SelectOption } from "../types";
 
 /** Payment methods sem Boleto para este modal */
-const MASS_ADD_PAYMENT_METHODS = LANCAMENTO_PAYMENT_METHODS.filter(
-	(m) => m !== "Boleto",
-);
-type MassAddTransactionType = (typeof LANCAMENTO_TRANSACTION_TYPES)[number];
-type MassAddPaymentMethod = (typeof LANCAMENTO_PAYMENT_METHODS)[number];
+const MASS_ADD_PAYMENT_METHODS = PAYMENT_METHODS.filter((m) => m !== "Boleto");
+type MassAddTransactionType = (typeof TRANSACTION_TYPES)[number];
+type MassAddPaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 function InlinePeriodPicker({
 	period,
@@ -71,7 +69,7 @@ function InlinePeriodPicker({
 
 	return (
 		<div className="-mt-1">
-			<span className="text-xs text-muted-foreground">Fatura de </span>
+			<span className="text-xs text-muted-foreground">Invoice de </span>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
 					<button
@@ -99,18 +97,18 @@ interface MassAddDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onSubmit: (data: MassAddFormData) => Promise<void>;
-	pagadorOptions: SelectOption[];
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
-	categoriaOptions: SelectOption[];
+	payerOptions: SelectOption[];
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
+	categoryOptions: SelectOption[];
 	estabelecimentos: string[];
 	selectedPeriod: string;
-	defaultPagadorId?: string | null;
-	defaultCartaoId?: string | null;
+	defaultPayerId?: string | null;
+	defaultCardId?: string | null;
 }
 
 export type MassAddFormData = Parameters<
-	typeof import("@/features/transactions/actions").createMassLancamentosAction
+	typeof import("@/features/transactions/actions").createMassTransactionsAction
 >[0];
 
 interface TransactionRow {
@@ -118,22 +116,22 @@ interface TransactionRow {
 	purchaseDate: string;
 	name: string;
 	amount: string;
-	categoriaId: string | undefined;
-	pagadorId: string | undefined;
+	categoryId: string | undefined;
+	payerId: string | undefined;
 }
 
 export function MassAddDialog({
 	open,
 	onOpenChange,
 	onSubmit,
-	pagadorOptions,
-	contaOptions,
-	cartaoOptions,
-	categoriaOptions,
+	payerOptions,
+	accountOptions,
+	cardOptions,
+	categoryOptions,
 	estabelecimentos,
 	selectedPeriod,
-	defaultPagadorId,
-	defaultCartaoId,
+	defaultPayerId,
+	defaultCardId,
 }: MassAddDialogProps) {
 	const [loading, setLoading] = useState(false);
 
@@ -141,16 +139,16 @@ export function MassAddDialog({
 	const [transactionType, setTransactionType] =
 		useState<MassAddTransactionType>("Despesa");
 	const [paymentMethod, setPaymentMethod] = useState<MassAddPaymentMethod>(
-		LANCAMENTO_PAYMENT_METHODS[0],
+		PAYMENT_METHODS[0],
 	);
 	const [period, setPeriod] = useState<string>(selectedPeriod);
-	const [contaId, setContaId] = useState<string | undefined>(undefined);
-	const [cartaoId, setCartaoId] = useState<string | undefined>(
-		defaultCartaoId ?? undefined,
+	const [accountId, setContaId] = useState<string | undefined>(undefined);
+	const [cardId, setCartaoId] = useState<string | undefined>(
+		defaultCardId ?? undefined,
 	);
 
-	// Quando defaultCartaoId está definido, exibe apenas o cartão específico
-	const isLockedToCartao = !!defaultCartaoId;
+	// Quando defaultCardId está definido, exibe apenas o cartão específico
+	const isLockedToCartao = !!defaultCardId;
 
 	const isCartaoSelected = paymentMethod === "Cartão de crédito";
 
@@ -161,18 +159,18 @@ export function MassAddDialog({
 			purchaseDate: getTodayDateString(),
 			name: "",
 			amount: "",
-			categoriaId: undefined,
-			pagadorId: defaultPagadorId ?? undefined,
+			categoryId: undefined,
+			payerId: defaultPayerId ?? undefined,
 		},
 	]);
 
 	// Categorias agrupadas e filtradas por tipo de transação
 	const groupedCategorias = useMemo(() => {
-		const filtered = categoriaOptions.filter(
+		const filtered = categoryOptions.filter(
 			(option) => option.group?.toLowerCase() === transactionType.toLowerCase(),
 		);
-		return groupAndSortCategorias(filtered);
-	}, [categoriaOptions, transactionType]);
+		return groupAndSortCategories(filtered);
+	}, [categoryOptions, transactionType]);
 
 	const addTransaction = () => {
 		setTransactions([
@@ -182,8 +180,8 @@ export function MassAddDialog({
 				purchaseDate: getTodayDateString(),
 				name: "",
 				amount: "",
-				categoriaId: undefined,
-				pagadorId: defaultPagadorId ?? undefined,
+				categoryId: undefined,
+				payerId: defaultPayerId ?? undefined,
 			},
 		]);
 	};
@@ -208,11 +206,11 @@ export function MassAddDialog({
 
 	const handleSubmit = async () => {
 		// Validate conta/cartao selection
-		if (isCartaoSelected && !cartaoId) {
+		if (isCartaoSelected && !cardId) {
 			toast.error("Selecione um cartão para continuar");
 			return;
 		}
-		if (!isCartaoSelected && !contaId) {
+		if (!isCartaoSelected && !accountId) {
 			toast.error("Selecione uma conta para continuar");
 			return;
 		}
@@ -236,15 +234,15 @@ export function MassAddDialog({
 				paymentMethod,
 				condition: "À vista",
 				period,
-				contaId,
-				cartaoId,
+				accountId,
+				cardId,
 			},
 			transactions: transactions.map((t) => ({
 				purchaseDate: t.purchaseDate,
 				name: t.name.trim(),
 				amount: Number(t.amount.trim()),
-				categoriaId: t.categoriaId,
-				pagadorId: t.pagadorId,
+				categoryId: t.categoryId,
+				payerId: t.payerId,
 			})),
 		};
 
@@ -254,18 +252,18 @@ export function MassAddDialog({
 			onOpenChange(false);
 			// Reset form
 			setTransactionType("Despesa");
-			setPaymentMethod(LANCAMENTO_PAYMENT_METHODS[0]);
+			setPaymentMethod(PAYMENT_METHODS[0]);
 			setPeriod(selectedPeriod);
 			setContaId(undefined);
-			setCartaoId(defaultCartaoId ?? undefined);
+			setCartaoId(defaultCardId ?? undefined);
 			setTransactions([
 				{
 					id: crypto.randomUUID(),
 					purchaseDate: getTodayDateString(),
 					name: "",
 					amount: "",
-					categoriaId: undefined,
-					pagadorId: defaultPagadorId ?? undefined,
+					categoryId: undefined,
+					payerId: defaultPayerId ?? undefined,
 				},
 			]);
 		} catch (_error) {
@@ -356,19 +354,19 @@ export function MassAddDialog({
 								<div className="space-y-2">
 									<Label htmlFor="cartao">Cartão</Label>
 									<Select
-										value={cartaoId}
+										value={cardId}
 										onValueChange={setCartaoId}
 										disabled={isLockedToCartao}
 									>
 										<SelectTrigger id="cartao" className="w-full">
 											<SelectValue placeholder="Selecione">
-												{cartaoId &&
+												{cardId &&
 													(() => {
-														const selectedOption = cartaoOptions.find(
-															(opt) => opt.value === cartaoId,
+														const selectedOption = cardOptions.find(
+															(opt) => opt.value === cardId,
 														);
 														return selectedOption ? (
-															<ContaCartaoSelectContent
+															<AccountCardSelectContent
 																label={selectedOption.label}
 																logo={selectedOption.logo}
 																isCartao={true}
@@ -378,22 +376,22 @@ export function MassAddDialog({
 											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
-											{cartaoOptions.length === 0 ? (
+											{cardOptions.length === 0 ? (
 												<div className="px-2 py-6 text-center">
 													<p className="text-sm text-muted-foreground">
 														Nenhum cartão cadastrado
 													</p>
 												</div>
 											) : (
-												cartaoOptions
+												cardOptions
 													.filter(
 														(option) =>
 															!isLockedToCartao ||
-															option.value === defaultCartaoId,
+															option.value === defaultCardId,
 													)
 													.map((option) => (
 														<SelectItem key={option.value} value={option.value}>
-															<ContaCartaoSelectContent
+															<AccountCardSelectContent
 																label={option.label}
 																logo={option.logo}
 																isCartao={true}
@@ -403,7 +401,7 @@ export function MassAddDialog({
 											)}
 										</SelectContent>
 									</Select>
-									{cartaoId ? (
+									{cardId ? (
 										<InlinePeriodPicker
 											period={period}
 											onPeriodChange={setPeriod}
@@ -412,20 +410,20 @@ export function MassAddDialog({
 								</div>
 							) : null}
 
-							{/* Conta (for non-credit-card methods) */}
+							{/* FinancialAccount (for non-credit-card methods) */}
 							{!isCartaoSelected ? (
 								<div className="space-y-2">
-									<Label htmlFor="conta">Conta</Label>
-									<Select value={contaId} onValueChange={setContaId}>
+									<Label htmlFor="conta">FinancialAccount</Label>
+									<Select value={accountId} onValueChange={setContaId}>
 										<SelectTrigger id="conta" className="w-full">
 											<SelectValue placeholder="Selecione">
-												{contaId &&
+												{accountId &&
 													(() => {
-														const selectedOption = contaOptions.find(
-															(opt) => opt.value === contaId,
+														const selectedOption = accountOptions.find(
+															(opt) => opt.value === accountId,
 														);
 														return selectedOption ? (
-															<ContaCartaoSelectContent
+															<AccountCardSelectContent
 																label={selectedOption.label}
 																logo={selectedOption.logo}
 																isCartao={false}
@@ -435,16 +433,16 @@ export function MassAddDialog({
 											</SelectValue>
 										</SelectTrigger>
 										<SelectContent>
-											{contaOptions.length === 0 ? (
+											{accountOptions.length === 0 ? (
 												<div className="px-2 py-6 text-center">
 													<p className="text-sm text-muted-foreground">
 														Nenhuma conta cadastrada
 													</p>
 												</div>
 											) : (
-												contaOptions.map((option) => (
+												accountOptions.map((option) => (
 													<SelectItem key={option.value} value={option.value}>
-														<ContaCartaoSelectContent
+														<AccountCardSelectContent
 															label={option.label}
 															logo={option.logo}
 															isCartao={false}
@@ -536,26 +534,26 @@ export function MassAddDialog({
 												htmlFor={`pagador-${transaction.id}`}
 												className="sr-only"
 											>
-												Pagador {index + 1}
+												Payer {index + 1}
 											</Label>
 											<Select
-												value={transaction.pagadorId}
+												value={transaction.payerId}
 												onValueChange={(value) =>
-													updateTransaction(transaction.id, "pagadorId", value)
+													updateTransaction(transaction.id, "payerId", value)
 												}
 											>
 												<SelectTrigger
 													id={`pagador-${transaction.id}`}
 													className="w-32 truncate"
 												>
-													<SelectValue placeholder="Pagador">
-														{transaction.pagadorId &&
+													<SelectValue placeholder="Payer">
+														{transaction.payerId &&
 															(() => {
-																const selectedOption = pagadorOptions.find(
-																	(opt) => opt.value === transaction.pagadorId,
+																const selectedOption = payerOptions.find(
+																	(opt) => opt.value === transaction.payerId,
 																);
 																return selectedOption ? (
-																	<PagadorSelectContent
+																	<PayerSelectContent
 																		label={selectedOption.label}
 																		avatarUrl={selectedOption.avatarUrl}
 																	/>
@@ -564,9 +562,9 @@ export function MassAddDialog({
 													</SelectValue>
 												</SelectTrigger>
 												<SelectContent>
-													{pagadorOptions.map((option) => (
+													{payerOptions.map((option) => (
 														<SelectItem key={option.value} value={option.value}>
-															<PagadorSelectContent
+															<PayerSelectContent
 																label={option.label}
 																avatarUrl={option.avatarUrl}
 															/>
@@ -581,23 +579,19 @@ export function MassAddDialog({
 												htmlFor={`categoria-${transaction.id}`}
 												className="sr-only"
 											>
-												Categoria {index + 1}
+												Category {index + 1}
 											</Label>
 											<Select
-												value={transaction.categoriaId}
+												value={transaction.categoryId}
 												onValueChange={(value) =>
-													updateTransaction(
-														transaction.id,
-														"categoriaId",
-														value,
-													)
+													updateTransaction(transaction.id, "categoryId", value)
 												}
 											>
 												<SelectTrigger
 													id={`categoria-${transaction.id}`}
 													className="w-32 truncate"
 												>
-													<SelectValue placeholder="Categoria" />
+													<SelectValue placeholder="Category" />
 												</SelectTrigger>
 												<SelectContent>
 													{groupedCategorias.map((group) => (
@@ -608,7 +602,7 @@ export function MassAddDialog({
 																	key={option.value}
 																	value={option.value}
 																>
-																	<CategoriaSelectContent
+																	<CategorySelectContent
 																		label={option.label}
 																		icon={option.icon}
 																	/>

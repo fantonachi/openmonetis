@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { CalendarGrid } from "@/features/calendar/components/calendar-grid";
 import { CalendarLegend } from "@/features/calendar/components/calendar-legend";
 import { EventModal } from "@/features/calendar/components/event-modal";
-import { LancamentoDialog } from "@/features/transactions/components/dialogs/transaction-dialog/transaction-dialog";
+import { TransactionDialog } from "@/features/transactions/components/dialogs/transaction-dialog/transaction-dialog";
 import type {
 	CalendarDay,
 	CalendarEvent,
@@ -93,16 +93,16 @@ export function MonthlyCalendar({
 				onCreate={handleOpenCreate}
 			/>
 
-			<LancamentoDialog
+			<TransactionDialog
 				mode="create"
 				open={createOpen}
 				onOpenChange={handleCreateDialogChange}
-				pagadorOptions={formOptions.pagadorOptions}
-				splitPagadorOptions={formOptions.splitPagadorOptions}
-				defaultPagadorId={formOptions.defaultPagadorId}
-				contaOptions={formOptions.contaOptions}
-				cartaoOptions={formOptions.cartaoOptions}
-				categoriaOptions={formOptions.categoriaOptions}
+				payerOptions={formOptions.payerOptions}
+				splitPayerOptions={formOptions.splitPayerOptions}
+				defaultPayerId={formOptions.defaultPayerId}
+				accountOptions={formOptions.accountOptions}
+				cardOptions={formOptions.cardOptions}
+				categoryOptions={formOptions.categoryOptions}
 				estabelecimentos={formOptions.estabelecimentos}
 				defaultPeriod={period.period}
 				defaultPurchaseDate={createDate ?? undefined}

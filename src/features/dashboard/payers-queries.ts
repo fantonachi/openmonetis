@@ -1,8 +1,8 @@
 import { and, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { lancamentos, pagadores } from "@/db/schema";
+import { payers, transactions } from "@/db/schema";
 import { ACCOUNT_AUTO_INVOICE_NOTE_PREFIX } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import { calculatePercentageChange } from "@/shared/utils/math";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 import { getPreviousPeriod } from "@/shared/utils/period";
@@ -18,49 +18,49 @@ export type DashboardPagador = {
 	isAdmin: boolean;
 };
 
-export type DashboardPagadoresSnapshot = {
-	pagadores: DashboardPagador[];
+export type DashboardPayersSnapshot = {
+	payers: DashboardPagador[];
 	totalExpenses: number;
 };
 
-export async function fetchDashboardPagadores(
+export async function fetchDashboardPayers(
 	userId: string,
 	period: string,
-): Promise<DashboardPagadoresSnapshot> {
+): Promise<DashboardPayersSnapshot> {
 	const previousPeriod = getPreviousPeriod(period);
 
 	const rows = await db
 		.select({
-			id: pagadores.id,
-			name: pagadores.name,
-			email: pagadores.email,
-			avatarUrl: pagadores.avatarUrl,
-			role: pagadores.role,
-			period: lancamentos.period,
-			totalExpenses: sql<number>`COALESCE(SUM(ABS(${lancamentos.amount})), 0)`,
+			id: payers.id,
+			name: payers.name,
+			email: payers.email,
+			avatarUrl: payers.avatarUrl,
+			role: payers.role,
+			period: transactions.period,
+			totalExpenses: sql<number>`COALESCE(SUM(ABS(${transactions.amount})), 0)`,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				inArray(lancamentos.period, [period, previousPeriod]),
-				eq(lancamentos.transactionType, "Despesa"),
+				eq(transactions.userId, userId),
+				inArray(transactions.period, [period, previousPeriod]),
+				eq(transactions.transactionType, "Despesa"),
 				or(
-					isNull(lancamentos.note),
-					sql`${lancamentos.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
+					isNull(transactions.note),
+					sql`${transactions.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 				),
 			),
 		)
 		.groupBy(
-			pagadores.id,
-			pagadores.name,
-			pagadores.email,
-			pagadores.avatarUrl,
-			pagadores.role,
-			lancamentos.period,
+			payers.id,
+			payers.name,
+			payers.email,
+			payers.avatarUrl,
+			payers.role,
+			transactions.period,
 		)
-		.orderBy(desc(sql`SUM(ABS(${lancamentos.amount}))`));
+		.orderBy(desc(sql`SUM(ABS(${transactions.amount}))`));
 
 	const groupedPagadores = new Map<
 		string,
@@ -81,7 +81,7 @@ export async function fetchDashboardPagadores(
 			name: row.name,
 			email: row.email,
 			avatarUrl: row.avatarUrl,
-			isAdmin: row.role === PAGADOR_ROLE_ADMIN,
+			isAdmin: row.role === PAYER_ROLE_ADMIN,
 			currentExpenses: 0,
 			previousExpenses: 0,
 		};
@@ -96,7 +96,7 @@ export async function fetchDashboardPagadores(
 		groupedPagadores.set(row.id, entry);
 	}
 
-	const pagadoresList = Array.from(groupedPagadores.values())
+	const payerList = Array.from(groupedPagadores.values())
 		.filter((p) => p.currentExpenses > 0)
 		.map((pagador) => ({
 			id: pagador.id,
@@ -113,13 +113,13 @@ export async function fetchDashboardPagadores(
 		}))
 		.sort((a, b) => b.totalExpenses - a.totalExpenses);
 
-	const totalExpenses = pagadoresList.reduce(
+	const totalExpenses = payerList.reduce(
 		(sum, p) => sum + p.totalExpenses,
 		0,
 	);
 
 	return {
-		pagadores: pagadoresList,
+		payers: payerList,
 		totalExpenses,
 	};
 }

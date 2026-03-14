@@ -1,12 +1,12 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { contas, lancamentos } from "@/db/schema";
+import { financialAccounts, transactions } from "@/db/schema";
 import {
 	buildDashboardAdminFilters,
 	excludeAutoInvoiceEntries,
 	excludeInitialBalanceWhenConfigured,
-} from "@/features/dashboard/lancamento-filters";
+} from "@/features/dashboard/transaction-filters";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 import {
 	buildPeriodWindow,
@@ -38,8 +38,8 @@ export async function fetchIncomeExpenseBalance(
 	userId: string,
 	currentPeriod: string,
 ): Promise<IncomeExpenseBalanceData> {
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { months: [] };
 	}
 
@@ -48,22 +48,25 @@ export async function fetchIncomeExpenseBalance(
 	// Single query: GROUP BY period + transactionType instead of 12 separate queries
 	const rows = await db
 		.select({
-			period: lancamentos.period,
-			transactionType: lancamentos.transactionType,
-			total: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+			period: transactions.period,
+			transactionType: transactions.transactionType,
+			total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 		})
-		.from(lancamentos)
-		.leftJoin(contas, eq(lancamentos.contaId, contas.id))
+		.from(transactions)
+		.leftJoin(
+			financialAccounts,
+			eq(transactions.accountId, financialAccounts.id),
+		)
 		.where(
 			and(
-				...buildDashboardAdminFilters({ userId, adminPagadorId }),
-				inArray(lancamentos.period, periods),
-				inArray(lancamentos.transactionType, ["Receita", "Despesa"]),
+				...buildDashboardAdminFilters({ userId, adminPayerId }),
+				inArray(transactions.period, periods),
+				inArray(transactions.transactionType, ["Receita", "Despesa"]),
 				excludeAutoInvoiceEntries(),
 				excludeInitialBalanceWhenConfigured(),
 			),
 		)
-		.groupBy(lancamentos.period, lancamentos.transactionType);
+		.groupBy(transactions.period, transactions.transactionType);
 
 	// Build lookup from query results
 	const dataMap = new Map<string, { income: number; expense: number }>();

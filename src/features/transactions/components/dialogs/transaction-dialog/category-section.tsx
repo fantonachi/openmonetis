@@ -1,6 +1,6 @@
 "use client";
 
-import { LANCAMENTO_TRANSACTION_TYPES } from "@/features/transactions/constants";
+import { TRANSACTION_TYPES } from "@/features/transactions/constants";
 import { Label } from "@/shared/components/ui/label";
 import {
 	Select,
@@ -13,7 +13,7 @@ import {
 } from "@/shared/components/ui/select";
 import { cn } from "@/shared/utils/ui";
 import {
-	CategoriaSelectContent,
+	CategorySelectContent,
 	TransactionTypeSelectContent,
 } from "../../select-items";
 import type { CategorySectionProps } from "./transaction-dialog-types";
@@ -21,8 +21,8 @@ import type { CategorySectionProps } from "./transaction-dialog-types";
 export function CategorySection({
 	formState,
 	onFieldChange,
-	categoriaOptions,
-	categoriaGroups,
+	categoryOptions,
+	categoryGroups,
 	isUpdateMode,
 	hideTransactionType = false,
 }: CategorySectionProps) {
@@ -47,13 +47,13 @@ export function CategorySection({
 							</SelectValue>
 						</SelectTrigger>
 						<SelectContent>
-							{LANCAMENTO_TRANSACTION_TYPES.filter(
-								(type) => type !== "Transferência",
-							).map((type) => (
-								<SelectItem key={type} value={type}>
-									<TransactionTypeSelectContent label={type} />
-								</SelectItem>
-							))}
+							{TRANSACTION_TYPES.filter((type) => type !== "Transferência").map(
+								(type) => (
+									<SelectItem key={type} value={type}>
+										<TransactionTypeSelectContent label={type} />
+									</SelectItem>
+								),
+							)}
 						</SelectContent>
 					</Select>
 				</div>
@@ -65,20 +65,20 @@ export function CategorySection({
 					showTransactionTypeField ? "md:w-1/2" : "md:w-full",
 				)}
 			>
-				<Label htmlFor="categoria">Categoria</Label>
+				<Label htmlFor="categoria">Category</Label>
 				<Select
-					value={formState.categoriaId}
-					onValueChange={(value) => onFieldChange("categoriaId", value)}
+					value={formState.categoryId}
+					onValueChange={(value) => onFieldChange("categoryId", value)}
 				>
 					<SelectTrigger id="categoria" className="w-full">
 						<SelectValue placeholder="Selecione">
-							{formState.categoriaId &&
+							{formState.categoryId &&
 								(() => {
-									const selectedOption = categoriaOptions.find(
-										(opt) => opt.value === formState.categoriaId,
+									const selectedOption = categoryOptions.find(
+										(opt) => opt.value === formState.categoryId,
 									);
 									return selectedOption ? (
-										<CategoriaSelectContent
+										<CategorySelectContent
 											label={selectedOption.label}
 											icon={selectedOption.icon}
 										/>
@@ -87,12 +87,12 @@ export function CategorySection({
 						</SelectValue>
 					</SelectTrigger>
 					<SelectContent>
-						{categoriaGroups.map((group) => (
+						{categoryGroups.map((group) => (
 							<SelectGroup key={group.label}>
 								<SelectLabel>{group.label}</SelectLabel>
 								{group.options.map((option) => (
 									<SelectItem key={option.value} value={option.value}>
-										<CategoriaSelectContent
+										<CategorySelectContent
 											label={option.label}
 											icon={option.icon}
 										/>

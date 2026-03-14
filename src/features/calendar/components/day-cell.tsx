@@ -16,7 +16,7 @@ export const EVENT_TYPE_STYLES: Record<
 	CalendarEvent["type"],
 	{ wrapper: string; dot: string; accent?: string }
 > = {
-	lancamento: {
+	transaction: {
 		wrapper:
 			"bg-warning/10 text-warning dark:bg-warning/5 dark:text-warning border-l-4 border-warning",
 		dot: "bg-warning",
@@ -26,7 +26,7 @@ export const EVENT_TYPE_STYLES: Record<
 			"bg-info/10 text-info dark:bg-info/5 dark:text-info border-l-4 border-info",
 		dot: "bg-info",
 	},
-	cartao: {
+	card: {
 		wrapper:
 			"bg-violet-100 text-violet-600 dark:bg-violet-900/10 dark:text-violet-50 border-l-4 border-violet-500",
 		dot: "bg-violet-600",
@@ -38,18 +38,18 @@ const eventStyles = EVENT_TYPE_STYLES;
 const formatCurrencyValue = (value: number | null | undefined) =>
 	currencyFormatter.format(Math.abs(value ?? 0));
 
-const formatAmount = (event: Extract<CalendarEvent, { type: "lancamento" }>) =>
-	formatCurrencyValue(event.lancamento.amount);
+const formatAmount = (event: Extract<CalendarEvent, { type: "transaction" }>) =>
+	formatCurrencyValue(event.transaction.amount);
 
 const buildEventLabel = (event: CalendarEvent) => {
 	switch (event.type) {
-		case "lancamento": {
-			return event.lancamento.name;
+		case "transaction": {
+			return event.transaction.name;
 		}
 		case "boleto": {
-			return event.lancamento.name;
+			return event.transaction.name;
 		}
-		case "cartao": {
+		case "card": {
 			return event.card.name;
 		}
 		default:
@@ -59,13 +59,13 @@ const buildEventLabel = (event: CalendarEvent) => {
 
 const buildEventComplement = (event: CalendarEvent) => {
 	switch (event.type) {
-		case "lancamento": {
+		case "transaction": {
 			return formatAmount(event);
 		}
 		case "boleto": {
-			return formatCurrencyValue(event.lancamento.amount);
+			return formatCurrencyValue(event.transaction.amount);
 		}
-		case "cartao": {
+		case "card": {
 			if (event.card.totalDue !== null) {
 				return formatCurrencyValue(event.card.totalDue);
 			}
@@ -78,8 +78,8 @@ const buildEventComplement = (event: CalendarEvent) => {
 
 const isPagamentoFatura = (event: CalendarEvent) => {
 	return (
-		event.type === "lancamento" &&
-		event.lancamento.name.startsWith("Pagamento fatura -")
+		event.type === "transaction" &&
+		event.transaction.name.startsWith("Pagamento fatura -")
 	);
 };
 

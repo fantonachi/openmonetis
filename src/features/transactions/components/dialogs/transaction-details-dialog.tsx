@@ -25,29 +25,29 @@ import { Separator } from "@/shared/components/ui/separator";
 import { parseLocalDateString } from "@/shared/utils/date";
 import { getPaymentMethodIcon } from "@/shared/utils/icons";
 import { InstallmentTimeline } from "../shared/installment-timeline";
-import type { LancamentoItem } from "../types";
+import type { TransactionItem } from "../types";
 
-interface LancamentoDetailsDialogProps {
+interface TransactionDetailsDialogProps {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	lancamento: LancamentoItem | null;
+	transaction: TransactionItem | null;
 }
 
-export function LancamentoDetailsDialog({
+export function TransactionDetailsDialog({
 	open,
 	onOpenChange,
-	lancamento,
-}: LancamentoDetailsDialogProps) {
-	if (!lancamento) return null;
+	transaction,
+}: TransactionDetailsDialogProps) {
+	if (!transaction) return null;
 
 	const isInstallment =
-		lancamento.condition?.toLowerCase() === "parcelado" &&
-		lancamento.currentInstallment &&
-		lancamento.installmentCount;
+		transaction.condition?.toLowerCase() === "parcelado" &&
+		transaction.currentInstallment &&
+		transaction.installmentCount;
 
-	const valorParcela = Math.abs(lancamento.amount);
-	const totalParcelas = lancamento.installmentCount ?? 1;
-	const parcelaAtual = lancamento.currentInstallment ?? 1;
+	const valorParcela = Math.abs(transaction.amount);
+	const totalParcelas = transaction.installmentCount ?? 1;
+	const parcelaAtual = transaction.currentInstallment ?? 1;
 	const valorTotal = isInstallment
 		? valorParcela * totalParcelas
 		: valorParcela;
@@ -62,10 +62,10 @@ export function LancamentoDetailsDialog({
 					<CardHeader className="flex flex-row items-start border-b sm:border-b-0">
 						<div>
 							<DialogTitle className="group flex items-center gap-2 text-lg">
-								#{lancamento.id}
+								#{transaction.id}
 							</DialogTitle>
 							<CardDescription>
-								{formatDate(lancamento.purchaseDate)}
+								{formatDate(transaction.purchaseDate)}
 							</CardDescription>
 						</div>
 					</CardHeader>
@@ -73,11 +73,11 @@ export function LancamentoDetailsDialog({
 					<CardContent className="text-sm">
 						<div className="grid gap-3">
 							<ul className="grid gap-3">
-								<DetailRow label="Descrição" value={lancamento.name} />
+								<DetailRow label="Descrição" value={transaction.name} />
 
 								<DetailRow
 									label="Período"
-									value={formatPeriod(lancamento.period)}
+									value={formatPeriod(transaction.period)}
 								/>
 
 								<li className="flex items-center justify-between">
@@ -85,21 +85,21 @@ export function LancamentoDetailsDialog({
 										Forma de Pagamento
 									</span>
 									<span className="flex items-center gap-1.5">
-										{getPaymentMethodIcon(lancamento.paymentMethod)}
+										{getPaymentMethodIcon(transaction.paymentMethod)}
 										<span className="capitalize">
-											{lancamento.paymentMethod}
+											{transaction.paymentMethod}
 										</span>
 									</span>
 								</li>
 
 								<DetailRow
-									label={lancamento.cartaoName ? "Cartão" : "Conta"}
-									value={lancamento.cartaoName ?? lancamento.contaName ?? "—"}
+									label={transaction.cartaoName ? "Cartão" : "FinancialAccount"}
+									value={transaction.cartaoName ?? transaction.contaName ?? "—"}
 								/>
 
 								<DetailRow
-									label="Categoria"
-									value={lancamento.categoriaName ?? "—"}
+									label="Category"
+									value={transaction.categoriaName ?? "—"}
 								/>
 
 								<li className="flex items-center justify-between">
@@ -109,37 +109,37 @@ export function LancamentoDetailsDialog({
 									<span className="capitalize">
 										<Badge
 											variant={getTransactionBadgeVariant(
-												lancamento.categoriaName === "Saldo inicial"
+												transaction.categoriaName === "Saldo inicial"
 													? "Saldo inicial"
-													: lancamento.transactionType,
+													: transaction.transactionType,
 											)}
 										>
-											{lancamento.categoriaName === "Saldo inicial"
+											{transaction.categoriaName === "Saldo inicial"
 												? "Saldo Inicial"
-												: lancamento.transactionType}
+												: transaction.transactionType}
 										</Badge>
 									</span>
 								</li>
 
 								<DetailRow
 									label="Condição"
-									value={formatCondition(lancamento.condition)}
+									value={formatCondition(transaction.condition)}
 								/>
 
 								<li className="flex items-center justify-between">
 									<span className="text-muted-foreground">Responsável</span>
 									<span className="flex items-center gap-2 capitalize">
-										<span>{lancamento.pagadorName}</span>
+										<span>{transaction.pagadorName}</span>
 									</span>
 								</li>
 
 								<DetailRow
 									label="Status"
-									value={lancamento.isSettled ? "Pago" : "Pendente"}
+									value={transaction.isSettled ? "Pago" : "Pendente"}
 								/>
 
-								{lancamento.note && (
-									<DetailRow label="Notas" value={lancamento.note} />
+								{transaction.note && (
+									<DetailRow label="Notas" value={transaction.note} />
 								)}
 							</ul>
 
@@ -148,11 +148,11 @@ export function LancamentoDetailsDialog({
 									<li className="mt-4">
 										<InstallmentTimeline
 											purchaseDate={parseLocalDateString(
-												lancamento.purchaseDate,
+												transaction.purchaseDate,
 											)}
 											currentInstallment={parcelaAtual}
 											totalInstallments={totalParcelas}
-											period={lancamento.period}
+											period={transaction.period}
 										/>
 									</li>
 								)}
@@ -169,10 +169,10 @@ export function LancamentoDetailsDialog({
 									/>
 								)}
 
-								{lancamento.recurrenceCount && (
+								{transaction.recurrenceCount && (
 									<DetailRow
 										label="Quantidade de Recorrências"
-										value={`${lancamento.recurrenceCount} meses`}
+										value={`${transaction.recurrenceCount} meses`}
 									/>
 								)}
 

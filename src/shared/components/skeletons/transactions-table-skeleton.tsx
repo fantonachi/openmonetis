@@ -24,8 +24,8 @@ export function TransactionsTableSkeleton() {
 						<TableHead className="w-[120px]">Valor</TableHead>
 						<TableHead className="w-[120px]">Condição</TableHead>
 						<TableHead className="w-[120px]">Pagamento</TableHead>
-						<TableHead className="w-[140px]">Pagador</TableHead>
-						<TableHead className="w-[140px]">Categoria</TableHead>
+						<TableHead className="w-[140px]">Payer</TableHead>
+						<TableHead className="w-[140px]">Category</TableHead>
 						<TableHead className="w-[140px]">Conta/Cartão</TableHead>
 						<TableHead className="w-[80px]">Ações</TableHead>
 					</TableRow>

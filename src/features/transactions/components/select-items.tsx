@@ -20,7 +20,7 @@ type SelectItemContentProps = {
 	icon?: string | null;
 };
 
-export function PagadorSelectContent({
+export function PayerSelectContent({
 	label,
 	avatarUrl,
 }: SelectItemContentProps) {
@@ -40,10 +40,7 @@ export function PagadorSelectContent({
 	);
 }
 
-export function CategoriaSelectContent({
-	label,
-	icon,
-}: SelectItemContentProps) {
+export function CategorySelectContent({ label, icon }: SelectItemContentProps) {
 	return (
 		<span className="flex items-center gap-2">
 			<CategoryIcon name={icon} className="size-4" />
@@ -89,7 +86,7 @@ export function ConditionSelectContent({ label }: { label: string }) {
 	);
 }
 
-export function ContaCartaoSelectContent({
+export function AccountCardSelectContent({
 	label,
 	logo,
 	isCartao,

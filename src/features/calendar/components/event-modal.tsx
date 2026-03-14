@@ -50,14 +50,14 @@ const EventCard = ({
 };
 
 const renderLancamento = (
-	event: Extract<CalendarEvent, { type: "lancamento" }>,
+	event: Extract<CalendarEvent, { type: "transaction" }>,
 ) => {
-	const isReceita = event.lancamento.transactionType === "Receita";
+	const isReceita = event.transaction.transactionType === "Receita";
 	const isPagamentoFatura =
-		event.lancamento.name.startsWith("Pagamento fatura -");
+		event.transaction.name.startsWith("Pagamento fatura -");
 
 	return (
-		<EventCard type="lancamento" isPagamentoFatura={isPagamentoFatura}>
+		<EventCard type="transaction" isPagamentoFatura={isPagamentoFatura}>
 			<div className="flex items-start justify-between gap-3">
 				<div className="flex flex-col gap-1">
 					<span
@@ -65,13 +65,13 @@ const renderLancamento = (
 							isPagamentoFatura && "text-success"
 						}`}
 					>
-						{event.lancamento.name}
+						{event.transaction.name}
 					</span>
 
 					<div className="flex gap-1">
-						<Badge variant={"outline"}>{event.lancamento.condition}</Badge>
-						<Badge variant={"outline"}>{event.lancamento.paymentMethod}</Badge>
-						<Badge variant={"outline"}>{event.lancamento.categoriaName}</Badge>
+						<Badge variant={"outline"}>{event.transaction.condition}</Badge>
+						<Badge variant={"outline"}>{event.transaction.paymentMethod}</Badge>
+						<Badge variant={"outline"}>{event.transaction.categoriaName}</Badge>
 					</div>
 				</div>
 				<span
@@ -83,7 +83,7 @@ const renderLancamento = (
 					<MoneyValues
 						showPositiveSign
 						className="text-base"
-						amount={event.lancamento.amount}
+						amount={event.transaction.amount}
 					/>
 				</span>
 			</div>
@@ -92,8 +92,8 @@ const renderLancamento = (
 };
 
 const renderBoleto = (event: Extract<CalendarEvent, { type: "boleto" }>) => {
-	const isPaid = Boolean(event.lancamento.isSettled);
-	const dueDate = event.lancamento.dueDate;
+	const isPaid = Boolean(event.transaction.isSettled);
+	const dueDate = event.transaction.dueDate;
 	const dueDateLabel = formatFinancialDateLabel(dueDate, "Vence em", {
 		day: "2-digit",
 		month: "2-digit",
@@ -106,7 +106,7 @@ const renderBoleto = (event: Extract<CalendarEvent, { type: "boleto" }>) => {
 				<div className="flex flex-col gap-1">
 					<div className="flex gap-1 items-center">
 						<span className="text-sm font-semibold leading-tight">
-							{event.lancamento.name}
+							{event.transaction.name}
 						</span>
 
 						{dueDateLabel && (
@@ -119,24 +119,24 @@ const renderBoleto = (event: Extract<CalendarEvent, { type: "boleto" }>) => {
 					<Badge variant={"outline"}>{isPaid ? "Pago" : "Pendente"}</Badge>
 				</div>
 				<span className="font-semibold">
-					<MoneyValues amount={event.lancamento.amount} />
+					<MoneyValues amount={event.transaction.amount} />
 				</span>
 			</div>
 		</EventCard>
 	);
 };
 
-const renderCard = (event: Extract<CalendarEvent, { type: "cartao" }>) => (
-	<EventCard type="cartao">
+const renderCard = (event: Extract<CalendarEvent, { type: "card" }>) => (
+	<EventCard type="card">
 		<div className="flex items-start justify-between gap-3">
 			<div className="flex flex-col gap-1">
 				<div className="flex gap-1 items-center">
 					<span className="text-sm font-semibold leading-tight">
-						Vencimento Fatura - {event.card.name}
+						Vencimento Invoice - {event.card.name}
 					</span>
 				</div>
 
-				<Badge variant={"outline"}>{event.card.status ?? "Fatura"}</Badge>
+				<Badge variant={"outline"}>{event.card.status ?? "Invoice"}</Badge>
 			</div>
 			{event.card.totalDue !== null ? (
 				<span className="font-semibold">
@@ -149,11 +149,11 @@ const renderCard = (event: Extract<CalendarEvent, { type: "cartao" }>) => (
 
 const renderEvent = (event: CalendarEvent) => {
 	switch (event.type) {
-		case "lancamento":
+		case "transaction":
 			return renderLancamento(event);
 		case "boleto":
 			return renderBoleto(event);
-		case "cartao":
+		case "card":
 			return renderCard(event);
 		default:
 			return null;

@@ -1,8 +1,8 @@
 import { and, eq, inArray } from "drizzle-orm";
 import type { RecurringSeriesTemplate } from "@/db/schema";
-import { categorias, recurringSeries } from "@/db/schema";
+import { categories, recurringSeries } from "@/db/schema";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 import { addMonthsToPeriod } from "@/shared/utils/period";
 
@@ -26,7 +26,7 @@ export type RecurringSeriesData = {
 export async function fetchRecurringSeries(
 	userId: string,
 ): Promise<RecurringSeriesData> {
-	const adminPagadorId = await getAdminPagadorId(userId);
+	const adminPayerId = await getAdminPayerId(userId);
 
 	const rows = await db
 		.select({
@@ -50,19 +50,19 @@ export async function fetchRecurringSeries(
 
 	// Fetch category names for all series in one query
 	const categoryIds = rows
-		.map((r) => (r.templateData as RecurringSeriesTemplate).categoriaId)
+		.map((r) => (r.templateData as RecurringSeriesTemplate).categoryId)
 		.filter((id): id is string => id !== null);
 
 	const categoryMap = new Map<string, { name: string; icon: string | null }>();
 	if (categoryIds.length > 0) {
 		const cats = await db
 			.select({
-				id: categorias.id,
-				name: categorias.name,
-				icon: categorias.icon,
+				id: categories.id,
+				name: categories.name,
+				icon: categories.icon,
 			})
-			.from(categorias)
-			.where(inArray(categorias.id, categoryIds));
+			.from(categories)
+			.where(inArray(categories.id, categoryIds));
 		for (const cat of cats) {
 			categoryMap.set(cat.id, { name: cat.name, icon: cat.icon });
 		}
@@ -71,16 +71,14 @@ export async function fetchRecurringSeries(
 	const series = rows
 		.filter((row) => {
 			// If admin pagador exists, only show series belonging to admin
-			if (!adminPagadorId) return true;
+			if (!adminPayerId) return true;
 			const template = row.templateData as RecurringSeriesTemplate;
-			return (
-				template.pagadorId === adminPagadorId || template.pagadorId === null
-			);
+			return template.payerId === adminPayerId || template.payerId === null;
 		})
 		.map((row): RecurringSeriesItem => {
 			const template = row.templateData as RecurringSeriesTemplate;
-			const category = template.categoriaId
-				? categoryMap.get(template.categoriaId)
+			const category = template.categoryId
+				? categoryMap.get(template.categoryId)
 				: null;
 			return {
 				id: row.id,

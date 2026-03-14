@@ -1,18 +1,23 @@
 import { and, desc, eq, isNull, ne, or, sql } from "drizzle-orm";
-import { categorias, contas, lancamentos, pagadores } from "@/db/schema";
-import { mapLancamentosData } from "@/features/transactions/page-helpers";
+import {
+	categories,
+	financialAccounts,
+	payers,
+	transactions,
+} from "@/db/schema";
+import { mapTransactionsData } from "@/features/transactions/page-helpers";
 import {
 	ACCOUNT_AUTO_INVOICE_NOTE_PREFIX,
 	INITIAL_BALANCE_NOTE,
 } from "@/shared/lib/accounts/constants";
 import type { CategoryType } from "@/shared/lib/categories/constants";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import { calculatePercentageChange } from "@/shared/utils/math";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 import { getPreviousPeriod } from "@/shared/utils/period";
 
-type MappedLancamentos = ReturnType<typeof mapLancamentosData>;
+type MappedLancamentos = ReturnType<typeof mapTransactionsData>;
 
 export type CategoryDetailData = {
 	category: {
@@ -34,8 +39,8 @@ export async function fetchCategoryDetails(
 	categoryId: string,
 	period: string,
 ): Promise<CategoryDetailData | null> {
-	const category = await db.query.categorias.findFirst({
-		where: and(eq(categorias.userId, userId), eq(categorias.id, categoryId)),
+	const category = await db.query.categories.findFirst({
+		where: and(eq(categories.userId, userId), eq(categories.id, categoryId)),
 	});
 
 	if (!category) {
@@ -46,35 +51,35 @@ export async function fetchCategoryDetails(
 	const transactionType = category.type === "receita" ? "Receita" : "Despesa";
 
 	const sanitizedNote = or(
-		isNull(lancamentos.note),
-		sql`${lancamentos.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
+		isNull(transactions.note),
+		sql`${transactions.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 	);
 
-	const currentRows = await db.query.lancamentos.findMany({
+	const currentRows = await db.query.transactions.findMany({
 		where: and(
-			eq(lancamentos.userId, userId),
-			eq(lancamentos.categoriaId, categoryId),
-			eq(lancamentos.transactionType, transactionType),
-			eq(lancamentos.period, period),
+			eq(transactions.userId, userId),
+			eq(transactions.categoryId, categoryId),
+			eq(transactions.transactionType, transactionType),
+			eq(transactions.period, period),
 			sanitizedNote,
 		),
 		with: {
-			pagador: true,
-			conta: true,
-			cartao: true,
-			categoria: true,
+			payer: true,
+			financialAccount: true,
+			card: true,
+			category: true,
 		},
-		orderBy: [desc(lancamentos.purchaseDate), desc(lancamentos.createdAt)],
+		orderBy: [desc(transactions.purchaseDate), desc(transactions.createdAt)],
 	});
 
 	const filteredRows = currentRows.filter((row) => {
-		// Filtrar apenas pagadores admin
-		if (row.pagador?.role !== PAGADOR_ROLE_ADMIN) return false;
+		// Filtrar apenas payers admin
+		if (row.payer?.role !== PAYER_ROLE_ADMIN) return false;
 
 		// Excluir saldos iniciais se a conta tiver o flag ativo
 		if (
 			row.note === INITIAL_BALANCE_NOTE &&
-			row.conta?.excludeInitialBalanceFromIncome
+			row.financialAccount?.excludeInitialBalanceFromIncome
 		) {
 			return false;
 		}
@@ -82,33 +87,36 @@ export async function fetchCategoryDetails(
 		return true;
 	});
 
-	const transactions = mapLancamentosData(filteredRows);
+	const transactionList = mapTransactionsData(filteredRows);
 
-	const currentTotal = transactions.reduce(
+	const currentTotal = transactionList.reduce(
 		(total, transaction) => total + Math.abs(toNumber(transaction.amount)),
 		0,
 	);
 
 	const [previousTotalRow] = await db
 		.select({
-			total: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+			total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 		})
-		.from(lancamentos)
-		.innerJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
-		.leftJoin(contas, eq(lancamentos.contaId, contas.id))
+		.from(transactions)
+		.innerJoin(payers, eq(transactions.payerId, payers.id))
+		.leftJoin(
+			financialAccounts,
+			eq(transactions.accountId, financialAccounts.id),
+		)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.categoriaId, categoryId),
-				eq(lancamentos.transactionType, transactionType),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
+				eq(transactions.userId, userId),
+				eq(transactions.categoryId, categoryId),
+				eq(transactions.transactionType, transactionType),
+				eq(payers.role, PAYER_ROLE_ADMIN),
 				sanitizedNote,
-				eq(lancamentos.period, previousPeriod),
+				eq(transactions.period, previousPeriod),
 				// Excluir saldos iniciais se a conta tiver o flag ativo
 				or(
-					ne(lancamentos.note, INITIAL_BALANCE_NOTE),
-					isNull(contas.excludeInitialBalanceFromIncome),
-					eq(contas.excludeInitialBalanceFromIncome, false),
+					ne(transactions.note, INITIAL_BALANCE_NOTE),
+					isNull(financialAccounts.excludeInitialBalanceFromIncome),
+					eq(financialAccounts.excludeInitialBalanceFromIncome, false),
 				),
 			),
 		);
@@ -131,6 +139,6 @@ export async function fetchCategoryDetails(
 		currentTotal,
 		previousTotal,
 		percentageChange,
-		transactions,
+		transactions: transactionList,
 	};
 }

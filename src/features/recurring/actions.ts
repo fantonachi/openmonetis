@@ -12,7 +12,7 @@ import { db } from "@/shared/lib/db";
 import { recurringSeriesActionSchema } from "@/shared/lib/schemas/recurring-series";
 import type { ActionResult } from "@/shared/lib/types/actions";
 
-const revalidate = () => revalidateForEntity("recorrentes");
+const revalidate = () => revalidateForEntity("recurring");
 
 async function findRecurringSeriesForUser(userId: string, seriesId: string) {
 	const [series] = await db

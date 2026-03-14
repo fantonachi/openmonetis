@@ -31,7 +31,7 @@ export function useInvoicesWidgetController(
 		isItemConfirmed: (invoice) => isInvoicePaid(invoice.paymentStatus),
 		executeConfirm: (invoice) =>
 			updateInvoicePaymentStatusAction({
-				cartaoId: invoice.cardId,
+				cardId: invoice.cardId,
 				period: invoice.period,
 				status: INVOICE_PAYMENT_STATUS.PAID,
 			}),

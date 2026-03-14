@@ -1,24 +1,24 @@
 import type {
-	LancamentoItem,
 	SelectOption,
+	TransactionItem,
 } from "@/features/transactions/components/types";
 
 export type CalendarEvent =
 	| {
 			id: string;
-			type: "lancamento";
+			type: "transaction";
 			date: string;
-			lancamento: LancamentoItem;
+			transaction: TransactionItem;
 	  }
 	| {
 			id: string;
 			type: "boleto";
 			date: string;
-			lancamento: LancamentoItem;
+			transaction: TransactionItem;
 	  }
 	| {
 			id: string;
-			type: "cartao";
+			type: "card";
 			date: string;
 			card: {
 				id: string;
@@ -47,12 +47,12 @@ export type CalendarDay = {
 };
 
 export type CalendarFormOptions = {
-	pagadorOptions: SelectOption[];
-	splitPagadorOptions: SelectOption[];
-	defaultPagadorId: string | null;
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
-	categoriaOptions: SelectOption[];
+	payerOptions: SelectOption[];
+	splitPayerOptions: SelectOption[];
+	defaultPayerId: string | null;
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
+	categoryOptions: SelectOption[];
 	estabelecimentos: string[];
 };
 

@@ -3,10 +3,10 @@
 import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { z } from "zod";
 import {
-	antecipacoesParcelas,
-	categorias,
-	lancamentos,
-	pagadores,
+	categories,
+	installmentAnticipations,
+	payers,
+	transactions,
 } from "@/db/schema";
 import {
 	handleActionError,
@@ -47,8 +47,8 @@ const createAnticipationSchema = z.object({
 		.min(0, "Informe um desconto maior ou igual a zero.")
 		.optional()
 		.default(0),
-	pagadorId: uuidSchema("Pagador").optional(),
-	categoriaId: uuidSchema("Categoria").optional(),
+	payerId: uuidSchema("Payer").optional(),
+	categoryId: uuidSchema("Category").optional(),
 	note: z.string().trim().optional(),
 });
 
@@ -72,16 +72,16 @@ export async function getEligibleInstallmentsAction(
 		const validatedSeriesId = uuidSchema("Série").parse(seriesId);
 
 		// Buscar todas as parcelas da série que estão elegíveis
-		const rows = await db.query.lancamentos.findMany({
+		const rows = await db.query.transactions.findMany({
 			where: and(
-				eq(lancamentos.seriesId, validatedSeriesId),
-				eq(lancamentos.userId, user.id),
-				eq(lancamentos.condition, "Parcelado"),
+				eq(transactions.seriesId, validatedSeriesId),
+				eq(transactions.userId, user.id),
+				eq(transactions.condition, "Parcelado"),
 				// Apenas parcelas não pagas e não antecipadas
-				or(eq(lancamentos.isSettled, false), isNull(lancamentos.isSettled)),
-				eq(lancamentos.isAnticipated, false),
+				or(eq(transactions.isSettled, false), isNull(transactions.isSettled)),
+				eq(transactions.isAnticipated, false),
 			),
-			orderBy: [asc(lancamentos.currentInstallment)],
+			orderBy: [asc(transactions.currentInstallment)],
 			columns: {
 				id: true,
 				name: true,
@@ -92,8 +92,8 @@ export async function getEligibleInstallmentsAction(
 				currentInstallment: true,
 				installmentCount: true,
 				paymentMethod: true,
-				categoriaId: true,
-				pagadorId: true,
+				categoryId: true,
+				payerId: true,
 			},
 		});
 
@@ -107,8 +107,8 @@ export async function getEligibleInstallmentsAction(
 			currentInstallment: row.currentInstallment,
 			installmentCount: row.installmentCount,
 			paymentMethod: row.paymentMethod,
-			categoriaId: row.categoriaId,
-			pagadorId: row.pagadorId,
+			categoryId: row.categoryId,
+			payerId: row.payerId,
 		}));
 
 		return {
@@ -132,13 +132,13 @@ export async function createInstallmentAnticipationAction(
 		const data = createAnticipationSchema.parse(input);
 
 		// 1. Validar parcelas selecionadas
-		const installments = await db.query.lancamentos.findMany({
+		const installments = await db.query.transactions.findMany({
 			where: and(
-				inArray(lancamentos.id, data.installmentIds),
-				eq(lancamentos.userId, user.id),
-				eq(lancamentos.seriesId, data.seriesId),
-				or(eq(lancamentos.isSettled, false), isNull(lancamentos.isSettled)),
-				eq(lancamentos.isAnticipated, false),
+				inArray(transactions.id, data.installmentIds),
+				eq(transactions.userId, user.id),
+				eq(transactions.seriesId, data.seriesId),
+				or(eq(transactions.isSettled, false), isNull(transactions.isSettled)),
+				eq(transactions.isAnticipated, false),
 			),
 		});
 
@@ -187,8 +187,8 @@ export async function createInstallmentAnticipationAction(
 		// 4. Criar lançamento e antecipação em transação
 		await db.transaction(async (tx: typeof db) => {
 			// 4.1. Criar o lançamento de antecipação (com desconto aplicado)
-			const [newLancamento] = await tx
-				.insert(lancamentos)
+			const [newLancamento] = (await tx
+				.insert(transactions)
 				.values({
 					name: generateAnticipationDescription(
 						firstInstallment.name,
@@ -202,10 +202,10 @@ export async function createInstallmentAnticipationAction(
 					period: data.anticipationPeriod,
 					dueDate: null,
 					isSettled: false,
-					pagadorId: data.pagadorId ?? firstInstallment.pagadorId,
-					categoriaId: data.categoriaId ?? firstInstallment.categoriaId,
-					cartaoId: firstInstallment.cartaoId,
-					contaId: firstInstallment.contaId,
+					payerId: data.payerId ?? firstInstallment.payerId,
+					categoryId: data.categoryId ?? firstInstallment.categoryId,
+					cardId: firstInstallment.cardId,
+					accountId: firstInstallment.accountId,
 					note:
 						data.note ||
 						generateAnticipationNote(
@@ -219,8 +219,8 @@ export async function createInstallmentAnticipationAction(
 								currentInstallment: inst.currentInstallment,
 								installmentCount: inst.installmentCount,
 								paymentMethod: inst.paymentMethod,
-								categoriaId: inst.categoriaId,
-								pagadorId: inst.pagadorId,
+								categoryId: inst.categoryId,
+								payerId: inst.payerId,
 							})),
 						),
 					userId: user.id,
@@ -234,11 +234,11 @@ export async function createInstallmentAnticipationAction(
 					anticipationId: null,
 					boletoPaymentDate: null,
 				})
-				.returning();
+				.returning()) as Array<typeof transactions.$inferSelect>;
 
 			// 4.2. Criar registro de antecipação
-			const [anticipation] = await tx
-				.insert(antecipacoesParcelas)
+			const [anticipation] = (await tx
+				.insert(installmentAnticipations)
 				.values({
 					seriesId: data.seriesId,
 					anticipationPeriod: data.anticipationPeriod,
@@ -247,26 +247,26 @@ export async function createInstallmentAnticipationAction(
 					totalAmount: formatDecimalForDbRequired(totalAmount),
 					installmentCount: installments.length,
 					discount: formatDecimalForDbRequired(discount),
-					lancamentoId: newLancamento.id,
-					pagadorId: data.pagadorId ?? firstInstallment.pagadorId,
-					categoriaId: data.categoriaId ?? firstInstallment.categoriaId,
+					transactionId: newLancamento.id,
+					payerId: data.payerId ?? firstInstallment.payerId,
+					categoryId: data.categoryId ?? firstInstallment.categoryId,
 					note: data.note || null,
 					userId: user.id,
 				})
-				.returning();
+				.returning()) as Array<typeof installmentAnticipations.$inferSelect>;
 
 			// 4.3. Marcar parcelas como antecipadas e zerar seus valores
 			await tx
-				.update(lancamentos)
+				.update(transactions)
 				.set({
 					isAnticipated: true,
 					anticipationId: anticipation.id,
 					amount: "0", // Zera o valor para não contar em dobro
 				})
-				.where(inArray(lancamentos.id, data.installmentIds));
+				.where(inArray(transactions.id, data.installmentIds));
 		});
 
-		revalidateForEntity("lancamentos");
+		revalidateForEntity("transactions");
 
 		return {
 			success: true,
@@ -296,40 +296,43 @@ export async function getInstallmentAnticipationsAction(
 		// Usar query builder ao invés de db.query para evitar problemas de tipagem
 		const anticipations = await db
 			.select({
-				id: antecipacoesParcelas.id,
-				seriesId: antecipacoesParcelas.seriesId,
-				anticipationPeriod: antecipacoesParcelas.anticipationPeriod,
-				anticipationDate: antecipacoesParcelas.anticipationDate,
+				id: installmentAnticipations.id,
+				seriesId: installmentAnticipations.seriesId,
+				anticipationPeriod: installmentAnticipations.anticipationPeriod,
+				anticipationDate: installmentAnticipations.anticipationDate,
 				anticipatedInstallmentIds:
-					antecipacoesParcelas.anticipatedInstallmentIds,
-				totalAmount: antecipacoesParcelas.totalAmount,
-				installmentCount: antecipacoesParcelas.installmentCount,
-				discount: antecipacoesParcelas.discount,
-				lancamentoId: antecipacoesParcelas.lancamentoId,
-				pagadorId: antecipacoesParcelas.pagadorId,
-				categoriaId: antecipacoesParcelas.categoriaId,
-				note: antecipacoesParcelas.note,
-				userId: antecipacoesParcelas.userId,
-				createdAt: antecipacoesParcelas.createdAt,
+					installmentAnticipations.anticipatedInstallmentIds,
+				totalAmount: installmentAnticipations.totalAmount,
+				installmentCount: installmentAnticipations.installmentCount,
+				discount: installmentAnticipations.discount,
+				transactionId: installmentAnticipations.transactionId,
+				payerId: installmentAnticipations.payerId,
+				categoryId: installmentAnticipations.categoryId,
+				note: installmentAnticipations.note,
+				userId: installmentAnticipations.userId,
+				createdAt: installmentAnticipations.createdAt,
 				// Joins
-				lancamento: lancamentos,
-				pagador: pagadores,
-				categoria: categorias,
+				transaction: transactions,
+				payer: payers,
+				category: categories,
 			})
-			.from(antecipacoesParcelas)
+			.from(installmentAnticipations)
 			.leftJoin(
-				lancamentos,
-				eq(antecipacoesParcelas.lancamentoId, lancamentos.id),
+				transactions,
+				eq(installmentAnticipations.transactionId, transactions.id),
 			)
-			.leftJoin(pagadores, eq(antecipacoesParcelas.pagadorId, pagadores.id))
-			.leftJoin(categorias, eq(antecipacoesParcelas.categoriaId, categorias.id))
+			.leftJoin(payers, eq(installmentAnticipations.payerId, payers.id))
+			.leftJoin(
+				categories,
+				eq(installmentAnticipations.categoryId, categories.id),
+			)
 			.where(
 				and(
-					eq(antecipacoesParcelas.seriesId, validatedSeriesId),
-					eq(antecipacoesParcelas.userId, user.id),
+					eq(installmentAnticipations.seriesId, validatedSeriesId),
+					eq(installmentAnticipations.userId, user.id),
 				),
 			)
-			.orderBy(desc(antecipacoesParcelas.createdAt));
+			.orderBy(desc(installmentAnticipations.createdAt));
 
 		return {
 			success: true,
@@ -358,32 +361,32 @@ export async function cancelInstallmentAnticipationAction(
 			// 1. Buscar antecipação usando query builder
 			const anticipationRows = await tx
 				.select({
-					id: antecipacoesParcelas.id,
-					seriesId: antecipacoesParcelas.seriesId,
-					anticipationPeriod: antecipacoesParcelas.anticipationPeriod,
-					anticipationDate: antecipacoesParcelas.anticipationDate,
+					id: installmentAnticipations.id,
+					seriesId: installmentAnticipations.seriesId,
+					anticipationPeriod: installmentAnticipations.anticipationPeriod,
+					anticipationDate: installmentAnticipations.anticipationDate,
 					anticipatedInstallmentIds:
-						antecipacoesParcelas.anticipatedInstallmentIds,
-					totalAmount: antecipacoesParcelas.totalAmount,
-					installmentCount: antecipacoesParcelas.installmentCount,
-					discount: antecipacoesParcelas.discount,
-					lancamentoId: antecipacoesParcelas.lancamentoId,
-					pagadorId: antecipacoesParcelas.pagadorId,
-					categoriaId: antecipacoesParcelas.categoriaId,
-					note: antecipacoesParcelas.note,
-					userId: antecipacoesParcelas.userId,
-					createdAt: antecipacoesParcelas.createdAt,
-					lancamento: lancamentos,
+						installmentAnticipations.anticipatedInstallmentIds,
+					totalAmount: installmentAnticipations.totalAmount,
+					installmentCount: installmentAnticipations.installmentCount,
+					discount: installmentAnticipations.discount,
+					transactionId: installmentAnticipations.transactionId,
+					payerId: installmentAnticipations.payerId,
+					categoryId: installmentAnticipations.categoryId,
+					note: installmentAnticipations.note,
+					userId: installmentAnticipations.userId,
+					createdAt: installmentAnticipations.createdAt,
+					transaction: transactions,
 				})
-				.from(antecipacoesParcelas)
+				.from(installmentAnticipations)
 				.leftJoin(
-					lancamentos,
-					eq(antecipacoesParcelas.lancamentoId, lancamentos.id),
+					transactions,
+					eq(installmentAnticipations.transactionId, transactions.id),
 				)
 				.where(
 					and(
-						eq(antecipacoesParcelas.id, data.anticipationId),
-						eq(antecipacoesParcelas.userId, user.id),
+						eq(installmentAnticipations.id, data.anticipationId),
+						eq(installmentAnticipations.userId, user.id),
 					),
 				)
 				.limit(1);
@@ -395,7 +398,7 @@ export async function cancelInstallmentAnticipationAction(
 			}
 
 			// 2. Verificar se o lançamento já foi pago
-			if (anticipation.lancamento?.isSettled === true) {
+			if (anticipation.transaction?.isSettled === true) {
 				throw new Error(
 					"Não é possível cancelar uma antecipação já paga. Remova o pagamento primeiro.",
 				);
@@ -408,7 +411,7 @@ export async function cancelInstallmentAnticipationAction(
 
 			// 4. Remover flag de antecipação e restaurar valores das parcelas
 			await tx
-				.update(lancamentos)
+				.update(transactions)
 				.set({
 					isAnticipated: false,
 					anticipationId: null,
@@ -416,23 +419,23 @@ export async function cancelInstallmentAnticipationAction(
 				})
 				.where(
 					inArray(
-						lancamentos.id,
+						transactions.id,
 						anticipation.anticipatedInstallmentIds as string[],
 					),
 				);
 
 			// 5. Deletar lançamento de antecipação
 			await tx
-				.delete(lancamentos)
-				.where(eq(lancamentos.id, anticipation.lancamentoId));
+				.delete(transactions)
+				.where(eq(transactions.id, anticipation.transactionId));
 
 			// 6. Deletar registro de antecipação
 			await tx
-				.delete(antecipacoesParcelas)
-				.where(eq(antecipacoesParcelas.id, data.anticipationId));
+				.delete(installmentAnticipations)
+				.where(eq(installmentAnticipations.id, data.anticipationId));
 		});
 
-		revalidateForEntity("lancamentos");
+		revalidateForEntity("transactions");
 
 		return {
 			success: true,
@@ -455,15 +458,15 @@ export async function getAnticipationDetailsAction(
 		// Validar anticipationId
 		const validatedId = uuidSchema("Antecipação").parse(anticipationId);
 
-		const anticipation = await db.query.antecipacoesParcelas.findFirst({
+		const anticipation = await db.query.installmentAnticipations.findFirst({
 			where: and(
-				eq(antecipacoesParcelas.id, validatedId),
-				eq(antecipacoesParcelas.userId, user.id),
+				eq(installmentAnticipations.id, validatedId),
+				eq(installmentAnticipations.userId, user.id),
 			),
 			with: {
-				lancamento: true,
-				pagador: true,
-				categoria: true,
+				transaction: true,
+				payer: true,
+				category: true,
 			},
 		});
 

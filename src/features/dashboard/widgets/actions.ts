@@ -18,21 +18,21 @@ export async function updateWidgetPreferences(
 
 		// Check if preferences exist
 		const existing = await db
-			.select({ id: schema.preferenciasUsuario.id })
-			.from(schema.preferenciasUsuario)
-			.where(eq(schema.preferenciasUsuario.userId, user.id))
+			.select({ id: schema.userPreferences.id })
+			.from(schema.userPreferences)
+			.where(eq(schema.userPreferences.userId, user.id))
 			.limit(1);
 
 		if (existing.length > 0) {
 			await db
-				.update(schema.preferenciasUsuario)
+				.update(schema.userPreferences)
 				.set({
 					dashboardWidgets: preferences,
 					updatedAt: new Date(),
 				})
-				.where(eq(schema.preferenciasUsuario.userId, user.id));
+				.where(eq(schema.userPreferences.userId, user.id));
 		} else {
-			await db.insert(schema.preferenciasUsuario).values({
+			await db.insert(schema.userPreferences).values({
 				userId: user.id,
 				dashboardWidgets: preferences,
 			});
@@ -54,12 +54,12 @@ export async function resetWidgetPreferences(): Promise<{
 		const user = await getUser();
 
 		await db
-			.update(schema.preferenciasUsuario)
+			.update(schema.userPreferences)
 			.set({
 				dashboardWidgets: null,
 				updatedAt: new Date(),
 			})
-			.where(eq(schema.preferenciasUsuario.userId, user.id));
+			.where(eq(schema.userPreferences.userId, user.id));
 
 		revalidatePath("/dashboard");
 		return { success: true };

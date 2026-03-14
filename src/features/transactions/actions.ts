@@ -5,17 +5,17 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { RecurringSeriesTemplate } from "@/db/schema";
 import {
-	cartoes,
-	categorias,
-	contas,
-	lancamentos,
-	pagadores,
+	cards,
+	categories,
+	financialAccounts,
+	payers,
 	recurringSeries,
+	transactions,
 } from "@/db/schema";
 import {
-	LANCAMENTO_CONDITIONS,
-	LANCAMENTO_PAYMENT_METHODS,
-	LANCAMENTO_TRANSACTION_TYPES,
+	PAYMENT_METHODS,
+	TRANSACTION_CONDITIONS,
+	TRANSACTION_TYPES,
 } from "@/features/transactions/constants";
 import {
 	INITIAL_BALANCE_CONDITION,
@@ -30,8 +30,8 @@ import {
 import { getUser } from "@/shared/lib/auth/server";
 import { db } from "@/shared/lib/db";
 import {
-	buildEntriesByPagador,
-	sendPagadorAutoEmails,
+	buildEntriesByPayer,
+	sendPayerAutoEmails,
 } from "@/shared/lib/payers/notifications";
 import { noteSchema, uuidSchema } from "@/shared/lib/schemas/common";
 import type { ActionResult } from "@/shared/lib/types/actions";
@@ -48,12 +48,12 @@ import { addMonthsToPeriod } from "@/shared/utils/period";
 
 async function validatePagadorOwnership(
 	userId: string,
-	pagadorId: string | null | undefined,
+	payerId: string | null | undefined,
 ): Promise<boolean> {
-	if (!pagadorId) return true; // Se não tem pagadorId, não precisa validar
+	if (!payerId) return true; // Se não tem payerId, não precisa validar
 
-	const pagador = await db.query.pagadores.findFirst({
-		where: and(eq(pagadores.id, pagadorId), eq(pagadores.userId, userId)),
+	const pagador = await db.query.payers.findFirst({
+		where: and(eq(payers.id, payerId), eq(payers.userId, userId)),
 	});
 
 	return !!pagador;
@@ -61,12 +61,12 @@ async function validatePagadorOwnership(
 
 async function validateCategoriaOwnership(
 	userId: string,
-	categoriaId: string | null | undefined,
+	categoryId: string | null | undefined,
 ): Promise<boolean> {
-	if (!categoriaId) return true;
+	if (!categoryId) return true;
 
-	const categoria = await db.query.categorias.findFirst({
-		where: and(eq(categorias.id, categoriaId), eq(categorias.userId, userId)),
+	const categoria = await db.query.categories.findFirst({
+		where: and(eq(categories.id, categoryId), eq(categories.userId, userId)),
 	});
 
 	return !!categoria;
@@ -74,12 +74,15 @@ async function validateCategoriaOwnership(
 
 async function validateContaOwnership(
 	userId: string,
-	contaId: string | null | undefined,
+	accountId: string | null | undefined,
 ): Promise<boolean> {
-	if (!contaId) return true;
+	if (!accountId) return true;
 
-	const conta = await db.query.contas.findFirst({
-		where: and(eq(contas.id, contaId), eq(contas.userId, userId)),
+	const conta = await db.query.financialAccounts.findFirst({
+		where: and(
+			eq(financialAccounts.id, accountId),
+			eq(financialAccounts.userId, userId),
+		),
 	});
 
 	return !!conta;
@@ -87,12 +90,12 @@ async function validateContaOwnership(
 
 async function validateCartaoOwnership(
 	userId: string,
-	cartaoId: string | null | undefined,
+	cardId: string | null | undefined,
 ): Promise<boolean> {
-	if (!cartaoId) return true;
+	if (!cardId) return true;
 
-	const cartao = await db.query.cartoes.findFirst({
-		where: and(eq(cartoes.id, cartaoId), eq(cartoes.userId, userId)),
+	const cartao = await db.query.cards.findFirst({
+		where: and(eq(cards.id, cardId), eq(cards.userId, userId)),
 	});
 
 	return !!cartao;
@@ -139,27 +142,27 @@ const baseFields = z.object({
 		.trim()
 		.min(1, "Informe o estabelecimento."),
 	transactionType: z
-		.enum(LANCAMENTO_TRANSACTION_TYPES, {
+		.enum(TRANSACTION_TYPES, {
 			message: "Selecione um tipo de transação válido.",
 		})
-		.default(LANCAMENTO_TRANSACTION_TYPES[0]),
+		.default(TRANSACTION_TYPES[0]),
 	amount: z.coerce
 		.number({ message: "Informe o valor da transação." })
 		.min(0, "Informe um valor maior ou igual a zero."),
-	condition: z.enum(LANCAMENTO_CONDITIONS, {
+	condition: z.enum(TRANSACTION_CONDITIONS, {
 		message: "Selecione uma condição válida.",
 	}),
-	paymentMethod: z.enum(LANCAMENTO_PAYMENT_METHODS, {
+	paymentMethod: z.enum(PAYMENT_METHODS, {
 		message: "Selecione uma forma de pagamento válida.",
 	}),
-	pagadorId: uuidSchema("Pagador").nullable().optional(),
-	secondaryPagadorId: uuidSchema("Pagador secundário").optional(),
+	payerId: uuidSchema("Payer").nullable().optional(),
+	secondaryPayerId: uuidSchema("Payer secundário").optional(),
 	isSplit: z.boolean().optional().default(false),
 	primarySplitAmount: z.coerce.number().min(0).optional(),
 	secondarySplitAmount: z.coerce.number().min(0).optional(),
-	contaId: uuidSchema("Conta").nullable().optional(),
-	cartaoId: uuidSchema("Cartão").nullable().optional(),
-	categoriaId: uuidSchema("Categoria").nullable().optional(),
+	accountId: uuidSchema("FinancialAccount").nullable().optional(),
+	cardId: uuidSchema("Cartão").nullable().optional(),
+	categoryId: uuidSchema("Category").nullable().optional(),
 	note: noteSchema,
 	installmentCount: z.coerce
 		.number()
@@ -194,26 +197,26 @@ const refineLancamento = (
 	data: z.infer<typeof baseFields> & { id?: string },
 	ctx: z.RefinementCtx,
 ) => {
-	if (!data.categoriaId) {
+	if (!data.categoryId) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
-			path: ["categoriaId"],
+			path: ["categoryId"],
 			message: "Selecione uma categoria.",
 		});
 	}
 
 	if (data.paymentMethod === "Cartão de crédito") {
-		if (!data.cartaoId) {
+		if (!data.cardId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				path: ["cartaoId"],
+				path: ["cardId"],
 				message: "Selecione o cartão.",
 			});
 		}
-	} else if (!data.contaId) {
+	} else if (!data.accountId) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
-			path: ["contaId"],
+			path: ["accountId"],
 			message: "Selecione a conta.",
 		});
 	}
@@ -235,24 +238,24 @@ const refineLancamento = (
 	}
 
 	if (data.isSplit) {
-		if (!data.pagadorId) {
+		if (!data.payerId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				path: ["pagadorId"],
+				path: ["payerId"],
 				message: "Selecione o pagador principal para dividir o lançamento.",
 			});
 		}
 
-		if (!data.secondaryPagadorId) {
+		if (!data.secondaryPayerId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				path: ["secondaryPagadorId"],
+				path: ["secondaryPayerId"],
 				message: "Selecione o pagador secundário para dividir o lançamento.",
 			});
-		} else if (data.pagadorId && data.secondaryPagadorId === data.pagadorId) {
+		} else if (data.payerId && data.secondaryPayerId === data.payerId) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
-				path: ["secondaryPagadorId"],
+				path: ["secondaryPayerId"],
 				message: "Escolha um pagador diferente para dividir o lançamento.",
 			});
 		}
@@ -300,7 +303,7 @@ type UpdateInput = z.infer<typeof updateSchema>;
 type DeleteInput = z.infer<typeof deleteSchema>;
 type ToggleSettlementInput = z.infer<typeof toggleSettlementSchema>;
 
-const revalidate = () => revalidateForEntity("lancamentos");
+const revalidate = () => revalidateForEntity("transactions");
 
 const resolveUserLabel = (user: {
 	name?: string | null;
@@ -367,27 +370,27 @@ const addMonthsToDate = (value: Date, offset: number) => {
 };
 
 type Share = {
-	pagadorId: string | null;
+	payerId: string | null;
 	amountCents: number;
 };
 
 const buildShares = ({
 	totalCents,
-	pagadorId,
+	payerId,
 	isSplit,
-	secondaryPagadorId,
+	secondaryPayerId,
 	primarySplitAmountCents,
 	secondarySplitAmountCents,
 }: {
 	totalCents: number;
-	pagadorId: string | null;
+	payerId: string | null;
 	isSplit: boolean;
-	secondaryPagadorId?: string;
+	secondaryPayerId?: string;
 	primarySplitAmountCents?: number;
 	secondarySplitAmountCents?: number;
 }): Share[] => {
 	if (isSplit) {
-		if (!pagadorId || !secondaryPagadorId) {
+		if (!payerId || !secondaryPayerId) {
 			throw new Error("Configuração de divisão inválida para o lançamento.");
 		}
 
@@ -397,9 +400,9 @@ const buildShares = ({
 			secondarySplitAmountCents !== undefined
 		) {
 			return [
-				{ pagadorId, amountCents: primarySplitAmountCents },
+				{ payerId, amountCents: primarySplitAmountCents },
 				{
-					pagadorId: secondaryPagadorId,
+					payerId: secondaryPayerId,
 					amountCents: secondarySplitAmountCents,
 				},
 			];
@@ -408,15 +411,15 @@ const buildShares = ({
 		// Fallback to equal split
 		const [primaryAmount, secondaryAmount] = splitAmount(totalCents, 2);
 		return [
-			{ pagadorId, amountCents: primaryAmount },
-			{ pagadorId: secondaryPagadorId, amountCents: secondaryAmount },
+			{ payerId, amountCents: primaryAmount },
+			{ payerId: secondaryPayerId, amountCents: secondaryAmount },
 		];
 	}
 
-	return [{ pagadorId, amountCents: totalCents }];
+	return [{ payerId, amountCents: totalCents }];
 };
 
-type BuildLancamentoRecordsParams = {
+type BuildTransactionRecordsParams = {
 	data: BaseInput;
 	userId: string;
 	period: string;
@@ -429,7 +432,7 @@ type BuildLancamentoRecordsParams = {
 	seriesId: string | null;
 };
 
-type LancamentoInsert = typeof lancamentos.$inferInsert;
+type TransactionInsert = typeof transactions.$inferInsert;
 
 const buildLancamentoRecords = ({
 	data,
@@ -442,8 +445,8 @@ const buildLancamentoRecords = ({
 	amountSign,
 	shouldNullifySettled,
 	seriesId,
-}: BuildLancamentoRecordsParams): LancamentoInsert[] => {
-	const records: LancamentoInsert[] = [];
+}: BuildTransactionRecordsParams): TransactionInsert[] => {
+	const records: TransactionInsert[] = [];
 
 	const basePayload = {
 		name: data.name,
@@ -451,9 +454,9 @@ const buildLancamentoRecords = ({
 		condition: data.condition,
 		paymentMethod: data.paymentMethod,
 		note: data.note ?? null,
-		contaId: data.contaId ?? null,
-		cartaoId: data.cartaoId ?? null,
-		categoriaId: data.categoriaId ?? null,
+		accountId: data.accountId ?? null,
+		cardId: data.cardId ?? null,
+		categoryId: data.categoryId ?? null,
 		recurrenceCount: null as number | null,
 		installmentCount: null as number | null,
 		currentInstallment: null as number | null,
@@ -495,7 +498,7 @@ const buildLancamentoRecords = ({
 				records.push({
 					...basePayload,
 					amount: centsToDecimalString(amountCents * amountSign),
-					pagadorId: share.pagadorId,
+					payerId: share.payerId,
 					purchaseDate: purchaseDate,
 					period: installmentPeriod,
 					isSettled: settled,
@@ -522,7 +525,7 @@ const buildLancamentoRecords = ({
 			records.push({
 				...basePayload,
 				amount: centsToDecimalString(share.amountCents * amountSign),
-				pagadorId: share.pagadorId,
+				payerId: share.payerId,
 				purchaseDate,
 				period,
 				isSettled: settled,
@@ -541,7 +544,7 @@ const buildLancamentoRecords = ({
 		records.push({
 			...basePayload,
 			amount: centsToDecimalString(share.amountCents * amountSign),
-			pagadorId: share.pagadorId,
+			payerId: share.payerId,
 			purchaseDate,
 			period,
 			isSettled: settled,
@@ -554,7 +557,7 @@ const buildLancamentoRecords = ({
 	return records;
 };
 
-export async function createLancamentoAction(
+export async function createTransactionAction(
 	input: CreateInput,
 ): Promise<ActionResult> {
 	try {
@@ -562,48 +565,48 @@ export async function createLancamentoAction(
 		const data = createSchema.parse(input);
 
 		// Validar propriedade dos recursos referenciados
-		if (data.pagadorId) {
-			const isValid = await validatePagadorOwnership(user.id, data.pagadorId);
+		if (data.payerId) {
+			const isValid = await validatePagadorOwnership(user.id, data.payerId);
 			if (!isValid) {
 				return {
 					success: false,
-					error: "Pagador não encontrado ou sem permissão.",
+					error: "Payer não encontrado ou sem permissão.",
 				};
 			}
 		}
 
-		if (data.secondaryPagadorId) {
+		if (data.secondaryPayerId) {
 			const isValid = await validatePagadorOwnership(
 				user.id,
-				data.secondaryPagadorId,
+				data.secondaryPayerId,
 			);
 			if (!isValid) {
 				return {
 					success: false,
-					error: "Pagador secundário não encontrado ou sem permissão.",
+					error: "Payer secundário não encontrado ou sem permissão.",
 				};
 			}
 		}
 
-		if (data.categoriaId) {
+		if (data.categoryId) {
 			const isValid = await validateCategoriaOwnership(
 				user.id,
-				data.categoriaId,
+				data.categoryId,
 			);
 			if (!isValid) {
-				return { success: false, error: "Categoria não encontrada." };
+				return { success: false, error: "Category não encontrada." };
 			}
 		}
 
-		if (data.contaId) {
-			const isValid = await validateContaOwnership(user.id, data.contaId);
+		if (data.accountId) {
+			const isValid = await validateContaOwnership(user.id, data.accountId);
 			if (!isValid) {
-				return { success: false, error: "Conta não encontrada." };
+				return { success: false, error: "FinancialAccount não encontrada." };
 			}
 		}
 
-		if (data.cartaoId) {
-			const isValid = await validateCartaoOwnership(user.id, data.cartaoId);
+		if (data.cardId) {
+			const isValid = await validateCartaoOwnership(user.id, data.cardId);
 			if (!isValid) {
 				return { success: false, error: "Cartão não encontrado." };
 			}
@@ -626,9 +629,9 @@ export async function createLancamentoAction(
 
 		const shares = buildShares({
 			totalCents,
-			pagadorId: data.pagadorId ?? null,
+			payerId: data.payerId ?? null,
 			isSplit: data.isSplit ?? false,
-			secondaryPagadorId: data.secondaryPagadorId,
+			secondaryPayerId: data.secondaryPayerId,
 			primarySplitAmountCents: data.primarySplitAmount
 				? Math.round(data.primarySplitAmount * 100)
 				: undefined,
@@ -669,10 +672,10 @@ export async function createLancamentoAction(
 					),
 					transactionType: data.transactionType,
 					paymentMethod: data.paymentMethod,
-					categoriaId: data.categoriaId ?? null,
-					contaId: data.contaId ?? null,
-					cartaoId: data.cartaoId ?? null,
-					pagadorId: data.pagadorId ?? null,
+					categoryId: data.categoryId ?? null,
+					accountId: data.accountId ?? null,
+					cardId: data.cardId ?? null,
+					payerId: data.payerId ?? null,
 					note: data.note ?? null,
 					condition: "Recorrente",
 				};
@@ -692,12 +695,12 @@ export async function createLancamentoAction(
 				}
 			}
 
-			await tx.insert(lancamentos).values(records);
+			await tx.insert(transactions).values(records);
 		});
 
-		const notificationEntries = buildEntriesByPagador(
+		const notificationEntries = buildEntriesByPayer(
 			records.map((record) => ({
-				pagadorId: record.pagadorId ?? null,
+				payerId: record.payerId ?? null,
 				name: record.name ?? null,
 				amount: record.amount ?? null,
 				transactionType: record.transactionType ?? null,
@@ -710,7 +713,7 @@ export async function createLancamentoAction(
 		);
 
 		if (notificationEntries.size > 0) {
-			await sendPagadorAutoEmails({
+			await sendPayerAutoEmails({
 				userLabel: resolveUserLabel(user),
 				action: "created",
 				entriesByPagador: notificationEntries,
@@ -725,7 +728,7 @@ export async function createLancamentoAction(
 	}
 }
 
-export async function updateLancamentoAction(
+export async function updateTransactionAction(
 	input: UpdateInput,
 ): Promise<ActionResult> {
 	try {
@@ -733,87 +736,101 @@ export async function updateLancamentoAction(
 		const data = updateSchema.parse(input);
 
 		// Validar propriedade dos recursos referenciados
-		if (data.pagadorId) {
-			const isValid = await validatePagadorOwnership(user.id, data.pagadorId);
+		if (data.payerId) {
+			const isValid = await validatePagadorOwnership(user.id, data.payerId);
 			if (!isValid) {
 				return {
 					success: false,
-					error: "Pagador não encontrado ou sem permissão.",
+					error: "Payer não encontrado ou sem permissão.",
 				};
 			}
 		}
 
-		if (data.secondaryPagadorId) {
+		if (data.secondaryPayerId) {
 			const isValid = await validatePagadorOwnership(
 				user.id,
-				data.secondaryPagadorId,
+				data.secondaryPayerId,
 			);
 			if (!isValid) {
 				return {
 					success: false,
-					error: "Pagador secundário não encontrado ou sem permissão.",
+					error: "Payer secundário não encontrado ou sem permissão.",
 				};
 			}
 		}
 
-		if (data.categoriaId) {
+		if (data.categoryId) {
 			const isValid = await validateCategoriaOwnership(
 				user.id,
-				data.categoriaId,
+				data.categoryId,
 			);
 			if (!isValid) {
-				return { success: false, error: "Categoria não encontrada." };
+				return { success: false, error: "Category não encontrada." };
 			}
 		}
 
-		if (data.contaId) {
-			const isValid = await validateContaOwnership(user.id, data.contaId);
+		if (data.accountId) {
+			const isValid = await validateContaOwnership(user.id, data.accountId);
 			if (!isValid) {
-				return { success: false, error: "Conta não encontrada." };
+				return { success: false, error: "FinancialAccount não encontrada." };
 			}
 		}
 
-		if (data.cartaoId) {
-			const isValid = await validateCartaoOwnership(user.id, data.cartaoId);
+		if (data.cardId) {
+			const isValid = await validateCartaoOwnership(user.id, data.cardId);
 			if (!isValid) {
 				return { success: false, error: "Cartão não encontrado." };
 			}
 		}
 
-		const existing = await db.query.lancamentos.findFirst({
+		const existing = (await db.query.transactions.findFirst({
 			columns: {
 				id: true,
 				note: true,
 				transactionType: true,
 				condition: true,
 				paymentMethod: true,
-				contaId: true,
-				categoriaId: true,
+				accountId: true,
+				categoryId: true,
 			},
-			where: and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)),
+			where: and(
+				eq(transactions.id, data.id),
+				eq(transactions.userId, user.id),
+			),
 			with: {
-				categoria: {
+				category: {
 					columns: {
 						name: true,
 					},
 				},
 			},
-		});
+		})) as
+			| {
+					id: string;
+					note: string | null;
+					transactionType: string;
+					condition: string;
+					paymentMethod: string;
+					accountId: string | null;
+					categoryId: string | null;
+					category: { name: string } | null;
+			  }
+			| undefined;
 
 		if (!existing) {
 			return { success: false, error: "Lançamento não encontrado." };
 		}
 
-		// Bloquear edição de lançamentos com categorias protegidas
+		// Bloquear edição de lançamentos com categories protegidas
 		// Nota: "Transferência interna" foi removida para permitir correção de valores
 		const categoriasProtegidasEdicao = ["Saldo inicial", "Pagamentos"];
 		if (
-			existing.categoria?.name &&
-			categoriasProtegidasEdicao.includes(existing.categoria.name)
+			existing.category?.name &&
+			categoriasProtegidasEdicao.includes(existing.category.name)
 		) {
 			return {
 				success: false,
-				error: `Lançamentos com a categoria '${existing.categoria.name}' não podem ser editados.`,
+				error: `Lançamentos com a categoria '${existing.category.name}' não podem ser editados.`,
 			};
 		}
 
@@ -834,7 +851,7 @@ export async function updateLancamentoAction(
 			: null;
 
 		await db
-			.update(lancamentos)
+			.update(transactions)
 			.set({
 				name: data.name,
 				purchaseDate: parseLocalDateString(data.purchaseDate),
@@ -842,10 +859,10 @@ export async function updateLancamentoAction(
 				amount: normalizedAmount,
 				condition: data.condition,
 				paymentMethod: data.paymentMethod,
-				pagadorId: data.pagadorId ?? null,
-				contaId: data.contaId ?? null,
-				cartaoId: data.cartaoId ?? null,
-				categoriaId: data.categoriaId ?? null,
+				payerId: data.payerId ?? null,
+				accountId: data.accountId ?? null,
+				cardId: data.cardId ?? null,
+				categoryId: data.categoryId ?? null,
 				note: data.note ?? null,
 				isSettled: normalizedSettled,
 				installmentCount: data.installmentCount ?? null,
@@ -854,17 +871,22 @@ export async function updateLancamentoAction(
 				boletoPaymentDate: boletoPaymentDateValue,
 				period,
 			})
-			.where(and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)));
+			.where(
+				and(eq(transactions.id, data.id), eq(transactions.userId, user.id)),
+			);
 
-		if (isInitialBalanceLancamento(existing) && existing?.contaId) {
+		if (isInitialBalanceLancamento(existing) && existing?.accountId) {
 			const updatedInitialBalance = formatDecimalForDbRequired(
 				Math.abs(data.amount ?? 0),
 			);
 			await db
-				.update(contas)
+				.update(financialAccounts)
 				.set({ initialBalance: updatedInitialBalance })
 				.where(
-					and(eq(contas.id, existing.contaId), eq(contas.userId, user.id)),
+					and(
+						eq(financialAccounts.id, existing.accountId),
+						eq(financialAccounts.userId, user.id),
+					),
 				);
 		}
 
@@ -876,18 +898,18 @@ export async function updateLancamentoAction(
 	}
 }
 
-export async function deleteLancamentoAction(
+export async function deleteTransactionAction(
 	input: DeleteInput,
 ): Promise<ActionResult> {
 	try {
 		const user = await getUser();
 		const data = deleteSchema.parse(input);
 
-		const existing = await db.query.lancamentos.findFirst({
+		const existing = (await db.query.transactions.findFirst({
 			columns: {
 				id: true,
 				name: true,
-				pagadorId: true,
+				payerId: true,
 				amount: true,
 				transactionType: true,
 				paymentMethod: true,
@@ -895,43 +917,63 @@ export async function deleteLancamentoAction(
 				purchaseDate: true,
 				period: true,
 				note: true,
-				categoriaId: true,
+				categoryId: true,
 			},
-			where: and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)),
+			where: and(
+				eq(transactions.id, data.id),
+				eq(transactions.userId, user.id),
+			),
 			with: {
-				categoria: {
+				category: {
 					columns: {
 						name: true,
 					},
 				},
 			},
-		});
+		})) as
+			| {
+					id: string;
+					name: string | null;
+					payerId: string | null;
+					amount: string | null;
+					transactionType: string;
+					paymentMethod: string;
+					condition: string;
+					purchaseDate: Date | null;
+					period: string;
+					note: string | null;
+					categoryId: string | null;
+					category: { name: string } | null;
+			  }
+			| undefined;
 
 		if (!existing) {
 			return { success: false, error: "Lançamento não encontrado." };
 		}
 
-		// Bloquear remoção de lançamentos com categorias protegidas
+		// Bloquear remoção de lançamentos com categories protegidas
 		// Nota: "Transferência interna" foi removida para permitir correção/exclusão
 		const categoriasProtegidasRemocao = ["Saldo inicial", "Pagamentos"];
 		if (
-			existing.categoria?.name &&
-			categoriasProtegidasRemocao.includes(existing.categoria.name)
+			existing.category?.name &&
+			categoriasProtegidasRemocao.includes(existing.category.name)
 		) {
 			return {
 				success: false,
-				error: `Lançamentos com a categoria '${existing.categoria.name}' não podem ser removidos.`,
+				error: `Lançamentos com a categoria '${existing.category.name}' não podem ser removidos.`,
 			};
 		}
 
 		await db
-			.delete(lancamentos)
-			.where(and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)));
+			.delete(transactions)
+			.where(
+				and(eq(transactions.id, data.id), eq(transactions.userId, user.id)),
+			);
 
-		if (existing.pagadorId) {
-			const notificationEntries = buildEntriesByPagador([
+		if (existing.payerId) {
+			const notificationEntries = buildEntriesByPayer([
 				{
-					pagadorId: existing.pagadorId,
+					payerId: existing.payerId,
 					name: existing.name ?? null,
 					amount: existing.amount ?? null,
 					transactionType: existing.transactionType ?? null,
@@ -943,7 +985,7 @@ export async function deleteLancamentoAction(
 				},
 			]);
 
-			await sendPagadorAutoEmails({
+			await sendPayerAutoEmails({
 				userLabel: resolveUserLabel(user),
 				action: "deleted",
 				entriesByPagador: notificationEntries,
@@ -958,16 +1000,19 @@ export async function deleteLancamentoAction(
 	}
 }
 
-export async function toggleLancamentoSettlementAction(
+export async function toggleTransactionSettlementAction(
 	input: ToggleSettlementInput,
 ): Promise<ActionResult> {
 	try {
 		const user = await getUser();
 		const data = toggleSettlementSchema.parse(input);
 
-		const existing = await db.query.lancamentos.findFirst({
+		const existing = await db.query.transactions.findFirst({
 			columns: { id: true, paymentMethod: true },
-			where: and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)),
+			where: and(
+				eq(transactions.id, data.id),
+				eq(transactions.userId, user.id),
+			),
 		});
 
 		if (!existing) {
@@ -989,12 +1034,14 @@ export async function toggleLancamentoSettlementAction(
 			: null;
 
 		await db
-			.update(lancamentos)
+			.update(transactions)
 			.set({
 				isSettled: data.value,
 				boletoPaymentDate,
 			})
-			.where(and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)));
+			.where(
+				and(eq(transactions.id, data.id), eq(transactions.userId, user.id)),
+			);
 
 		revalidate();
 
@@ -1018,14 +1065,14 @@ const deleteBulkSchema = z.object({
 
 type DeleteBulkInput = z.infer<typeof deleteBulkSchema>;
 
-export async function deleteLancamentoBulkAction(
+export async function deleteTransactionBulkAction(
 	input: DeleteBulkInput,
 ): Promise<ActionResult> {
 	try {
 		const user = await getUser();
 		const data = deleteBulkSchema.parse(input);
 
-		const existing = await db.query.lancamentos.findFirst({
+		const existing = await db.query.transactions.findFirst({
 			columns: {
 				id: true,
 				name: true,
@@ -1033,7 +1080,10 @@ export async function deleteLancamentoBulkAction(
 				period: true,
 				condition: true,
 			},
-			where: and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)),
+			where: and(
+				eq(transactions.id, data.id),
+				eq(transactions.userId, user.id),
+			),
 		});
 
 		if (!existing) {
@@ -1049,9 +1099,9 @@ export async function deleteLancamentoBulkAction(
 
 		if (data.scope === "current") {
 			await db
-				.delete(lancamentos)
+				.delete(transactions)
 				.where(
-					and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)),
+					and(eq(transactions.id, data.id), eq(transactions.userId, user.id)),
 				);
 
 			revalidate();
@@ -1060,12 +1110,12 @@ export async function deleteLancamentoBulkAction(
 
 		if (data.scope === "future") {
 			await db
-				.delete(lancamentos)
+				.delete(transactions)
 				.where(
 					and(
-						eq(lancamentos.seriesId, existing.seriesId),
-						eq(lancamentos.userId, user.id),
-						sql`${lancamentos.period} >= ${existing.period}`,
+						eq(transactions.seriesId, existing.seriesId),
+						eq(transactions.userId, user.id),
+						sql`${transactions.period} >= ${existing.period}`,
 					),
 				);
 
@@ -1078,11 +1128,11 @@ export async function deleteLancamentoBulkAction(
 
 		if (data.scope === "all") {
 			await db
-				.delete(lancamentos)
+				.delete(transactions)
 				.where(
 					and(
-						eq(lancamentos.seriesId, existing.seriesId),
-						eq(lancamentos.userId, user.id),
+						eq(transactions.seriesId, existing.seriesId),
+						eq(transactions.userId, user.id),
 					),
 				);
 
@@ -1108,11 +1158,11 @@ const updateBulkSchema = z.object({
 		.string({ message: "Informe o estabelecimento." })
 		.trim()
 		.min(1, "Informe o estabelecimento."),
-	categoriaId: uuidSchema("Categoria").nullable().optional(),
+	categoryId: uuidSchema("Category").nullable().optional(),
 	note: noteSchema,
-	pagadorId: uuidSchema("Pagador").nullable().optional(),
-	contaId: uuidSchema("Conta").nullable().optional(),
-	cartaoId: uuidSchema("Cartão").nullable().optional(),
+	payerId: uuidSchema("Payer").nullable().optional(),
+	accountId: uuidSchema("FinancialAccount").nullable().optional(),
+	cardId: uuidSchema("Cartão").nullable().optional(),
 	amount: z.coerce
 		.number({ message: "Informe o valor da transação." })
 		.min(0, "Informe um valor maior ou igual a zero.")
@@ -1137,14 +1187,14 @@ const updateBulkSchema = z.object({
 
 type UpdateBulkInput = z.infer<typeof updateBulkSchema>;
 
-export async function updateLancamentoBulkAction(
+export async function updateTransactionBulkAction(
 	input: UpdateBulkInput,
 ): Promise<ActionResult> {
 	try {
 		const user = await getUser();
 		const data = updateBulkSchema.parse(input);
 
-		const existing = await db.query.lancamentos.findFirst({
+		const existing = await db.query.transactions.findFirst({
 			columns: {
 				id: true,
 				name: true,
@@ -1154,7 +1204,10 @@ export async function updateLancamentoBulkAction(
 				transactionType: true,
 				purchaseDate: true,
 			},
-			where: and(eq(lancamentos.id, data.id), eq(lancamentos.userId, user.id)),
+			where: and(
+				eq(transactions.id, data.id),
+				eq(transactions.userId, user.id),
+			),
 		});
 
 		if (!existing) {
@@ -1170,11 +1223,11 @@ export async function updateLancamentoBulkAction(
 
 		const baseUpdatePayload: Record<string, unknown> = {
 			name: data.name,
-			categoriaId: data.categoriaId ?? null,
+			categoryId: data.categoryId ?? null,
 			note: data.note ?? null,
-			pagadorId: data.pagadorId ?? null,
-			contaId: data.contaId ?? null,
-			cartaoId: data.cartaoId ?? null,
+			payerId: data.payerId ?? null,
+			accountId: data.accountId ?? null,
+			cardId: data.cardId ?? null,
 		};
 
 		if (data.amount !== undefined) {
@@ -1247,12 +1300,12 @@ export async function updateLancamentoBulkAction(
 					}
 
 					await tx
-						.update(lancamentos)
+						.update(transactions)
 						.set(perRecordPayload)
 						.where(
 							and(
-								eq(lancamentos.id, record.id),
-								eq(lancamentos.userId, user.id),
+								eq(transactions.id, record.id),
+								eq(transactions.userId, user.id),
 							),
 						);
 				}
@@ -1272,17 +1325,17 @@ export async function updateLancamentoBulkAction(
 		}
 
 		if (data.scope === "future") {
-			const futureLancamentos = await db.query.lancamentos.findMany({
+			const futureLancamentos = await db.query.transactions.findMany({
 				columns: {
 					id: true,
 					purchaseDate: true,
 				},
 				where: and(
-					eq(lancamentos.seriesId, existing.seriesId),
-					eq(lancamentos.userId, user.id),
-					sql`${lancamentos.period} >= ${existing.period}`,
+					eq(transactions.seriesId, existing.seriesId),
+					eq(transactions.userId, user.id),
+					sql`${transactions.period} >= ${existing.period}`,
 				),
-				orderBy: asc(lancamentos.purchaseDate),
+				orderBy: asc(transactions.purchaseDate),
 			});
 
 			await applyUpdates(
@@ -1300,16 +1353,16 @@ export async function updateLancamentoBulkAction(
 		}
 
 		if (data.scope === "all") {
-			const allLancamentos = await db.query.lancamentos.findMany({
+			const allLancamentos = await db.query.transactions.findMany({
 				columns: {
 					id: true,
 					purchaseDate: true,
 				},
 				where: and(
-					eq(lancamentos.seriesId, existing.seriesId),
-					eq(lancamentos.userId, user.id),
+					eq(transactions.seriesId, existing.seriesId),
+					eq(transactions.userId, user.id),
 				),
-				orderBy: asc(lancamentos.purchaseDate),
+				orderBy: asc(transactions.purchaseDate),
 			});
 
 			await applyUpdates(
@@ -1347,15 +1400,15 @@ const massAddTransactionSchema = z.object({
 	amount: z.coerce
 		.number({ message: "Informe o valor da transação." })
 		.min(0, "Informe um valor maior ou igual a zero."),
-	categoriaId: uuidSchema("Categoria").nullable().optional(),
-	pagadorId: uuidSchema("Pagador").nullable().optional(),
+	categoryId: uuidSchema("Category").nullable().optional(),
+	payerId: uuidSchema("Payer").nullable().optional(),
 });
 
 const massAddSchema = z.object({
 	fixedFields: z.object({
-		transactionType: z.enum(LANCAMENTO_TRANSACTION_TYPES).optional(),
-		paymentMethod: z.enum(LANCAMENTO_PAYMENT_METHODS).optional(),
-		condition: z.enum(LANCAMENTO_CONDITIONS).optional(),
+		transactionType: z.enum(TRANSACTION_TYPES).optional(),
+		paymentMethod: z.enum(PAYMENT_METHODS).optional(),
+		condition: z.enum(TRANSACTION_CONDITIONS).optional(),
 		period: z
 			.string()
 			.trim()
@@ -1363,8 +1416,8 @@ const massAddSchema = z.object({
 				message: "Selecione um período válido.",
 			})
 			.optional(),
-		contaId: uuidSchema("Conta").nullable().optional(),
-		cartaoId: uuidSchema("Cartão").nullable().optional(),
+		accountId: uuidSchema("FinancialAccount").nullable().optional(),
+		cardId: uuidSchema("Cartão").nullable().optional(),
 	}),
 	transactions: z
 		.array(massAddTransactionSchema)
@@ -1373,7 +1426,7 @@ const massAddSchema = z.object({
 
 type MassAddInput = z.infer<typeof massAddSchema>;
 
-export async function createMassLancamentosAction(
+export async function createMassTransactionsAction(
 	input: MassAddInput,
 ): Promise<ActionResult> {
 	try {
@@ -1381,20 +1434,20 @@ export async function createMassLancamentosAction(
 		const data = massAddSchema.parse(input);
 
 		// Validar campos fixos
-		if (data.fixedFields.contaId) {
+		if (data.fixedFields.accountId) {
 			const isValid = await validateContaOwnership(
 				user.id,
-				data.fixedFields.contaId,
+				data.fixedFields.accountId,
 			);
 			if (!isValid) {
-				return { success: false, error: "Conta não encontrada." };
+				return { success: false, error: "FinancialAccount não encontrada." };
 			}
 		}
 
-		if (data.fixedFields.cartaoId) {
+		if (data.fixedFields.cardId) {
 			const isValid = await validateCartaoOwnership(
 				user.id,
-				data.fixedFields.cartaoId,
+				data.fixedFields.cardId,
 			);
 			if (!isValid) {
 				return { success: false, error: "Cartão não encontrado." };
@@ -1405,41 +1458,41 @@ export async function createMassLancamentosAction(
 		for (let i = 0; i < data.transactions.length; i++) {
 			const transaction = data.transactions[i];
 
-			if (transaction.pagadorId) {
+			if (transaction.payerId) {
 				const isValid = await validatePagadorOwnership(
 					user.id,
-					transaction.pagadorId,
+					transaction.payerId,
 				);
 				if (!isValid) {
 					return {
 						success: false,
-						error: `Pagador não encontrado na transação ${i + 1}.`,
+						error: `Payer não encontrado na transação ${i + 1}.`,
 					};
 				}
 			}
 
-			if (transaction.categoriaId) {
+			if (transaction.categoryId) {
 				const isValid = await validateCategoriaOwnership(
 					user.id,
-					transaction.categoriaId,
+					transaction.categoryId,
 				);
 				if (!isValid) {
 					return {
 						success: false,
-						error: `Categoria não encontrada na transação ${i + 1}.`,
+						error: `Category não encontrada na transação ${i + 1}.`,
 					};
 				}
 			}
 		}
 
 		// Default values for non-fixed fields
-		const defaultTransactionType = LANCAMENTO_TRANSACTION_TYPES[0];
-		const defaultCondition = LANCAMENTO_CONDITIONS[0];
-		const defaultPaymentMethod = LANCAMENTO_PAYMENT_METHODS[0];
+		const defaultTransactionType = TRANSACTION_TYPES[0];
+		const defaultCondition = TRANSACTION_CONDITIONS[0];
+		const defaultPaymentMethod = PAYMENT_METHODS[0];
 
-		const allRecords: LancamentoInsert[] = [];
+		const allRecords: TransactionInsert[] = [];
 		const notificationData: Array<{
-			pagadorId: string | null;
+			payerId: string | null;
 			name: string | null;
 			amount: string | null;
 			transactionType: string | null;
@@ -1457,16 +1510,16 @@ export async function createMassLancamentosAction(
 			const condition = data.fixedFields.condition ?? defaultCondition;
 			const paymentMethod =
 				data.fixedFields.paymentMethod ?? defaultPaymentMethod;
-			const pagadorId = transaction.pagadorId ?? null;
-			const contaId =
+			const payerId = transaction.payerId ?? null;
+			const accountId =
 				paymentMethod === "Cartão de crédito"
 					? null
-					: (data.fixedFields.contaId ?? null);
-			const cartaoId =
+					: (data.fixedFields.accountId ?? null);
+			const cardId =
 				paymentMethod === "Cartão de crédito"
-					? (data.fixedFields.cartaoId ?? null)
+					? (data.fixedFields.cardId ?? null)
 					: null;
-			const categoriaId = transaction.categoriaId ?? null;
+			const categoryId = transaction.categoryId ?? null;
 
 			const period =
 				data.fixedFields.period ?? resolvePeriod(transaction.purchaseDate);
@@ -1476,7 +1529,7 @@ export async function createMassLancamentosAction(
 			const amount = centsToDecimalString(totalCents * amountSign);
 			const isSettled = paymentMethod === "Cartão de crédito" ? null : false;
 
-			const record: LancamentoInsert = {
+			const record: TransactionInsert = {
 				name: transaction.name,
 				purchaseDate,
 				period,
@@ -1484,10 +1537,10 @@ export async function createMassLancamentosAction(
 				amount,
 				condition,
 				paymentMethod,
-				pagadorId,
-				contaId,
-				cartaoId,
-				categoriaId,
+				payerId,
+				accountId,
+				cardId,
+				categoryId,
 				note: null,
 				installmentCount: null,
 				recurrenceCount: null,
@@ -1503,7 +1556,7 @@ export async function createMassLancamentosAction(
 			allRecords.push(record);
 
 			notificationData.push({
-				pagadorId,
+				payerId,
 				name: transaction.name,
 				amount,
 				transactionType,
@@ -1521,14 +1574,14 @@ export async function createMassLancamentosAction(
 
 		// Insert all records in a single transaction
 		await db.transaction(async (tx: typeof db) => {
-			await tx.insert(lancamentos).values(allRecords);
+			await tx.insert(transactions).values(allRecords);
 		});
 
 		// Send notifications
-		const notificationEntries = buildEntriesByPagador(notificationData);
+		const notificationEntries = buildEntriesByPayer(notificationData);
 
 		if (notificationEntries.size > 0) {
-			await sendPagadorAutoEmails({
+			await sendPayerAutoEmails({
 				userLabel: resolveUserLabel(user),
 				action: "created",
 				entriesByPagador: notificationEntries,
@@ -1549,7 +1602,7 @@ export async function createMassLancamentosAction(
 	}
 }
 
-// Delete multiple lancamentos at once
+// Delete multiple transactions at once
 const deleteMultipleSchema = z.object({
 	ids: z
 		.array(uuidSchema("Lançamento"))
@@ -1558,19 +1611,19 @@ const deleteMultipleSchema = z.object({
 
 type DeleteMultipleInput = z.infer<typeof deleteMultipleSchema>;
 
-export async function deleteMultipleLancamentosAction(
+export async function deleteMultipleTransactionsAction(
 	input: DeleteMultipleInput,
 ): Promise<ActionResult> {
 	try {
 		const user = await getUser();
 		const data = deleteMultipleSchema.parse(input);
 
-		// Fetch all lancamentos to be deleted
-		const existing = await db.query.lancamentos.findMany({
+		// Fetch all transactions to be deleted
+		const existing = await db.query.transactions.findMany({
 			columns: {
 				id: true,
 				name: true,
-				pagadorId: true,
+				payerId: true,
 				amount: true,
 				transactionType: true,
 				paymentMethod: true,
@@ -1580,8 +1633,8 @@ export async function deleteMultipleLancamentosAction(
 				note: true,
 			},
 			where: and(
-				inArray(lancamentos.id, data.ids),
-				eq(lancamentos.userId, user.id),
+				inArray(transactions.id, data.ids),
+				eq(transactions.userId, user.id),
 			),
 		});
 
@@ -1589,11 +1642,14 @@ export async function deleteMultipleLancamentosAction(
 			return { success: false, error: "Nenhum lançamento encontrado." };
 		}
 
-		// Delete all lancamentos
+		// Delete all transactions
 		await db
-			.delete(lancamentos)
+			.delete(transactions)
 			.where(
-				and(inArray(lancamentos.id, data.ids), eq(lancamentos.userId, user.id)),
+				and(
+					inArray(transactions.id, data.ids),
+					eq(transactions.userId, user.id),
+				),
 			);
 
 		// Send notifications
@@ -1602,11 +1658,11 @@ export async function deleteMultipleLancamentosAction(
 				(
 					item: (typeof existing)[number],
 				): item is typeof item & {
-					pagadorId: NonNullable<typeof item.pagadorId>;
-				} => Boolean(item.pagadorId),
+					payerId: NonNullable<typeof item.payerId>;
+				} => Boolean(item.payerId),
 			)
 			.map((item: (typeof existing)[number]) => ({
-				pagadorId: item.pagadorId,
+				payerId: item.payerId,
 				name: item.name ?? null,
 				amount: item.amount ?? null,
 				transactionType: item.transactionType ?? null,
@@ -1618,9 +1674,9 @@ export async function deleteMultipleLancamentosAction(
 			}));
 
 		if (notificationData.length > 0) {
-			const notificationEntries = buildEntriesByPagador(notificationData);
+			const notificationEntries = buildEntriesByPayer(notificationData);
 
-			await sendPagadorAutoEmails({
+			await sendPayerAutoEmails({
 				userLabel: resolveUserLabel(user),
 				action: "deleted",
 				entriesByPagador: notificationEntries,

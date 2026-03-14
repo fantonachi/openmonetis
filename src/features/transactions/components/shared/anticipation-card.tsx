@@ -23,7 +23,7 @@ import { displayPeriod } from "@/shared/utils/period";
 
 interface AnticipationCardProps {
 	anticipation: InstallmentAnticipationWithRelations;
-	onViewLancamento?: (lancamentoId: string) => void;
+	onViewLancamento?: (transactionId: string) => void;
 	onCanceled?: () => void;
 }
 
@@ -34,7 +34,7 @@ export function AnticipationCard({
 }: AnticipationCardProps) {
 	const [isPending, startTransition] = useTransition();
 
-	const isSettled = anticipation.lancamento.isSettled === true;
+	const isSettled = anticipation.transaction.isSettled === true;
 	const canCancel = !isSettled;
 
 	const formatDate = (date: Date) => {
@@ -57,7 +57,7 @@ export function AnticipationCard({
 	};
 
 	const handleViewLancamento = () => {
-		onViewLancamento?.(anticipation.lancamentoId);
+		onViewLancamento?.(anticipation.transactionId);
 	};
 
 	return (
@@ -132,19 +132,17 @@ export function AnticipationCard({
 						</dd>
 					</div>
 
-					{anticipation.pagador && (
+					{anticipation.payer && (
 						<div>
-							<dt className="text-muted-foreground">Pagador</dt>
-							<dd className="mt-1 font-medium">{anticipation.pagador.name}</dd>
+							<dt className="text-muted-foreground">Payer</dt>
+							<dd className="mt-1 font-medium">{anticipation.payer.name}</dd>
 						</div>
 					)}
 
-					{anticipation.categoria && (
+					{anticipation.category && (
 						<div>
-							<dt className="text-muted-foreground">Categoria</dt>
-							<dd className="mt-1 font-medium">
-								{anticipation.categoria.name}
-							</dd>
+							<dt className="text-muted-foreground">Category</dt>
+							<dd className="mt-1 font-medium">{anticipation.category.name}</dd>
 						</div>
 					)}
 				</dl>

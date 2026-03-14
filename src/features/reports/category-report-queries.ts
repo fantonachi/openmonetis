@@ -1,8 +1,8 @@
 import { and, eq, inArray, isNull, or, sql } from "drizzle-orm";
-import { categorias, lancamentos } from "@/db/schema";
+import { categories, transactions } from "@/db/schema";
 import { ACCOUNT_AUTO_INVOICE_NOTE_PREFIX } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 import type {
 	CategoryReportData,
@@ -28,47 +28,47 @@ export async function fetchCategoryReport(
 	// Generate all periods in the range
 	const periods = generatePeriodRange(startPeriod, endPeriod);
 
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { categories: [], periods, totals: new Map(), grandTotal: 0 };
 	}
 
 	// Build WHERE conditions
 	const whereConditions = [
-		eq(lancamentos.userId, userId),
-		eq(lancamentos.pagadorId, adminPagadorId),
-		inArray(lancamentos.period, periods),
-		or(eq(categorias.type, "despesa"), eq(categorias.type, "receita")),
+		eq(transactions.userId, userId),
+		eq(transactions.payerId, adminPayerId),
+		inArray(transactions.period, periods),
+		or(eq(categories.type, "despesa"), eq(categories.type, "receita")),
 		or(
-			isNull(lancamentos.note),
-			sql`${lancamentos.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
+			isNull(transactions.note),
+			sql`${transactions.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 		),
 	];
 
 	// Add optional category filter
 	if (categoryIds && categoryIds.length > 0) {
-		whereConditions.push(inArray(categorias.id, categoryIds));
+		whereConditions.push(inArray(categories.id, categoryIds));
 	}
 
 	// Query to get aggregated data by category and period
 	const rows = await db
 		.select({
-			categoryId: categorias.id,
-			categoryName: categorias.name,
-			categoryIcon: categorias.icon,
-			categoryType: categorias.type,
-			period: lancamentos.period,
-			total: sql<number>`coalesce(sum(${lancamentos.amount}), 0)`,
+			categoryId: categories.id,
+			categoryName: categories.name,
+			categoryIcon: categories.icon,
+			categoryType: categories.type,
+			period: transactions.period,
+			total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
 		})
-		.from(lancamentos)
-		.innerJoin(categorias, eq(lancamentos.categoriaId, categorias.id))
+		.from(transactions)
+		.innerJoin(categories, eq(transactions.categoryId, categories.id))
 		.where(and(...whereConditions))
 		.groupBy(
-			categorias.id,
-			categorias.name,
-			categorias.icon,
-			categorias.type,
-			lancamentos.period,
+			categories.id,
+			categories.name,
+			categories.icon,
+			categories.type,
+			transactions.period,
 		);
 
 	// Process results into CategoryReportData structure
@@ -171,10 +171,10 @@ export async function fetchCategoryReport(
 	}
 
 	// Convert to array and sort
-	const categories = Array.from(categoryMap.values());
+	const categoryList = Array.from(categoryMap.values());
 
 	// Sort: despesas first (by total desc), then receitas (by total desc)
-	categories.sort((a, b) => {
+	categoryList.sort((a, b) => {
 		// First by type: despesa comes before receita
 		if (a.type !== b.type) {
 			return a.type === "despesa" ? -1 : 1;
@@ -185,12 +185,12 @@ export async function fetchCategoryReport(
 
 	// Calculate grand total
 	let grandTotal = 0;
-	for (const categoryItem of categories) {
+	for (const categoryItem of categoryList) {
 		grandTotal += categoryItem.total;
 	}
 
 	return {
-		categories,
+		categories: categoryList,
 		periods,
 		totals: periodTotalsMap,
 		grandTotal,

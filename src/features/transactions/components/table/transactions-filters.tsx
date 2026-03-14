@@ -14,9 +14,9 @@ import {
 	useTransition,
 } from "react";
 import {
-	LANCAMENTO_CONDITIONS,
-	LANCAMENTO_PAYMENT_METHODS,
-	LANCAMENTO_TRANSACTION_TYPES,
+	PAYMENT_METHODS,
+	TRANSACTION_CONDITIONS,
+	TRANSACTION_TYPES,
 } from "@/features/transactions/constants";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -52,14 +52,17 @@ import {
 } from "@/shared/components/ui/select";
 import { cn } from "@/shared/utils/ui";
 import {
-	CategoriaSelectContent,
+	AccountCardSelectContent,
+	CategorySelectContent,
 	ConditionSelectContent,
-	ContaCartaoSelectContent,
-	PagadorSelectContent,
+	PayerSelectContent,
 	PaymentMethodSelectContent,
 	TransactionTypeSelectContent,
 } from "../select-items";
-import type { ContaCartaoFilterOption, LancamentoFilterOption } from "../types";
+import type {
+	AccountCardFilterOption,
+	TransactionFilterOption,
+} from "../types";
 
 const FILTER_EMPTY_VALUE = "__all";
 
@@ -124,23 +127,23 @@ function FilterSelect({
 	);
 }
 
-interface LancamentosFiltersProps {
-	pagadorOptions: LancamentoFilterOption[];
-	categoriaOptions: LancamentoFilterOption[];
-	contaCartaoOptions: ContaCartaoFilterOption[];
+interface TransactionsFiltersProps {
+	payerOptions: TransactionFilterOption[];
+	categoryOptions: TransactionFilterOption[];
+	accountCardOptions: AccountCardFilterOption[];
 	className?: string;
 	exportButton?: ReactNode;
 	hideAdvancedFilters?: boolean;
 }
 
-export function LancamentosFilters({
-	pagadorOptions,
-	categoriaOptions,
-	contaCartaoOptions,
+export function TransactionsFilters({
+	payerOptions,
+	categoryOptions,
+	accountCardOptions,
 	className,
 	exportButton,
 	hideAdvancedFilters = false,
-}: LancamentosFiltersProps) {
+}: TransactionsFiltersProps) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
@@ -195,7 +198,7 @@ export function LancamentosFilters({
 			nextParams.set("periodo", periodValue);
 		}
 		setSearchValue("");
-		setCategoriaOpen(false);
+		setCategoryOpen(false);
 		startTransition(() => {
 			const target = nextParams.toString()
 				? `${pathname}?${nextParams.toString()}`
@@ -204,13 +207,13 @@ export function LancamentosFilters({
 		});
 	};
 
-	const pagadorSelectOptions = pagadorOptions.map((option) => ({
+	const payerSelectOptions = payerOptions.map((option) => ({
 		value: option.slug,
 		label: option.label,
 		avatarUrl: option.avatarUrl,
 	}));
 
-	const contaOptions = contaCartaoOptions
+	const accountOptions = accountCardOptions
 		.filter((option) => option.kind === "conta")
 		.map((option) => ({
 			value: option.slug,
@@ -218,7 +221,7 @@ export function LancamentosFilters({
 			logo: option.logo,
 		}));
 
-	const cartaoOptions = contaCartaoOptions
+	const cardOptions = accountCardOptions
 		.filter((option) => option.kind === "cartao")
 		.map((option) => ({
 			value: option.slug,
@@ -226,34 +229,34 @@ export function LancamentosFilters({
 			logo: option.logo,
 		}));
 
-	const categoriaValue = getParamValue("categoria");
-	const selectedCategoria =
-		categoriaValue !== FILTER_EMPTY_VALUE
-			? categoriaOptions.find((option) => option.slug === categoriaValue)
+	const categoryValue = getParamValue("category");
+	const selectedCategory =
+		categoryValue !== FILTER_EMPTY_VALUE
+			? categoryOptions.find((option) => option.slug === categoryValue)
 			: null;
 
-	const pagadorValue = getParamValue("pagador");
-	const selectedPagador =
-		pagadorValue !== FILTER_EMPTY_VALUE
-			? pagadorOptions.find((option) => option.slug === pagadorValue)
+	const payerValue = getParamValue("payer");
+	const selectedPayer =
+		payerValue !== FILTER_EMPTY_VALUE
+			? payerOptions.find((option) => option.slug === payerValue)
 			: null;
 
-	const contaCartaoValue = getParamValue("contaCartao");
-	const selectedContaCartao =
-		contaCartaoValue !== FILTER_EMPTY_VALUE
-			? contaCartaoOptions.find((option) => option.slug === contaCartaoValue)
+	const accountCardValue = getParamValue("accountCard");
+	const selectedAccountCard =
+		accountCardValue !== FILTER_EMPTY_VALUE
+			? accountCardOptions.find((option) => option.slug === accountCardValue)
 			: null;
 
-	const [categoriaOpen, setCategoriaOpen] = useState(false);
+	const [categoryOpen, setCategoryOpen] = useState(false);
 	const [drawerOpen, setDrawerOpen] = useState(false);
 
 	const hasActiveFilters =
-		searchParams.get("transacao") ||
-		searchParams.get("condicao") ||
-		searchParams.get("pagamento") ||
-		searchParams.get("pagador") ||
-		searchParams.get("categoria") ||
-		searchParams.get("contaCartao");
+		searchParams.get("type") ||
+		searchParams.get("condition") ||
+		searchParams.get("payment") ||
+		searchParams.get("payer") ||
+		searchParams.get("category") ||
+		searchParams.get("accountCard");
 
 	const handleResetFilters = () => {
 		handleReset();
@@ -315,9 +318,9 @@ export function LancamentosFilters({
 										Tipo de Lançamento
 									</label>
 									<FilterSelect
-										param="transacao"
+										param="type"
 										placeholder="Todos"
-										options={buildStaticOptions(LANCAMENTO_TRANSACTION_TYPES)}
+										options={buildStaticOptions(TRANSACTION_TYPES)}
 										widthClass="w-full border-dashed"
 										disabled={isPending}
 										getParamValue={getParamValue}
@@ -333,9 +336,9 @@ export function LancamentosFilters({
 										Condição de Lançamento
 									</label>
 									<FilterSelect
-										param="condicao"
+										param="condition"
 										placeholder="Todas"
-										options={buildStaticOptions(LANCAMENTO_CONDITIONS)}
+										options={buildStaticOptions(TRANSACTION_CONDITIONS)}
 										widthClass="w-full border-dashed"
 										disabled={isPending}
 										getParamValue={getParamValue}
@@ -351,9 +354,9 @@ export function LancamentosFilters({
 										Forma de Pagamento
 									</label>
 									<FilterSelect
-										param="pagamento"
+										param="payment"
 										placeholder="Todos"
-										options={buildStaticOptions(LANCAMENTO_PAYMENT_METHODS)}
+										options={buildStaticOptions(PAYMENT_METHODS)}
 										widthClass="w-full border-dashed"
 										disabled={isPending}
 										getParamValue={getParamValue}
@@ -365,12 +368,12 @@ export function LancamentosFilters({
 								</div>
 
 								<div className="space-y-2">
-									<label className="text-sm font-medium">Pagador</label>
+									<label className="text-sm font-medium">Payer</label>
 									<Select
-										value={getParamValue("pagador")}
+										value={getParamValue("payer")}
 										onValueChange={(value) =>
 											handleFilterChange(
-												"pagador",
+												"payer",
 												value === FILTER_EMPTY_VALUE ? null : value,
 											)
 										}
@@ -381,10 +384,10 @@ export function LancamentosFilters({
 											disabled={isPending}
 										>
 											<span className="truncate">
-												{selectedPagador ? (
-													<PagadorSelectContent
-														label={selectedPagador.label}
-														avatarUrl={selectedPagador.avatarUrl}
+												{selectedPayer ? (
+													<PayerSelectContent
+														label={selectedPayer.label}
+														avatarUrl={selectedPayer.avatarUrl}
 													/>
 												) : (
 													"Todos"
@@ -393,9 +396,9 @@ export function LancamentosFilters({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value={FILTER_EMPTY_VALUE}>Todos</SelectItem>
-											{pagadorSelectOptions.map((option) => (
+											{payerSelectOptions.map((option) => (
 												<SelectItem key={option.value} value={option.value}>
-													<PagadorSelectContent
+													<PayerSelectContent
 														label={option.label}
 														avatarUrl={option.avatarUrl}
 													/>
@@ -406,25 +409,25 @@ export function LancamentosFilters({
 								</div>
 
 								<div className="space-y-2">
-									<label className="text-sm font-medium">Categoria</label>
+									<label className="text-sm font-medium">Category</label>
 									<Popover
-										open={categoriaOpen}
-										onOpenChange={setCategoriaOpen}
+										open={categoryOpen}
+										onOpenChange={setCategoryOpen}
 										modal
 									>
 										<PopoverTrigger asChild>
 											<Button
 												variant="outline"
 												role="combobox"
-												aria-expanded={categoriaOpen}
+												aria-expanded={categoryOpen}
 												className="w-full justify-between text-sm border-dashed"
 												disabled={isPending}
 											>
 												<span className="truncate flex items-center gap-2">
-													{selectedCategoria ? (
-														<CategoriaSelectContent
-															label={selectedCategoria.label}
-															icon={selectedCategoria.icon}
+													{selectedCategory ? (
+														<CategorySelectContent
+															label={selectedCategory.label}
+															icon={selectedCategory.icon}
 														/>
 													) : (
 														"Todas"
@@ -442,29 +445,29 @@ export function LancamentosFilters({
 														<CommandItem
 															value={FILTER_EMPTY_VALUE}
 															onSelect={() => {
-																handleFilterChange("categoria", null);
-																setCategoriaOpen(false);
+																handleFilterChange("category", null);
+																setCategoryOpen(false);
 															}}
 														>
 															Todas
-															{categoriaValue === FILTER_EMPTY_VALUE ? (
+															{categoryValue === FILTER_EMPTY_VALUE ? (
 																<RiCheckLine className="ml-auto size-4" />
 															) : null}
 														</CommandItem>
-														{categoriaOptions.map((option) => (
+														{categoryOptions.map((option) => (
 															<CommandItem
 																key={option.slug}
 																value={option.slug}
 																onSelect={() => {
-																	handleFilterChange("categoria", option.slug);
-																	setCategoriaOpen(false);
+																	handleFilterChange("category", option.slug);
+																	setCategoryOpen(false);
 																}}
 															>
-																<CategoriaSelectContent
+																<CategorySelectContent
 																	label={option.label}
 																	icon={option.icon}
 																/>
-																{categoriaValue === option.slug ? (
+																{categoryValue === option.slug ? (
 																	<RiCheckLine className="ml-auto size-4" />
 																) : null}
 															</CommandItem>
@@ -479,10 +482,10 @@ export function LancamentosFilters({
 								<div className="space-y-2">
 									<label className="text-sm font-medium">Conta/Cartão</label>
 									<Select
-										value={getParamValue("contaCartao")}
+										value={getParamValue("accountCard")}
 										onValueChange={(value) =>
 											handleFilterChange(
-												"contaCartao",
+												"accountCard",
 												value === FILTER_EMPTY_VALUE ? null : value,
 											)
 										}
@@ -493,11 +496,11 @@ export function LancamentosFilters({
 											disabled={isPending}
 										>
 											<span className="truncate">
-												{selectedContaCartao ? (
-													<ContaCartaoSelectContent
-														label={selectedContaCartao.label}
-														logo={selectedContaCartao.logo}
-														isCartao={selectedContaCartao.kind === "cartao"}
+												{selectedAccountCard ? (
+													<AccountCardSelectContent
+														label={selectedAccountCard.label}
+														logo={selectedAccountCard.logo}
+														isCartao={selectedAccountCard.kind === "cartao"}
 													/>
 												) : (
 													"Todos"
@@ -506,12 +509,12 @@ export function LancamentosFilters({
 										</SelectTrigger>
 										<SelectContent>
 											<SelectItem value={FILTER_EMPTY_VALUE}>Todos</SelectItem>
-											{contaOptions.length > 0 ? (
+											{accountOptions.length > 0 ? (
 												<SelectGroup>
 													<SelectLabel>Contas</SelectLabel>
-													{contaOptions.map((option) => (
+													{accountOptions.map((option) => (
 														<SelectItem key={option.value} value={option.value}>
-															<ContaCartaoSelectContent
+															<AccountCardSelectContent
 																label={option.label}
 																logo={option.logo}
 																isCartao={false}
@@ -520,12 +523,12 @@ export function LancamentosFilters({
 													))}
 												</SelectGroup>
 											) : null}
-											{cartaoOptions.length > 0 ? (
+											{cardOptions.length > 0 ? (
 												<SelectGroup>
 													<SelectLabel>Cartões</SelectLabel>
-													{cartaoOptions.map((option) => (
+													{cardOptions.map((option) => (
 														<SelectItem key={option.value} value={option.value}>
-															<ContaCartaoSelectContent
+															<AccountCardSelectContent
 																label={option.label}
 																logo={option.logo}
 																isCartao={true}

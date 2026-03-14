@@ -2,15 +2,15 @@
 
 import { and, eq, lt, ne, sql } from "drizzle-orm";
 import {
-	cartoes,
-	categorias,
-	faturas,
-	lancamentos,
-	orcamentos,
+	budgets,
+	cards,
+	categories,
+	invoices,
+	transactions,
 } from "@/db/schema";
 import { db } from "@/shared/lib/db";
 import { INVOICE_PAYMENT_STATUS } from "@/shared/lib/invoices";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import {
 	buildDateOnlyStringFromPeriodDay,
 	getBusinessDateString,
@@ -67,128 +67,126 @@ export async function fetchDashboardNotifications(
 	const today = getBusinessDateString();
 	const DAYS_THRESHOLD = 5;
 
-	const adminPagadorId = await getAdminPagadorId(userId);
+	const adminPayerId = await getAdminPayerId(userId);
 
 	// --- Faturas atrasadas (períodos anteriores) ---
 	const overdueInvoices = await db
 		.select({
-			invoiceId: faturas.id,
-			cardId: cartoes.id,
-			cardName: cartoes.name,
-			cardLogo: cartoes.logo,
-			dueDay: cartoes.dueDay,
-			period: faturas.period,
+			invoiceId: invoices.id,
+			cardId: cards.id,
+			cardName: cards.name,
+			cardLogo: cards.logo,
+			dueDay: cards.dueDay,
+			period: invoices.period,
 			totalAmount: sql<number | null>`
         COALESCE(
-          (SELECT SUM(${lancamentos.amount})
-           FROM ${lancamentos}
-           WHERE ${lancamentos.cartaoId} = ${cartoes.id}
-             AND ${lancamentos.period} = ${faturas.period}
-             AND ${lancamentos.userId} = ${faturas.userId}),
+          (SELECT SUM(${transactions.amount})
+           FROM ${transactions}
+           WHERE ${transactions.cardId} = ${cards.id}
+             AND ${transactions.period} = ${invoices.period}
+             AND ${transactions.userId} = ${invoices.userId}),
           0
         )
       `,
 		})
-		.from(faturas)
-		.innerJoin(cartoes, eq(faturas.cartaoId, cartoes.id))
+		.from(invoices)
+		.innerJoin(cards, eq(invoices.cardId, cards.id))
 		.where(
 			and(
-				eq(faturas.userId, userId),
-				eq(faturas.paymentStatus, INVOICE_PAYMENT_STATUS.PENDING),
-				lt(faturas.period, currentPeriod),
+				eq(invoices.userId, userId),
+				eq(invoices.paymentStatus, INVOICE_PAYMENT_STATUS.PENDING),
+				lt(invoices.period, currentPeriod),
 			),
 		);
 
 	// --- Faturas do período atual ---
 	const currentInvoices = await db
 		.select({
-			invoiceId: faturas.id,
-			cardId: cartoes.id,
-			cardName: cartoes.name,
-			cardLogo: cartoes.logo,
-			dueDay: cartoes.dueDay,
-			period: sql<string>`COALESCE(${faturas.period}, ${currentPeriod})`,
-			paymentStatus: faturas.paymentStatus,
+			invoiceId: invoices.id,
+			cardId: cards.id,
+			cardName: cards.name,
+			cardLogo: cards.logo,
+			dueDay: cards.dueDay,
+			period: sql<string>`COALESCE(${invoices.period}, ${currentPeriod})`,
+			paymentStatus: invoices.paymentStatus,
 			totalAmount: sql<number | null>`
-        COALESCE(SUM(${lancamentos.amount}), 0)
+        COALESCE(SUM(${transactions.amount}), 0)
       `,
-			transactionCount: sql<number | null>`COUNT(${lancamentos.id})`,
+			transactionCount: sql<number | null>`COUNT(${transactions.id})`,
 		})
-		.from(cartoes)
+		.from(cards)
 		.leftJoin(
-			faturas,
+			invoices,
 			and(
-				eq(faturas.cartaoId, cartoes.id),
-				eq(faturas.userId, userId),
-				eq(faturas.period, currentPeriod),
+				eq(invoices.cardId, cards.id),
+				eq(invoices.userId, userId),
+				eq(invoices.period, currentPeriod),
 			),
 		)
 		.leftJoin(
-			lancamentos,
+			transactions,
 			and(
-				eq(lancamentos.cartaoId, cartoes.id),
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, currentPeriod),
+				eq(transactions.cardId, cards.id),
+				eq(transactions.userId, userId),
+				eq(transactions.period, currentPeriod),
 			),
 		)
-		.where(eq(cartoes.userId, userId))
+		.where(eq(cards.userId, userId))
 		.groupBy(
-			faturas.id,
-			cartoes.id,
-			cartoes.name,
-			cartoes.logo,
-			cartoes.dueDay,
-			faturas.period,
-			faturas.paymentStatus,
+			invoices.id,
+			cards.id,
+			cards.name,
+			cards.logo,
+			cards.dueDay,
+			invoices.period,
+			invoices.paymentStatus,
 		);
 
 	// --- Boletos não pagos ---
 	const boletosConditions = [
-		eq(lancamentos.userId, userId),
-		eq(lancamentos.paymentMethod, PAYMENT_METHOD_BOLETO),
-		eq(lancamentos.isSettled, false),
+		eq(transactions.userId, userId),
+		eq(transactions.paymentMethod, PAYMENT_METHOD_BOLETO),
+		eq(transactions.isSettled, false),
 	];
-	if (adminPagadorId) {
-		boletosConditions.push(eq(lancamentos.pagadorId, adminPagadorId));
+	if (adminPayerId) {
+		boletosConditions.push(eq(transactions.payerId, adminPayerId));
 	}
 
 	const boletosRows = await db
 		.select({
-			id: lancamentos.id,
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			dueDate: lancamentos.dueDate,
-			period: lancamentos.period,
+			id: transactions.id,
+			name: transactions.name,
+			amount: transactions.amount,
+			dueDate: transactions.dueDate,
+			period: transactions.period,
 		})
-		.from(lancamentos)
+		.from(transactions)
 		.where(and(...boletosConditions));
 
 	// --- Orçamentos do período atual ---
 	const budgetJoinConditions = [
-		eq(lancamentos.categoriaId, orcamentos.categoriaId),
-		eq(lancamentos.userId, orcamentos.userId),
-		eq(lancamentos.period, orcamentos.period),
-		eq(lancamentos.transactionType, "Despesa"),
-		ne(lancamentos.condition, "cancelado"),
+		eq(transactions.categoryId, budgets.categoryId),
+		eq(transactions.userId, budgets.userId),
+		eq(transactions.period, budgets.period),
+		eq(transactions.transactionType, "Despesa"),
+		ne(transactions.condition, "cancelado"),
 	];
-	if (adminPagadorId) {
-		budgetJoinConditions.push(eq(lancamentos.pagadorId, adminPagadorId));
+	if (adminPayerId) {
+		budgetJoinConditions.push(eq(transactions.payerId, adminPayerId));
 	}
 
 	const budgetRows = await db
 		.select({
-			orcamentoId: orcamentos.id,
-			budgetAmount: orcamentos.amount,
-			categoriaName: categorias.name,
-			spentAmount: sql<number>`COALESCE(SUM(ABS(${lancamentos.amount})), 0)`,
+			orcamentoId: budgets.id,
+			budgetAmount: budgets.amount,
+			categoriaName: categories.name,
+			spentAmount: sql<number>`COALESCE(SUM(ABS(${transactions.amount})), 0)`,
 		})
-		.from(orcamentos)
-		.innerJoin(categorias, eq(orcamentos.categoriaId, categorias.id))
-		.leftJoin(lancamentos, and(...budgetJoinConditions))
-		.where(
-			and(eq(orcamentos.userId, userId), eq(orcamentos.period, currentPeriod)),
-		)
-		.groupBy(orcamentos.id, orcamentos.amount, categorias.name);
+		.from(budgets)
+		.innerJoin(categories, eq(budgets.categoryId, categories.id))
+		.leftJoin(transactions, and(...budgetJoinConditions))
+		.where(and(eq(budgets.userId, userId), eq(budgets.period, currentPeriod)))
+		.groupBy(budgets.id, budgets.amount, categories.name);
 
 	// =====================
 	// Processar notificações

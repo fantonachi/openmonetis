@@ -55,8 +55,8 @@ interface AnticipateInstallmentsDialogProps {
 type AnticipationFormValues = {
 	anticipationPeriod: string;
 	discount: string;
-	pagadorId: string;
-	categoriaId: string;
+	payerId: string;
+	categoryId: string;
 	note: string;
 };
 
@@ -90,8 +90,8 @@ export function AnticipateInstallmentsDialog({
 		useFormState<AnticipationFormValues>({
 			anticipationPeriod: defaultPeriod,
 			discount: "0",
-			pagadorId: "",
-			categoriaId: "",
+			payerId: "",
+			categoryId: "",
 			note: "",
 		});
 
@@ -119,8 +119,8 @@ export function AnticipateInstallmentsDialog({
 						replaceForm({
 							anticipationPeriod: defaultPeriod,
 							discount: "0",
-							pagadorId: first.pagadorId ?? "",
-							categoriaId: first.categoriaId ?? "",
+							payerId: first.payerId ?? "",
+							categoryId: first.categoryId ?? "",
 							note: "",
 						});
 					}
@@ -182,8 +182,8 @@ export function AnticipateInstallmentsDialog({
 				installmentIds: selectedIds,
 				anticipationPeriod: formState.anticipationPeriod,
 				discount: Number(formState.discount) || 0,
-				pagadorId: formState.pagadorId || undefined,
-				categoriaId: formState.categoriaId || undefined,
+				payerId: formState.payerId || undefined,
+				categoryId: formState.categoryId || undefined,
 				note: formState.note || undefined,
 			});
 
@@ -269,11 +269,11 @@ export function AnticipateInstallmentsDialog({
 							</Field>
 
 							<Field className="gap-1">
-								<FieldLabel htmlFor="anticipation-pagador">Pagador</FieldLabel>
+								<FieldLabel htmlFor="anticipation-pagador">Payer</FieldLabel>
 								<FieldContent>
 									<Select
-										value={formState.pagadorId}
-										onValueChange={(value) => updateField("pagadorId", value)}
+										value={formState.payerId}
+										onValueChange={(value) => updateField("payerId", value)}
 										disabled={isPending}
 									>
 										<SelectTrigger id="anticipation-pagador" className="w-full">
@@ -292,12 +292,12 @@ export function AnticipateInstallmentsDialog({
 
 							<Field className="gap-1">
 								<FieldLabel htmlFor="anticipation-categoria">
-									Categoria
+									Category
 								</FieldLabel>
 								<FieldContent>
 									<Select
-										value={formState.categoriaId}
-										onValueChange={(value) => updateField("categoriaId", value)}
+										value={formState.categoryId}
+										onValueChange={(value) => updateField("categoryId", value)}
 										disabled={isPending}
 									>
 										<SelectTrigger

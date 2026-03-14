@@ -10,9 +10,9 @@ const LEGEND_ITEMS: Array<{
 	label: string;
 	dotColor?: string;
 }> = [
-	{ type: "lancamento", label: "Lançamentos" },
+	{ type: "transaction", label: "Lançamentos" },
 	{ type: "boleto", label: "Boleto com vencimento" },
-	{ type: "cartao", label: "Vencimento de cartão" },
+	{ type: "card", label: "Vencimento de cartão" },
 	{ label: "Pagamento fatura", dotColor: "bg-success" },
 ];
 

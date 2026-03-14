@@ -55,12 +55,14 @@ export function MyAccountsWidget({
 								>
 									<div className="flex min-w-0 flex-1 items-center gap-3">
 										<div className="relative size-10 overflow-hidden">
-											<Image
-												src={logoSrc}
-												alt={`Logo da conta ${account.name}`}
-												fill
-												className="object-contain rounded-full"
-											/>
+											{logoSrc ? (
+												<Image
+													src={logoSrc}
+													alt={`Logo da conta ${account.name}`}
+													fill
+													className="object-contain rounded-full"
+												/>
+											) : null}
 										</div>
 
 										<div className="min-w-0">

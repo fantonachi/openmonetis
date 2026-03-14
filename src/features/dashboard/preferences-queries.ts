@@ -11,10 +11,10 @@ export async function fetchUserDashboardPreferences(
 ): Promise<UserDashboardPreferences> {
 	const result = await db
 		.select({
-			dashboardWidgets: schema.preferenciasUsuario.dashboardWidgets,
+			dashboardWidgets: schema.userPreferences.dashboardWidgets,
 		})
-		.from(schema.preferenciasUsuario)
-		.where(eq(schema.preferenciasUsuario.userId, userId))
+		.from(schema.userPreferences)
+		.where(eq(schema.userPreferences.userId, userId))
 		.limit(1);
 
 	return {

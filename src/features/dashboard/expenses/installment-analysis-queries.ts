@@ -1,11 +1,11 @@
 import { and, eq, isNotNull, isNull, or, sql } from "drizzle-orm";
-import { cartoes, lancamentos, pagadores } from "@/db/schema";
+import { cards, payers, transactions } from "@/db/schema";
 import {
 	ACCOUNT_AUTO_INVOICE_NOTE_PREFIX,
 	INITIAL_BALANCE_NOTE,
 } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import {
 	buildDateOnlyStringFromPeriodDay,
 	parseLocalDateString,
@@ -46,7 +46,7 @@ export type InstallmentGroup = {
 	seriesId: string;
 	name: string;
 	paymentMethod: string;
-	cartaoId: string | null;
+	cardId: string | null;
 	cartaoName: string | null;
 	cartaoDueDay: string | null;
 	cartaoLogo: string | null;
@@ -68,44 +68,44 @@ export async function fetchInstallmentAnalysis(
 	// 1. Buscar todos os lançamentos parcelados não antecipados do pagador admin
 	const installmentRows = await db
 		.select({
-			id: lancamentos.id,
-			seriesId: lancamentos.seriesId,
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			paymentMethod: lancamentos.paymentMethod,
-			currentInstallment: lancamentos.currentInstallment,
-			installmentCount: lancamentos.installmentCount,
-			dueDate: lancamentos.dueDate,
-			period: lancamentos.period,
-			isAnticipated: lancamentos.isAnticipated,
-			isSettled: lancamentos.isSettled,
-			purchaseDate: lancamentos.purchaseDate,
-			cartaoId: lancamentos.cartaoId,
-			cartaoName: cartoes.name,
-			cartaoDueDay: cartoes.dueDay,
-			cartaoLogo: cartoes.logo,
+			id: transactions.id,
+			seriesId: transactions.seriesId,
+			name: transactions.name,
+			amount: transactions.amount,
+			paymentMethod: transactions.paymentMethod,
+			currentInstallment: transactions.currentInstallment,
+			installmentCount: transactions.installmentCount,
+			dueDate: transactions.dueDate,
+			period: transactions.period,
+			isAnticipated: transactions.isAnticipated,
+			isSettled: transactions.isSettled,
+			purchaseDate: transactions.purchaseDate,
+			cardId: transactions.cardId,
+			cartaoName: cards.name,
+			cartaoDueDay: cards.dueDay,
+			cartaoLogo: cards.logo,
 		})
-		.from(lancamentos)
-		.leftJoin(cartoes, eq(lancamentos.cartaoId, cartoes.id))
-		.leftJoin(pagadores, eq(lancamentos.pagadorId, pagadores.id))
+		.from(transactions)
+		.leftJoin(cards, eq(transactions.cardId, cards.id))
+		.leftJoin(payers, eq(transactions.payerId, payers.id))
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.transactionType, "Despesa"),
-				eq(lancamentos.condition, "Parcelado"),
-				eq(lancamentos.isAnticipated, false),
-				isNotNull(lancamentos.seriesId),
-				eq(pagadores.role, PAGADOR_ROLE_ADMIN),
+				eq(transactions.userId, userId),
+				eq(transactions.transactionType, "Despesa"),
+				eq(transactions.condition, "Parcelado"),
+				eq(transactions.isAnticipated, false),
+				isNotNull(transactions.seriesId),
+				eq(payers.role, PAYER_ROLE_ADMIN),
 				or(
-					isNull(lancamentos.note),
+					isNull(transactions.note),
 					and(
-						sql`${lancamentos.note} != ${INITIAL_BALANCE_NOTE}`,
-						sql`${lancamentos.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
+						sql`${transactions.note} != ${INITIAL_BALANCE_NOTE}`,
+						sql`${transactions.note} NOT LIKE ${`${ACCOUNT_AUTO_INVOICE_NOTE_PREFIX}%`}`,
 					),
 				),
 			),
 		)
-		.orderBy(lancamentos.purchaseDate, lancamentos.currentInstallment);
+		.orderBy(transactions.purchaseDate, transactions.currentInstallment);
 
 	// Agrupar por seriesId
 	const seriesMap = new Map<string, InstallmentGroup>();
@@ -140,7 +140,7 @@ export async function fetchInstallmentAnalysis(
 				seriesId: row.seriesId,
 				name: row.name,
 				paymentMethod: row.paymentMethod,
-				cartaoId: row.cartaoId,
+				cardId: row.cardId,
 				cartaoName: row.cartaoName,
 				cartaoDueDay: row.cartaoDueDay,
 				cartaoLogo: row.cartaoLogo,

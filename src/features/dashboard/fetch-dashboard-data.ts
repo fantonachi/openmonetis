@@ -11,7 +11,7 @@ import { fetchGoalsProgressData } from "./goals-progress-queries";
 import { fetchIncomeExpenseBalance } from "./income-expense-balance-queries";
 import { fetchDashboardInvoices } from "./invoices-queries";
 import { fetchDashboardNotes } from "./notes-queries";
-import { fetchDashboardPagadores } from "./payers-queries";
+import { fetchDashboardPayers } from "./payers-queries";
 import { fetchPaymentConditions } from "./payments/payment-conditions-queries";
 import { fetchPaymentMethods } from "./payments/payment-methods-queries";
 import { fetchPaymentStatus } from "./payments/payment-status-queries";
@@ -49,7 +49,7 @@ async function fetchDashboardDataInternal(userId: string, period: string) {
 		fetchGoalsProgressData(userId, period),
 		fetchPaymentStatus(userId, period),
 		fetchIncomeExpenseBalance(userId, period),
-		fetchDashboardPagadores(userId, period),
+		fetchDashboardPayers(userId, period),
 		fetchDashboardNotes(userId),
 		fetchPaymentConditions(userId, period),
 		fetchPaymentMethods(userId, period),

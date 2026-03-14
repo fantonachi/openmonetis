@@ -1,16 +1,16 @@
 import { and, eq, gte, lte, ne, or } from "drizzle-orm";
-import { cartoes, lancamentos } from "@/db/schema";
+import { cards, transactions } from "@/db/schema";
 import {
 	buildOptionSets,
 	buildSluggedFilters,
-	mapLancamentosData,
+	mapTransactionsData,
 } from "@/features/transactions/page-helpers";
 import {
-	fetchLancamentoFilterSources,
 	fetchRecentEstablishments,
+	fetchTransactionFilterSources,
 } from "@/features/transactions/queries";
 import { db } from "@/shared/lib/db";
-import { PAGADOR_ROLE_ADMIN } from "@/shared/lib/payers/constants";
+import { PAYER_ROLE_ADMIN } from "@/shared/lib/payers/constants";
 import type { CalendarData, CalendarEvent } from "@/shared/lib/types/calendar";
 import { formatDateKey } from "@/shared/utils/calendar";
 import { parsePeriod } from "@/shared/utils/period";
@@ -46,65 +46,62 @@ export const fetchCalendarData = async ({
 	const rangeStartKey = formatDateKey(rangeStart);
 	const rangeEndKey = formatDateKey(rangeEnd);
 
-	const [lancamentoRows, cardRows, filterSources] = await Promise.all([
-		db.query.lancamentos.findMany({
+	const [transactionRows, cardRows, filterSources] = await Promise.all([
+		db.query.transactions.findMany({
 			where: and(
-				eq(lancamentos.userId, userId),
-				ne(lancamentos.transactionType, TRANSACTION_TYPE_TRANSFERENCIA),
+				eq(transactions.userId, userId),
+				ne(transactions.transactionType, TRANSACTION_TYPE_TRANSFERENCIA),
 				or(
 					// Lançamentos cuja data de compra esteja no período do calendário
 					and(
-						gte(lancamentos.purchaseDate, rangeStart),
-						lte(lancamentos.purchaseDate, rangeEnd),
+						gte(transactions.purchaseDate, rangeStart),
+						lte(transactions.purchaseDate, rangeEnd),
 					),
 					// Boletos cuja data de vencimento esteja no período do calendário
 					and(
-						eq(lancamentos.paymentMethod, PAYMENT_METHOD_BOLETO),
-						gte(lancamentos.dueDate, rangeStart),
-						lte(lancamentos.dueDate, rangeEnd),
+						eq(transactions.paymentMethod, PAYMENT_METHOD_BOLETO),
+						gte(transactions.dueDate, rangeStart),
+						lte(transactions.dueDate, rangeEnd),
 					),
 					// Lançamentos de cartão do período (para calcular totais de vencimento)
 					and(
-						eq(lancamentos.period, period),
-						ne(lancamentos.paymentMethod, PAYMENT_METHOD_BOLETO),
+						eq(transactions.period, period),
+						ne(transactions.paymentMethod, PAYMENT_METHOD_BOLETO),
 					),
 				),
 			),
 			with: {
-				pagador: true,
-				conta: true,
-				cartao: true,
-				categoria: true,
+				payer: true,
+				financialAccount: true,
+				card: true,
+				category: true,
 			},
 		}),
-		db.query.cartoes.findMany({
-			where: eq(cartoes.userId, userId),
+		db.query.cards.findMany({
+			where: eq(cards.userId, userId),
 		}),
-		fetchLancamentoFilterSources(userId),
+		fetchTransactionFilterSources(userId),
 	]);
 
-	const lancamentosData = mapLancamentosData(lancamentoRows);
+	const transactionData = mapTransactionsData(transactionRows);
 	const events: CalendarEvent[] = [];
 
 	const cardTotals = new Map<string, number>();
-	for (const item of lancamentosData) {
+	for (const item of transactionData) {
 		if (
-			!item.cartaoId ||
+			!item.cardId ||
 			item.period !== period ||
-			item.pagadorRole !== PAGADOR_ROLE_ADMIN
+			item.pagadorRole !== PAYER_ROLE_ADMIN
 		) {
 			continue;
 		}
 		const amount = Math.abs(item.amount ?? 0);
-		cardTotals.set(
-			item.cartaoId,
-			(cardTotals.get(item.cartaoId) ?? 0) + amount,
-		);
+		cardTotals.set(item.cardId, (cardTotals.get(item.cardId) ?? 0) + amount);
 	}
 
-	for (const item of lancamentosData) {
+	for (const item of transactionData) {
 		const isBoleto = item.paymentMethod === PAYMENT_METHOD_BOLETO;
-		const isAdminPagador = item.pagadorRole === PAGADOR_ROLE_ADMIN;
+		const isAdminPagador = item.pagadorRole === PAYER_ROLE_ADMIN;
 
 		// Para boletos, exibir apenas na data de vencimento e apenas se for pagador admin
 		if (isBoleto) {
@@ -117,7 +114,7 @@ export const fetchCalendarData = async ({
 					id: `${item.id}:boleto`,
 					type: "boleto",
 					date: item.dueDate,
-					lancamento: item,
+					transaction: item,
 				});
 			}
 		} else {
@@ -129,9 +126,9 @@ export const fetchCalendarData = async ({
 			if (isWithinRange(purchaseDateKey, rangeStartKey, rangeEndKey)) {
 				events.push({
 					id: item.id,
-					type: "lancamento",
+					type: "transaction",
 					date: purchaseDateKey,
-					lancamento: item,
+					transaction: item,
 				});
 			}
 		}
@@ -155,7 +152,7 @@ export const fetchCalendarData = async ({
 
 		events.push({
 			id: `${card.id}:cartao`,
-			type: "cartao",
+			type: "card",
 			date: dueDateKey,
 			card: {
 				id: card.id,
@@ -171,9 +168,9 @@ export const fetchCalendarData = async ({
 	}
 
 	const typePriority: Record<CalendarEvent["type"], number> = {
-		lancamento: 0,
+		transaction: 0,
 		boleto: 1,
-		cartao: 2,
+		card: 2,
 	};
 
 	events.sort((a, b) => {
@@ -186,7 +183,7 @@ export const fetchCalendarData = async ({
 	const sluggedFilters = buildSluggedFilters(filterSources);
 	const optionSets = buildOptionSets({
 		...sluggedFilters,
-		pagadorRows: filterSources.pagadorRows,
+		payerRows: filterSources.payerRows,
 	});
 
 	const estabelecimentos = await fetchRecentEstablishments(userId);
@@ -194,12 +191,12 @@ export const fetchCalendarData = async ({
 	return {
 		events,
 		formOptions: {
-			pagadorOptions: optionSets.pagadorOptions,
-			splitPagadorOptions: optionSets.splitPagadorOptions,
-			defaultPagadorId: optionSets.defaultPagadorId,
-			contaOptions: optionSets.contaOptions,
-			cartaoOptions: optionSets.cartaoOptions,
-			categoriaOptions: optionSets.categoriaOptions,
+			payerOptions: optionSets.payerOptions,
+			splitPayerOptions: optionSets.splitPayerOptions,
+			defaultPayerId: optionSets.defaultPayerId,
+			accountOptions: optionSets.accountOptions,
+			cardOptions: optionSets.cardOptions,
+			categoryOptions: optionSets.categoryOptions,
 			estabelecimentos,
 		},
 	};

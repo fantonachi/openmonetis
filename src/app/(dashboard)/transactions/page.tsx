@@ -1,20 +1,20 @@
 import { triggerRecurringGeneration } from "@/features/recurring/trigger-recurring-generation";
 import { fetchUserPreferences } from "@/features/settings/queries";
-import { LancamentosPage } from "@/features/transactions/components/page/transactions-page";
+import { TransactionsPage } from "@/features/transactions/components/page/transactions-page";
 import {
-	buildLancamentoWhere,
+	buildTransactionWhere,
 	buildOptionSets,
 	buildSluggedFilters,
 	buildSlugMaps,
-	extractLancamentoSearchFilters,
+	extractTransactionSearchFilters,
 	getSingleParam,
-	mapLancamentosData,
+	mapTransactionsData,
 	type ResolvedSearchParams,
 } from "@/features/transactions/page-helpers";
 import {
-	fetchLancamentoFilterSources,
-	fetchLancamentos,
 	fetchRecentEstablishments,
+	fetchTransactionFilterSources,
+	fetchTransactions,
 } from "@/features/transactions/queries";
 import MonthNavigation from "@/shared/components/month-picker/month-navigation";
 import { getUserId } from "@/shared/lib/auth/server";
@@ -34,63 +34,63 @@ export default async function Page({ searchParams }: PageProps) {
 	const periodoParamRaw = getSingleParam(resolvedSearchParams, "periodo");
 	const { period: selectedPeriod } = parsePeriodParam(periodoParamRaw);
 
-	const searchFilters = extractLancamentoSearchFilters(resolvedSearchParams);
+	const searchFilters = extractTransactionSearchFilters(resolvedSearchParams);
 
 	const [filterSources, userPreferences] = await Promise.all([
-		fetchLancamentoFilterSources(userId),
+		fetchTransactionFilterSources(userId),
 		fetchUserPreferences(userId),
 	]);
 
 	const sluggedFilters = buildSluggedFilters(filterSources);
 	const slugMaps = buildSlugMaps(sluggedFilters);
 
-	const filters = buildLancamentoWhere({
+	const filters = buildTransactionWhere({
 		userId,
 		period: selectedPeriod,
 		filters: searchFilters,
 		slugMaps,
 	});
 
-	const [lancamentoRows, estabelecimentos] = await Promise.all([
-		fetchLancamentos(filters),
+	const [transactionRows, estabelecimentos] = await Promise.all([
+		fetchTransactions(filters),
 		fetchRecentEstablishments(userId),
 	]);
-	const lancamentosData = mapLancamentosData(lancamentoRows);
+	const transactionData = mapTransactionsData(transactionRows);
 
 	const {
-		pagadorOptions,
-		splitPagadorOptions,
-		defaultPagadorId,
-		contaOptions,
-		cartaoOptions,
-		categoriaOptions,
-		pagadorFilterOptions,
-		categoriaFilterOptions,
-		contaCartaoFilterOptions,
+		payerOptions,
+		splitPayerOptions,
+		defaultPayerId,
+		accountOptions,
+		cardOptions,
+		categoryOptions,
+		payerFilterOptions,
+		categoryFilterOptions,
+		accountCardFilterOptions,
 	} = buildOptionSets({
 		...sluggedFilters,
-		pagadorRows: filterSources.pagadorRows,
+		payerRows: filterSources.payerRows,
 	});
 
 	return (
 		<main className="flex flex-col gap-6">
 			<MonthNavigation />
-			<LancamentosPage
+			<TransactionsPage
 				currentUserId={userId}
-				lancamentos={lancamentosData}
-				pagadorOptions={pagadorOptions}
-				splitPagadorOptions={splitPagadorOptions}
-				defaultPagadorId={defaultPagadorId}
-				contaOptions={contaOptions}
-				cartaoOptions={cartaoOptions}
-				categoriaOptions={categoriaOptions}
-				pagadorFilterOptions={pagadorFilterOptions}
-				categoriaFilterOptions={categoriaFilterOptions}
-				contaCartaoFilterOptions={contaCartaoFilterOptions}
+				transactions={transactionData}
+				payerOptions={payerOptions}
+				splitPayerOptions={splitPayerOptions}
+				defaultPayerId={defaultPayerId}
+				accountOptions={accountOptions}
+				cardOptions={cardOptions}
+				categoryOptions={categoryOptions}
+				payerFilterOptions={payerFilterOptions}
+				categoryFilterOptions={categoryFilterOptions}
+				accountCardFilterOptions={accountCardFilterOptions}
 				selectedPeriod={selectedPeriod}
 				estabelecimentos={estabelecimentos}
-				noteAsColumn={userPreferences?.extratoNoteAsColumn ?? false}
-				columnOrder={userPreferences?.lancamentosColumnOrder ?? null}
+				noteAsColumn={userPreferences?.statementNoteAsColumn ?? false}
+				columnOrder={userPreferences?.transactionsColumnOrder ?? null}
 			/>
 		</main>
 	);

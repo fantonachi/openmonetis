@@ -1,11 +1,11 @@
 import { and, inArray, sql } from "drizzle-orm";
-import { lancamentos } from "@/db/schema";
+import { transactions } from "@/db/schema";
 import {
 	buildDashboardAdminPeriodFilters,
 	excludeAutoInvoiceEntries,
-} from "@/features/dashboard/lancamento-filters";
+} from "@/features/dashboard/transaction-filters";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 
 export type PaymentStatusCategory = {
@@ -29,41 +29,41 @@ export async function fetchPaymentStatus(
 	userId: string,
 	period: string,
 ): Promise<PaymentStatusData> {
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { income: emptyCategory(), expenses: emptyCategory() };
 	}
 
 	// Single query: GROUP BY transactionType instead of 2 separate queries
 	const rows = await db
 		.select({
-			transactionType: lancamentos.transactionType,
+			transactionType: transactions.transactionType,
 			confirmed: sql<number>`
 				coalesce(
-					sum(case when ${lancamentos.isSettled} = true then ${lancamentos.amount} else 0 end),
+					sum(case when ${transactions.isSettled} = true then ${transactions.amount} else 0 end),
 					0
 				)
 			`,
 			pending: sql<number>`
 				coalesce(
-					sum(case when ${lancamentos.isSettled} = false or ${lancamentos.isSettled} is null then ${lancamentos.amount} else 0 end),
+					sum(case when ${transactions.isSettled} = false or ${transactions.isSettled} is null then ${transactions.amount} else 0 end),
 					0
 				)
 			`,
 		})
-		.from(lancamentos)
+		.from(transactions)
 		.where(
 			and(
 				...buildDashboardAdminPeriodFilters({
 					userId,
 					period,
-					adminPagadorId,
+					adminPayerId,
 				}),
-				inArray(lancamentos.transactionType, ["Receita", "Despesa"]),
+				inArray(transactions.transactionType, ["Receita", "Despesa"]),
 				excludeAutoInvoiceEntries(),
 			),
 		)
-		.groupBy(lancamentos.transactionType);
+		.groupBy(transactions.transactionType);
 
 	const result = { income: emptyCategory(), expenses: emptyCategory() };
 

@@ -1,9 +1,9 @@
 "use server";
 
 import { and, asc, eq } from "drizzle-orm";
-import { lancamentos } from "@/db/schema";
+import { transactions } from "@/db/schema";
 import { db } from "@/shared/lib/db";
-import { getAdminPagadorId } from "@/shared/lib/payers/get-admin-id";
+import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
 import { toDateOnlyString } from "@/shared/utils/date";
 import { safeToNumber as toNumber } from "@/shared/utils/number";
 
@@ -37,33 +37,33 @@ export async function fetchDashboardBills(
 	userId: string,
 	period: string,
 ): Promise<DashboardBillsSnapshot> {
-	const adminPagadorId = await getAdminPagadorId(userId);
-	if (!adminPagadorId) {
+	const adminPayerId = await getAdminPayerId(userId);
+	if (!adminPayerId) {
 		return { bills: [], totalPendingAmount: 0, pendingCount: 0 };
 	}
 
 	const rows = await db
 		.select({
-			id: lancamentos.id,
-			name: lancamentos.name,
-			amount: lancamentos.amount,
-			dueDate: lancamentos.dueDate,
-			boletoPaymentDate: lancamentos.boletoPaymentDate,
-			isSettled: lancamentos.isSettled,
+			id: transactions.id,
+			name: transactions.name,
+			amount: transactions.amount,
+			dueDate: transactions.dueDate,
+			boletoPaymentDate: transactions.boletoPaymentDate,
+			isSettled: transactions.isSettled,
 		})
-		.from(lancamentos)
+		.from(transactions)
 		.where(
 			and(
-				eq(lancamentos.userId, userId),
-				eq(lancamentos.period, period),
-				eq(lancamentos.paymentMethod, PAYMENT_METHOD_BOLETO),
-				eq(lancamentos.pagadorId, adminPagadorId),
+				eq(transactions.userId, userId),
+				eq(transactions.period, period),
+				eq(transactions.paymentMethod, PAYMENT_METHOD_BOLETO),
+				eq(transactions.payerId, adminPayerId),
 			),
 		)
 		.orderBy(
-			asc(lancamentos.isSettled),
-			asc(lancamentos.dueDate),
-			asc(lancamentos.name),
+			asc(transactions.isSettled),
+			asc(transactions.dueDate),
+			asc(transactions.name),
 		);
 
 	const bills = rows.map((row: RawDashboardBill): DashboardBill => {

@@ -1,41 +1,41 @@
 import type { SQL } from "drizzle-orm";
 import { and, eq, ilike, isNotNull, or } from "drizzle-orm";
 import {
-	cartoes,
-	type categorias,
-	contas,
-	lancamentos,
-	type pagadores,
+	cards,
+	type categories,
+	financialAccounts,
+	type payers,
+	transactions,
 } from "@/db/schema";
 import type { SelectOption } from "@/features/transactions/components/types";
 import {
-	LANCAMENTO_CONDITIONS,
-	LANCAMENTO_PAYMENT_METHODS,
-	LANCAMENTO_TRANSACTION_TYPES,
+	PAYMENT_METHODS,
+	TRANSACTION_CONDITIONS,
+	TRANSACTION_TYPES,
 } from "@/features/transactions/constants";
 import { ACCOUNT_AUTO_INVOICE_NOTE_PREFIX } from "@/shared/lib/accounts/constants";
 import {
-	PAGADOR_ROLE_ADMIN,
-	PAGADOR_ROLE_TERCEIRO,
+	PAYER_ROLE_ADMIN,
+	PAYER_ROLE_THIRD_PARTY,
 } from "@/shared/lib/payers/constants";
 import { toDateOnlyString } from "@/shared/utils/date";
 
-type PagadorRow = typeof pagadores.$inferSelect;
-type ContaRow = typeof contas.$inferSelect;
-type CartaoRow = typeof cartoes.$inferSelect;
-type CategoriaRow = typeof categorias.$inferSelect;
+type PayerRow = typeof payers.$inferSelect;
+type AccountRow = typeof financialAccounts.$inferSelect;
+type CardRow = typeof cards.$inferSelect;
+type CategoryRow = typeof categories.$inferSelect;
 
 export type ResolvedSearchParams =
 	| Record<string, string | string[] | undefined>
 	| undefined;
 
-export type LancamentoSearchFilters = {
+export type TransactionSearchFilters = {
 	transactionFilter: string | null;
 	conditionFilter: string | null;
 	paymentFilter: string | null;
-	pagadorFilter: string | null;
-	categoriaFilter: string | null;
-	contaCartaoFilter: string | null;
+	payerFilter: string | null;
+	categoryFilter: string | null;
+	accountCardFilter: string | null;
 	searchFilter: string | null;
 };
 
@@ -45,23 +45,23 @@ type BaseSluggedOption = {
 	slug: string;
 };
 
-type PagadorSluggedOption = BaseSluggedOption & {
+type PayerSluggedOption = BaseSluggedOption & {
 	role: string | null;
 	avatarUrl: string | null;
 };
 
-type CategoriaSluggedOption = BaseSluggedOption & {
+type CategorySluggedOption = BaseSluggedOption & {
 	type: string | null;
 	icon: string | null;
 };
 
-type ContaSluggedOption = BaseSluggedOption & {
+type AccountSluggedOption = BaseSluggedOption & {
 	kind: "conta";
 	logo: string | null;
 	accountType: string | null;
 };
 
-type CartaoSluggedOption = BaseSluggedOption & {
+type CardSluggedOption = BaseSluggedOption & {
 	kind: "cartao";
 	logo: string | null;
 	closingDay: string | null;
@@ -69,17 +69,17 @@ type CartaoSluggedOption = BaseSluggedOption & {
 };
 
 export type SluggedFilters = {
-	pagadorFiltersRaw: PagadorSluggedOption[];
-	categoriaFiltersRaw: CategoriaSluggedOption[];
-	contaFiltersRaw: ContaSluggedOption[];
-	cartaoFiltersRaw: CartaoSluggedOption[];
+	payerFiltersRaw: PayerSluggedOption[];
+	categoryFiltersRaw: CategorySluggedOption[];
+	accountFiltersRaw: AccountSluggedOption[];
+	cardFiltersRaw: CardSluggedOption[];
 };
 
 export type SlugMaps = {
-	pagador: Map<string, string>;
-	categoria: Map<string, string>;
-	conta: Map<string, string>;
-	cartao: Map<string, string>;
+	payer: Map<string, string>;
+	category: Map<string, string>;
+	financialAccount: Map<string, string>;
+	card: Map<string, string>;
 };
 
 export type FilterOption = {
@@ -87,20 +87,20 @@ export type FilterOption = {
 	label: string;
 };
 
-export type ContaCartaoFilterOption = FilterOption & {
+export type AccountCardFilterOption = FilterOption & {
 	kind: "conta" | "cartao";
 };
 
-export type LancamentoOptionSets = {
-	pagadorOptions: SelectOption[];
-	splitPagadorOptions: SelectOption[];
-	defaultPagadorId: string | null;
-	contaOptions: SelectOption[];
-	cartaoOptions: SelectOption[];
-	categoriaOptions: SelectOption[];
-	pagadorFilterOptions: FilterOption[];
-	categoriaFilterOptions: FilterOption[];
-	contaCartaoFilterOptions: ContaCartaoFilterOption[];
+export type TransactionOptionSets = {
+	payerOptions: SelectOption[];
+	splitPayerOptions: SelectOption[];
+	defaultPayerId: string | null;
+	accountOptions: SelectOption[];
+	cardOptions: SelectOption[];
+	categoryOptions: SelectOption[];
+	payerFilterOptions: FilterOption[];
+	categoryFilterOptions: FilterOption[];
+	accountCardFilterOptions: AccountCardFilterOption[];
 };
 
 export const getSingleParam = (
@@ -114,15 +114,15 @@ export const getSingleParam = (
 	return Array.isArray(value) ? (value[0] ?? null) : value;
 };
 
-export const extractLancamentoSearchFilters = (
+export const extractTransactionSearchFilters = (
 	params: ResolvedSearchParams,
-): LancamentoSearchFilters => ({
-	transactionFilter: getSingleParam(params, "transacao"),
-	conditionFilter: getSingleParam(params, "condicao"),
-	paymentFilter: getSingleParam(params, "pagamento"),
-	pagadorFilter: getSingleParam(params, "pagador"),
-	categoriaFilter: getSingleParam(params, "categoria"),
-	contaCartaoFilter: getSingleParam(params, "contaCartao"),
+): TransactionSearchFilters => ({
+	transactionFilter: getSingleParam(params, "type"),
+	conditionFilter: getSingleParam(params, "condition"),
+	paymentFilter: getSingleParam(params, "payment"),
+	payerFilter: getSingleParam(params, "payer"),
+	categoryFilter: getSingleParam(params, "category"),
+	accountCardFilter: getSingleParam(params, "accountCard"),
 	searchFilter: getSingleParam(params, "q"),
 });
 
@@ -179,177 +179,178 @@ export const toOption = (
 });
 
 export const buildSluggedFilters = ({
-	pagadorRows,
-	categoriaRows,
-	contaRows,
-	cartaoRows,
+	payerRows,
+	categoryRows,
+	accountRows,
+	cardRows,
 }: {
-	pagadorRows: PagadorRow[];
-	categoriaRows: CategoriaRow[];
-	contaRows: ContaRow[];
-	cartaoRows: CartaoRow[];
+	payerRows: PayerRow[];
+	categoryRows: CategoryRow[];
+	accountRows: AccountRow[];
+	cardRows: CardRow[];
 }): SluggedFilters => {
-	const pagadorSlugger = createSlugGenerator();
-	const categoriaSlugger = createSlugGenerator();
-	const contaCartaoSlugger = createSlugGenerator();
+	const payerSlugger = createSlugGenerator();
+	const categorySlugger = createSlugGenerator();
+	const accountCardSlugger = createSlugGenerator();
 
-	const pagadorFiltersRaw = pagadorRows.map((pagador) => {
-		const label = normalizeLabel(pagador.name);
+	const payerFiltersRaw = payerRows.map((payer) => {
+		const label = normalizeLabel(payer.name);
 		return {
-			id: pagador.id,
+			id: payer.id,
 			label,
-			slug: pagadorSlugger(label),
-			role: pagador.role ?? null,
-			avatarUrl: pagador.avatarUrl ?? null,
+			slug: payerSlugger(label),
+			role: payer.role ?? null,
+			avatarUrl: payer.avatarUrl ?? null,
 		};
 	});
 
-	const categoriaFiltersRaw = categoriaRows.map((categoria) => {
-		const label = normalizeLabel(categoria.name);
+	const categoryFiltersRaw = categoryRows.map((category) => {
+		const label = normalizeLabel(category.name);
 		return {
-			id: categoria.id,
+			id: category.id,
 			label,
-			slug: categoriaSlugger(label),
-			type: categoria.type ?? null,
-			icon: categoria.icon ?? null,
+			slug: categorySlugger(label),
+			type: category.type ?? null,
+			icon: category.icon ?? null,
 		};
 	});
 
-	const contaFiltersRaw = contaRows.map((conta) => {
-		const label = normalizeLabel(conta.name);
+	const accountFiltersRaw = accountRows.map((account) => {
+		const label = normalizeLabel(account.name);
 		return {
-			id: conta.id,
+			id: account.id,
 			label,
-			slug: contaCartaoSlugger(label),
+			slug: accountCardSlugger(label),
 			kind: "conta" as const,
-			logo: conta.logo ?? null,
-			accountType: conta.accountType ?? null,
+			logo: account.logo ?? null,
+			accountType: account.accountType ?? null,
 		};
 	});
 
-	const cartaoFiltersRaw = cartaoRows.map((cartao) => {
-		const label = normalizeLabel(cartao.name);
+	const cardFiltersRaw = cardRows.map((card) => {
+		const label = normalizeLabel(card.name);
 		return {
-			id: cartao.id,
+			id: card.id,
 			label,
-			slug: contaCartaoSlugger(label),
+			slug: accountCardSlugger(label),
 			kind: "cartao" as const,
-			logo: cartao.logo ?? null,
-			closingDay: cartao.closingDay ?? null,
-			dueDay: cartao.dueDay ?? null,
+			logo: card.logo ?? null,
+			closingDay: card.closingDay ?? null,
+			dueDay: card.dueDay ?? null,
 		};
 	});
 
 	return {
-		pagadorFiltersRaw,
-		categoriaFiltersRaw,
-		contaFiltersRaw,
-		cartaoFiltersRaw,
+		payerFiltersRaw,
+		categoryFiltersRaw,
+		accountFiltersRaw,
+		cardFiltersRaw,
 	};
 };
 
 export const buildSlugMaps = ({
-	pagadorFiltersRaw,
-	categoriaFiltersRaw,
-	contaFiltersRaw,
-	cartaoFiltersRaw,
+	payerFiltersRaw,
+	categoryFiltersRaw,
+	accountFiltersRaw,
+	cardFiltersRaw,
 }: SluggedFilters): SlugMaps => ({
-	pagador: new Map(pagadorFiltersRaw.map(({ slug, id }) => [slug, id])),
-	categoria: new Map(categoriaFiltersRaw.map(({ slug, id }) => [slug, id])),
-	conta: new Map(contaFiltersRaw.map(({ slug, id }) => [slug, id])),
-	cartao: new Map(cartaoFiltersRaw.map(({ slug, id }) => [slug, id])),
+	payer: new Map(payerFiltersRaw.map(({ slug, id }) => [slug, id])),
+	category: new Map(categoryFiltersRaw.map(({ slug, id }) => [slug, id])),
+	financialAccount: new Map(
+		accountFiltersRaw.map(({ slug, id }) => [slug, id]),
+	),
+	card: new Map(cardFiltersRaw.map(({ slug, id }) => [slug, id])),
 });
 
 const isValidTransaction = (
 	value: string | null,
-): value is (typeof LANCAMENTO_TRANSACTION_TYPES)[number] =>
-	!!value &&
-	(LANCAMENTO_TRANSACTION_TYPES as readonly string[]).includes(value ?? "");
+): value is (typeof TRANSACTION_TYPES)[number] =>
+	!!value && (TRANSACTION_TYPES as readonly string[]).includes(value ?? "");
 
 const isValidCondition = (
 	value: string | null,
-): value is (typeof LANCAMENTO_CONDITIONS)[number] =>
-	!!value && (LANCAMENTO_CONDITIONS as readonly string[]).includes(value ?? "");
+): value is (typeof TRANSACTION_CONDITIONS)[number] =>
+	!!value &&
+	(TRANSACTION_CONDITIONS as readonly string[]).includes(value ?? "");
 
 const isValidPaymentMethod = (
 	value: string | null,
-): value is (typeof LANCAMENTO_PAYMENT_METHODS)[number] =>
-	!!value &&
-	(LANCAMENTO_PAYMENT_METHODS as readonly string[]).includes(value ?? "");
+): value is (typeof PAYMENT_METHODS)[number] =>
+	!!value && (PAYMENT_METHODS as readonly string[]).includes(value ?? "");
 
 const buildSearchPattern = (value: string | null) =>
 	value ? `%${value.trim().replace(/\s+/g, "%")}%` : null;
 
-export const buildLancamentoWhere = ({
+export const buildTransactionWhere = ({
 	userId,
 	period,
 	filters,
 	slugMaps,
 	cardId,
 	accountId,
-	pagadorId,
+	payerId,
 }: {
 	userId: string;
 	period: string;
-	filters: LancamentoSearchFilters;
+	filters: TransactionSearchFilters;
 	slugMaps: SlugMaps;
 	cardId?: string;
 	accountId?: string;
-	pagadorId?: string;
+	payerId?: string;
 }): SQL[] => {
 	const where: SQL[] = [
-		eq(lancamentos.userId, userId),
-		eq(lancamentos.period, period),
+		eq(transactions.userId, userId),
+		eq(transactions.period, period),
 	];
 
-	if (pagadorId) {
-		where.push(eq(lancamentos.pagadorId, pagadorId));
+	if (payerId) {
+		where.push(eq(transactions.payerId, payerId));
 	}
 
 	if (cardId) {
-		where.push(eq(lancamentos.cartaoId, cardId));
+		where.push(eq(transactions.cardId, cardId));
 	}
 
 	if (accountId) {
-		where.push(eq(lancamentos.contaId, accountId));
+		where.push(eq(transactions.accountId, accountId));
 	}
 
 	if (isValidTransaction(filters.transactionFilter)) {
-		where.push(eq(lancamentos.transactionType, filters.transactionFilter));
+		where.push(eq(transactions.transactionType, filters.transactionFilter));
 	}
 
 	if (isValidCondition(filters.conditionFilter)) {
-		where.push(eq(lancamentos.condition, filters.conditionFilter));
+		where.push(eq(transactions.condition, filters.conditionFilter));
 	}
 
 	if (isValidPaymentMethod(filters.paymentFilter)) {
-		where.push(eq(lancamentos.paymentMethod, filters.paymentFilter));
+		where.push(eq(transactions.paymentMethod, filters.paymentFilter));
 	}
 
-	if (!pagadorId && filters.pagadorFilter) {
-		const id = slugMaps.pagador.get(filters.pagadorFilter);
+	if (!payerId && filters.payerFilter) {
+		const id = slugMaps.payer.get(filters.payerFilter);
 		if (id) {
-			where.push(eq(lancamentos.pagadorId, id));
+			where.push(eq(transactions.payerId, id));
 		}
 	}
 
-	if (filters.categoriaFilter) {
-		const id = slugMaps.categoria.get(filters.categoriaFilter);
+	if (filters.categoryFilter) {
+		const id = slugMaps.category.get(filters.categoryFilter);
 		if (id) {
-			where.push(eq(lancamentos.categoriaId, id));
+			where.push(eq(transactions.categoryId, id));
 		}
 	}
 
-	if (filters.contaCartaoFilter) {
-		const contaId = slugMaps.conta.get(filters.contaCartaoFilter);
-		const relatedCartaoId = contaId
+	if (filters.accountCardFilter) {
+		const accountId = slugMaps.financialAccount.get(filters.accountCardFilter);
+		const relatedCardId = accountId
 			? null
-			: slugMaps.cartao.get(filters.contaCartaoFilter);
-		if (contaId) {
-			where.push(eq(lancamentos.contaId, contaId));
+			: slugMaps.card.get(filters.accountCardFilter);
+		if (accountId) {
+			where.push(eq(transactions.accountId, accountId));
 		}
-		if (!contaId && relatedCartaoId) {
-			where.push(eq(lancamentos.cartaoId, relatedCartaoId));
+		if (!accountId && relatedCardId) {
+			where.push(eq(transactions.cardId, relatedCardId));
 		}
 	}
 
@@ -357,12 +358,15 @@ export const buildLancamentoWhere = ({
 	if (searchPattern) {
 		where.push(
 			or(
-				ilike(lancamentos.name, searchPattern),
-				ilike(lancamentos.note, searchPattern),
-				ilike(lancamentos.paymentMethod, searchPattern),
-				ilike(lancamentos.condition, searchPattern),
-				and(isNotNull(contas.name), ilike(contas.name, searchPattern)),
-				and(isNotNull(cartoes.name), ilike(cartoes.name, searchPattern)),
+				ilike(transactions.name, searchPattern),
+				ilike(transactions.note, searchPattern),
+				ilike(transactions.paymentMethod, searchPattern),
+				ilike(transactions.condition, searchPattern),
+				and(
+					isNotNull(financialAccounts.name),
+					ilike(financialAccounts.name, searchPattern),
+				),
+				and(isNotNull(cards.name), ilike(cards.name, searchPattern)),
 			) as SQL,
 		);
 	}
@@ -370,38 +374,38 @@ export const buildLancamentoWhere = ({
 	return where;
 };
 
-type LancamentoRowWithRelations = typeof lancamentos.$inferSelect & {
-	pagador?: PagadorRow | null;
-	conta?: ContaRow | null;
-	cartao?: CartaoRow | null;
-	categoria?: CategoriaRow | null;
+type TransactionRowWithRelations = Partial<typeof transactions.$inferSelect> & {
+	payer?: PayerRow | null;
+	financialAccount?: AccountRow | null;
+	card?: CardRow | null;
+	category?: CategoryRow | null;
 };
 
-export const mapLancamentosData = (rows: LancamentoRowWithRelations[]) =>
+export const mapTransactionsData = (rows: TransactionRowWithRelations[]) =>
 	rows.map((item) => ({
-		id: item.id,
-		userId: item.userId,
-		name: item.name,
+		id: item.id ?? "",
+		userId: item.userId ?? "",
+		name: item.name ?? "",
 		purchaseDate: toDateOnlyString(item.purchaseDate) ?? "",
 		period: item.period ?? "",
-		transactionType: item.transactionType,
+		transactionType: item.transactionType ?? "",
 		amount: Number(item.amount ?? 0),
-		condition: item.condition,
-		paymentMethod: item.paymentMethod,
-		pagadorId: item.pagadorId ?? null,
-		pagadorName: item.pagador?.name ?? null,
-		pagadorAvatar: item.pagador?.avatarUrl ?? null,
-		pagadorRole: item.pagador?.role ?? null,
-		contaId: item.contaId ?? null,
-		contaName: item.conta?.name ?? null,
-		contaLogo: item.conta?.logo ?? null,
-		cartaoId: item.cartaoId ?? null,
-		cartaoName: item.cartao?.name ?? null,
-		cartaoLogo: item.cartao?.logo ?? null,
-		categoriaId: item.categoriaId ?? null,
-		categoriaName: item.categoria?.name ?? null,
-		categoriaType: item.categoria?.type ?? null,
-		categoriaIcon: item.categoria?.icon ?? null,
+		condition: item.condition ?? "",
+		paymentMethod: item.paymentMethod ?? "",
+		payerId: item.payerId ?? null,
+		pagadorName: item.payer?.name ?? null,
+		pagadorAvatar: item.payer?.avatarUrl ?? null,
+		pagadorRole: item.payer?.role ?? null,
+		accountId: item.accountId ?? null,
+		contaName: item.financialAccount?.name ?? null,
+		contaLogo: item.financialAccount?.logo ?? null,
+		cardId: item.cardId ?? null,
+		cartaoName: item.card?.name ?? null,
+		cartaoLogo: item.card?.logo ?? null,
+		categoryId: item.categoryId ?? null,
+		categoriaName: item.category?.name ?? null,
+		categoriaType: item.category?.type ?? null,
+		categoriaIcon: item.category?.icon ?? null,
 		installmentCount: item.installmentCount ?? null,
 		recurrenceCount: item.recurrenceCount ?? null,
 		currentInstallment: item.currentInstallment ?? null,
@@ -417,8 +421,8 @@ export const mapLancamentosData = (rows: LancamentoRowWithRelations[]) =>
 		seriesId: item.seriesId ?? null,
 		readonly:
 			Boolean(item.note?.startsWith(ACCOUNT_AUTO_INVOICE_NOTE_PREFIX)) ||
-			item.categoria?.name === "Saldo inicial" ||
-			item.categoria?.name === "Pagamentos",
+			item.category?.name === "Saldo inicial" ||
+			item.category?.name === "Pagamentos",
 	}));
 
 const sortByLabel = <T extends { label: string }>(items: T[]) =>
@@ -427,45 +431,44 @@ const sortByLabel = <T extends { label: string }>(items: T[]) =>
 	);
 
 export const buildOptionSets = ({
-	pagadorFiltersRaw,
-	categoriaFiltersRaw,
-	contaFiltersRaw,
-	cartaoFiltersRaw,
-	pagadorRows,
+	payerFiltersRaw,
+	categoryFiltersRaw,
+	accountFiltersRaw,
+	cardFiltersRaw,
+	payerRows,
 	limitCartaoId,
 	limitContaId,
 }: SluggedFilters & {
-	pagadorRows: PagadorRow[];
+	payerRows: PayerRow[];
 	limitCartaoId?: string;
 	limitContaId?: string;
-}): LancamentoOptionSets => {
-	const pagadorOptions = sortByLabel(
-		pagadorFiltersRaw.map(({ id, label, role, slug, avatarUrl }) =>
+}): TransactionOptionSets => {
+	const payerOptions = sortByLabel(
+		payerFiltersRaw.map(({ id, label, role, slug, avatarUrl }) =>
 			toOption(id, label, role, undefined, slug, avatarUrl),
 		),
 	);
 
-	const pagadorFilterOptions = sortByLabel(
-		pagadorFiltersRaw.map(({ slug, label, avatarUrl }) => ({
+	const payerFilterOptions = sortByLabel(
+		payerFiltersRaw.map(({ slug, label, avatarUrl }) => ({
 			slug,
 			label,
 			avatarUrl,
 		})),
 	);
 
-	const defaultPagadorId =
-		pagadorRows.find((pagador) => pagador.role === PAGADOR_ROLE_ADMIN)?.id ??
-		null;
+	const defaultPayerId =
+		payerRows.find((payer) => payer.role === PAYER_ROLE_ADMIN)?.id ?? null;
 
-	const splitPagadorOptions = pagadorOptions.filter(
-		(option) => option.role === PAGADOR_ROLE_TERCEIRO,
+	const splitPayerOptions = payerOptions.filter(
+		(option) => option.role === PAYER_ROLE_THIRD_PARTY,
 	);
 
 	const contaOptionsSource = limitContaId
-		? contaFiltersRaw.filter((conta) => conta.id === limitContaId)
-		: contaFiltersRaw;
+		? accountFiltersRaw.filter((conta) => conta.id === limitContaId)
+		: accountFiltersRaw;
 
-	const contaOptions = sortByLabel(
+	const accountOptions = sortByLabel(
 		contaOptionsSource.map(({ id, label, slug, logo, accountType }) =>
 			toOption(
 				id,
@@ -482,10 +485,10 @@ export const buildOptionSets = ({
 	);
 
 	const cartaoOptionsSource = limitCartaoId
-		? cartaoFiltersRaw.filter((cartao) => cartao.id === limitCartaoId)
-		: cartaoFiltersRaw;
+		? cardFiltersRaw.filter((cartao) => cartao.id === limitCartaoId)
+		: cardFiltersRaw;
 
-	const cartaoOptions = sortByLabel(
+	const cardOptions = sortByLabel(
 		cartaoOptionsSource.map(({ id, label, slug, logo, closingDay, dueDay }) =>
 			toOption(
 				id,
@@ -503,18 +506,18 @@ export const buildOptionSets = ({
 		),
 	);
 
-	const categoriaOptions = sortByLabel(
-		categoriaFiltersRaw.map(({ id, label, type, slug, icon }) =>
+	const categoryOptions = sortByLabel(
+		categoryFiltersRaw.map(({ id, label, type, slug, icon }) =>
 			toOption(id, label, undefined, type, slug, undefined, undefined, icon),
 		),
 	);
 
-	const categoriaFilterOptions = sortByLabel(
-		categoriaFiltersRaw.map(({ slug, label, icon }) => ({ slug, label, icon })),
+	const categoryFilterOptions = sortByLabel(
+		categoryFiltersRaw.map(({ slug, label, icon }) => ({ slug, label, icon })),
 	);
 
-	const contaCartaoFilterOptions = sortByLabel(
-		[...contaFiltersRaw, ...cartaoFiltersRaw]
+	const accountCardFilterOptions = sortByLabel(
+		[...accountFiltersRaw, ...cardFiltersRaw]
 			.filter(
 				(option) =>
 					(limitCartaoId && option.kind === "cartao"
@@ -528,14 +531,14 @@ export const buildOptionSets = ({
 	);
 
 	return {
-		pagadorOptions,
-		splitPagadorOptions,
-		defaultPagadorId,
-		contaOptions,
-		cartaoOptions,
-		categoriaOptions,
-		pagadorFilterOptions,
-		categoriaFilterOptions,
-		contaCartaoFilterOptions,
+		payerOptions,
+		splitPayerOptions,
+		defaultPayerId,
+		accountOptions,
+		cardOptions,
+		categoryOptions,
+		payerFilterOptions,
+		categoryFilterOptions,
+		accountCardFilterOptions,
 	};
 };

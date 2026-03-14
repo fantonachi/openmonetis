@@ -38,7 +38,7 @@ import {
 	widgetsConfig,
 } from "@/features/dashboard/widgets/widgets-config";
 import { NoteDialog } from "@/features/notes/components/note-dialog";
-import { LancamentoDialog } from "@/features/transactions/components/dialogs/transaction-dialog/transaction-dialog";
+import { TransactionDialog } from "@/features/transactions/components/dialogs/transaction-dialog/transaction-dialog";
 import type { SelectOption } from "@/features/transactions/components/types";
 import { ExpandableWidgetCard } from "@/shared/components/expandable-widget-card";
 import { Button } from "@/shared/components/ui/button";
@@ -48,12 +48,12 @@ type DashboardGridEditableProps = {
 	period: string;
 	initialPreferences: WidgetPreferences | null;
 	quickActionOptions: {
-		pagadorOptions: SelectOption[];
-		splitPagadorOptions: SelectOption[];
-		defaultPagadorId: string | null;
-		contaOptions: SelectOption[];
-		cartaoOptions: SelectOption[];
-		categoriaOptions: SelectOption[];
+		payerOptions: SelectOption[];
+		splitPayerOptions: SelectOption[];
+		defaultPayerId: string | null;
+		accountOptions: SelectOption[];
+		cardOptions: SelectOption[];
+		categoryOptions: SelectOption[];
 		estabelecimentos: string[];
 	};
 };
@@ -203,14 +203,14 @@ export function DashboardGridEditable({
 							Ações rápidas
 						</span>
 						<div className="-mb-1 grid w-full grid-cols-3 gap-1 pb-1 sm:mb-0 sm:flex sm:w-auto sm:items-center sm:gap-2 sm:overflow-visible sm:pb-0">
-							<LancamentoDialog
+							<TransactionDialog
 								mode="create"
-								pagadorOptions={quickActionOptions.pagadorOptions}
-								splitPagadorOptions={quickActionOptions.splitPagadorOptions}
-								defaultPagadorId={quickActionOptions.defaultPagadorId}
-								contaOptions={quickActionOptions.contaOptions}
-								cartaoOptions={quickActionOptions.cartaoOptions}
-								categoriaOptions={quickActionOptions.categoriaOptions}
+								payerOptions={quickActionOptions.payerOptions}
+								splitPayerOptions={quickActionOptions.splitPayerOptions}
+								defaultPayerId={quickActionOptions.defaultPayerId}
+								accountOptions={quickActionOptions.accountOptions}
+								cardOptions={quickActionOptions.cardOptions}
+								categoryOptions={quickActionOptions.categoryOptions}
 								estabelecimentos={quickActionOptions.estabelecimentos}
 								defaultPeriod={period}
 								defaultTransactionType="Receita"
@@ -228,14 +228,14 @@ export function DashboardGridEditable({
 									</Button>
 								}
 							/>
-							<LancamentoDialog
+							<TransactionDialog
 								mode="create"
-								pagadorOptions={quickActionOptions.pagadorOptions}
-								splitPagadorOptions={quickActionOptions.splitPagadorOptions}
-								defaultPagadorId={quickActionOptions.defaultPagadorId}
-								contaOptions={quickActionOptions.contaOptions}
-								cartaoOptions={quickActionOptions.cartaoOptions}
-								categoriaOptions={quickActionOptions.categoriaOptions}
+								payerOptions={quickActionOptions.payerOptions}
+								splitPayerOptions={quickActionOptions.splitPayerOptions}
+								defaultPayerId={quickActionOptions.defaultPayerId}
+								accountOptions={quickActionOptions.accountOptions}
+								cardOptions={quickActionOptions.cardOptions}
+								categoryOptions={quickActionOptions.categoryOptions}
 								estabelecimentos={quickActionOptions.estabelecimentos}
 								defaultPeriod={period}
 								defaultTransactionType="Despesa"

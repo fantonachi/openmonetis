@@ -111,7 +111,7 @@ export function CategoryReportSkeleton() {
 
 /**
  * Skeleton para a tabela de relatórios de categorias
- * Mantém a estrutura de colunas: Categoria, Tipo, múltiplos períodos, Total
+ * Mantém a estrutura de colunas: Category, Tipo, múltiplos períodos, Total
  */
 function CategoryReportTableSkeleton() {
 	// Simula 6 períodos (colunas)
@@ -122,7 +122,7 @@ function CategoryReportTableSkeleton() {
 			<Table>
 				<TableHeader>
 					<TableRow>
-						{/* Categoria */}
+						{/* Category */}
 						<TableHead className="w-[280px] min-w-[280px]">
 							<Skeleton className="h-4 w-20 rounded-2xl bg-foreground/10" />
 						</TableHead>
