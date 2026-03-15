@@ -1,15 +1,11 @@
 "use client";
+
 import { RiInformationLine } from "@remixicon/react";
 import Image from "next/image";
 import type { ReactNode } from "react";
 import MoneyValues from "@/shared/components/money-values";
 import { Badge } from "@/shared/components/ui/badge";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/shared/components/ui/card";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import {
 	Tooltip,
 	TooltipContent,
@@ -18,8 +14,6 @@ import {
 import { resolveLogoSrc } from "@/shared/lib/logo";
 import { formatCurrency } from "@/shared/utils/currency";
 import { cn } from "@/shared/utils/ui";
-
-type DetailValue = string | number | ReactNode;
 
 type AccountStatementCardProps = {
 	accountName: string;
@@ -37,11 +31,7 @@ type AccountStatementCardProps = {
 const getAccountStatusBadgeVariant = (
 	status: string,
 ): "success" | "outline" => {
-	const normalizedStatus = status.toLowerCase();
-	if (normalizedStatus === "ativa") {
-		return "success";
-	}
-	return "outline";
+	return status.toLowerCase() === "ativa" ? "success" : "outline";
 };
 
 export function AccountStatementCard({
@@ -57,149 +47,133 @@ export function AccountStatementCard({
 	actions,
 }: AccountStatementCardProps) {
 	const logoPath = resolveLogoSrc(logo);
+	const resultado = totalIncomes - totalExpenses;
 
 	return (
-		<Card className="border">
-			<CardHeader className="flex flex-col gap-3">
-				<div className="flex items-start gap-3">
-					{logoPath ? (
-						<div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-background">
-							<Image
-								src={logoPath}
-								alt={`Logo da conta ${accountName}`}
-								width={48}
-								height={48}
-								className="h-full w-full object-contain"
-							/>
-						</div>
-					) : null}
-
-					<div className="flex w-full items-start justify-between gap-3">
-						<div className="space-y-1">
-							<CardTitle className="text-xl font-semibold text-foreground">
-								{accountName}
-							</CardTitle>
-							<p className="text-sm text-muted-foreground">
-								Extrato de {periodLabel}
-							</p>
+		<Card className="gap-0 py-0">
+			<CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+				<div className="flex flex-col gap-4">
+					{/* Linha 1 — identidade */}
+					<div className="flex items-center justify-between gap-3">
+						<div className="flex min-w-0 items-center gap-3">
+							{logoPath ? (
+								<div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full">
+									<Image
+										src={logoPath}
+										alt={`Logo ${accountName}`}
+										width={42}
+										height={42}
+										className="h-full w-full object-contain"
+									/>
+								</div>
+							) : null}
+							<div className="min-w-0">
+								<h2 className="truncate text-sm font-semibold text-foreground">
+									{accountName}
+								</h2>
+								<p className="text-xs text-muted-foreground">
+									Extrato de {periodLabel}
+								</p>
+							</div>
 						</div>
 						{actions ? <div className="shrink-0">{actions}</div> : null}
 					</div>
-				</div>
-			</CardHeader>
 
-			<CardContent className="space-y-4 border-t border-border/60 border-dashed pt-4">
-				{/* Composição do Saldo */}
-				<div className="space-y-3">
-					<DetailItem
-						label="Saldo no início do período"
-						value={<MoneyValues amount={openingBalance} className="text-2xl" />}
-						tooltip="Saldo inicial cadastrado na conta somado aos lançamentos pagos anteriores a este mês."
-					/>
-
-					<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-						<DetailItem
-							label="Entradas"
-							value={
-								<span className="font-medium text-success">
-									{formatCurrency(totalIncomes)}
-								</span>
-							}
-							tooltip="Total de receitas deste mês classificadas como pagas para esta conta."
+					{/* Linha 2 — saldo final (hero) */}
+					<div className="space-y-4">
+						<p className="text-sm font-medium text-muted-foreground ">
+							Saldo ao final do período
+						</p>
+						<MoneyValues
+							amount={currentBalance}
+							className="text-3xl leading-none font-semibold tracking-tight sm:text-[2rem]"
 						/>
-						<DetailItem
-							label="Saídas"
-							value={
-								<span className="font-medium text-destructive">
-									{formatCurrency(totalExpenses)}
-								</span>
-							}
-							tooltip="Total de despesas pagas neste mês (considerando divisão entre pagadores)."
-						/>
-
-						<DetailItem
-							label="Resultado do período"
-							value={
-								<MoneyValues
-									amount={totalIncomes - totalExpenses}
-									className={cn(
-										"font-semibold text-xl",
-										totalIncomes - totalExpenses >= 0
-											? "text-success"
-											: "text-destructive",
-									)}
-								/>
-							}
-							tooltip="Diferença entre entradas e saídas do mês; positivo indica saldo crescente."
-						/>
+						<div className="flex items-center gap-2">
+							<Badge
+								variant={getAccountStatusBadgeVariant(status)}
+								className="text-[11px]"
+							>
+								{status}
+							</Badge>
+							<span className="text-xs text-muted-foreground">
+								{accountType}
+							</span>
+						</div>
 					</div>
 
-					{/* Saldo Atual - Destaque Principal */}
-					<DetailItem
-						label="Saldo ao final do período"
-						value={<MoneyValues amount={currentBalance} className="text-2xl" />}
-						tooltip="Saldo inicial do período + entradas - saídas realizadas neste mês."
-					/>
-				</div>
+					{/* Linha 3 — breakdown financeiro */}
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+						<MetaItem
+							label="Saldo inicial"
+							tooltip="Saldo inicial cadastrado na conta somado aos lançamentos pagos anteriores a este mês."
+						>
+							<span className="text-sm font-semibold text-foreground">
+								{formatCurrency(openingBalance)}
+							</span>
+						</MetaItem>
 
-				{/* Informações da FinancialAccount */}
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2 pt-2 border-t border-border/60 border-dashed">
-					<DetailItem
-						label="Tipo da conta"
-						value={accountType}
-						tooltip="Classificação definida na criação da conta (corrente, poupança, etc.)."
-					/>
-					<DetailItem
-						label="Status da conta"
-						value={
-							<div className="flex items-center">
-								<Badge
-									variant={getAccountStatusBadgeVariant(status)}
-									className="text-xs"
-								>
-									{status}
-								</Badge>
-							</div>
-						}
-						tooltip="Indica se a conta está ativa para lançamentos ou foi desativada."
-					/>
+						<MetaItem
+							label="Entradas"
+							tooltip="Total de receitas deste mês classificadas como pagas para esta conta."
+						>
+							<span className="text-sm font-semibold text-success">
+								{formatCurrency(totalIncomes)}
+							</span>
+						</MetaItem>
+
+						<MetaItem
+							label="Saídas"
+							tooltip="Total de despesas pagas neste mês (considerando divisão entre pagadores)."
+						>
+							<span className="text-sm font-semibold text-destructive">
+								{formatCurrency(totalExpenses)}
+							</span>
+						</MetaItem>
+
+						<MetaItem
+							label="Resultado"
+							tooltip="Diferença entre entradas e saídas do mês; positivo indica saldo crescente."
+						>
+							<span
+								className={cn(
+									"text-sm font-semibold",
+									resultado >= 0 ? "text-success" : "text-destructive",
+								)}
+							>
+								{resultado >= 0 ? "+" : ""}
+								{formatCurrency(resultado)}
+							</span>
+						</MetaItem>
+					</div>
 				</div>
 			</CardContent>
 		</Card>
 	);
 }
 
-function DetailItem({
+function MetaItem({
 	label,
-	value,
-	className,
 	tooltip,
+	children,
 }: {
 	label: string;
-	value: DetailValue;
-	className?: string;
-	tooltip?: string;
+	tooltip: string;
+	children: ReactNode;
 }) {
 	return (
-		<div className={cn("space-y-1", className)}>
-			<span className="flex items-center gap-1 text-xs font-medium uppercase text-muted-foreground/80">
+		<div className="rounded-md border border-border/60  px-3 py-2">
+			<span className="flex items-center gap-1 text-sm font-medium text-muted-foreground ">
 				{label}
-				{tooltip ? (
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<RiInformationLine className="size-3.5 cursor-help text-muted-foreground/60" />
-						</TooltipTrigger>
-						<TooltipContent
-							side="top"
-							align="start"
-							className="max-w-xs text-xs"
-						>
-							{tooltip}
-						</TooltipContent>
-					</Tooltip>
-				) : null}
+				<Tooltip>
+					<TooltipTrigger asChild>
+						<RiInformationLine className="size-3 shrink-0 cursor-help text-muted-foreground/50" />
+					</TooltipTrigger>
+					<TooltipContent side="top" align="start" className="max-w-xs text-xs">
+						{tooltip}
+					</TooltipContent>
+				</Tooltip>
 			</span>
-			<div className="text-base text-foreground">{value}</div>
+			<div className="mt-1">{children}</div>
 		</div>
 	);
 }

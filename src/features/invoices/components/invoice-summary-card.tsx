@@ -3,6 +3,7 @@
 import { RiEditLine } from "@remixicon/react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import type { ReactNode } from "react";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
@@ -13,12 +14,7 @@ import MoneyValues from "@/shared/components/money-values";
 import StatusDot from "@/shared/components/status-dot";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from "@/shared/components/ui/card";
+import { Card, CardContent } from "@/shared/components/ui/card";
 import { resolveCardBrandAsset } from "@/shared/lib/cards/brand-assets";
 import {
 	INVOICE_PAYMENT_STATUS,
@@ -29,6 +25,7 @@ import {
 } from "@/shared/lib/invoices";
 import { resolveLogoSrc } from "@/shared/lib/logo";
 import { formatCurrency } from "@/shared/utils/currency";
+import { formatDateOnly } from "@/shared/utils/date";
 import { cn } from "@/shared/utils/ui";
 import { EditPaymentDateDialog } from "./edit-payment-date-dialog";
 
@@ -66,12 +63,16 @@ const formatDay = (value: string) => value.padStart(2, "0");
 
 const getCardStatusDotColor = (status: string | null) => {
 	if (!status) return "bg-gray-400";
-	const normalizedStatus = status.toLowerCase();
-	if (normalizedStatus === "ativo" || normalizedStatus === "active") {
-		return "bg-success";
-	}
-	return "bg-gray-400";
+	const s = status.toLowerCase();
+	return s === "ativo" || s === "active" ? "bg-success" : "bg-gray-400";
 };
+
+const formatPaymentDate = (value: Date | null) =>
+	formatDateOnly(value, {
+		day: "2-digit",
+		month: "short",
+		year: "numeric",
+	}) ?? "data não informada";
 
 export function InvoiceSummaryCard({
 	cardId,
@@ -95,20 +96,21 @@ export function InvoiceSummaryCard({
 		initialPaymentDate ?? new Date(),
 	);
 
-	// Atualizar estado quando initialPaymentDate mudar
 	useEffect(() => {
 		setPaymentDate(initialPaymentDate ?? new Date());
 	}, [initialPaymentDate]);
 
 	const logoPath = resolveLogoSrc(logo);
 	const brandAsset = resolveCardBrandAsset(cardBrand);
-	const limitLabel =
-		typeof limitAmount === "number" ? formatCurrency(limitAmount) : "—";
+	const isPaid = invoiceStatus === INVOICE_PAYMENT_STATUS.PAID;
+	const paymentDateLabel = isPaid ? formatPaymentDate(paymentDate) : null;
+	const actionDescription = isPaid
+		? `Pagamento registrado em ${paymentDateLabel}.`
+		: INVOICE_STATUS_DESCRIPTION[invoiceStatus];
 
-	const targetStatus =
-		invoiceStatus === INVOICE_PAYMENT_STATUS.PAID
-			? INVOICE_PAYMENT_STATUS.PENDING
-			: INVOICE_PAYMENT_STATUS.PAID;
+	const targetStatus = isPaid
+		? INVOICE_PAYMENT_STATUS.PENDING
+		: INVOICE_PAYMENT_STATUS.PAID;
 
 	const handleAction = () => {
 		startTransition(async () => {
@@ -152,150 +154,145 @@ export function InvoiceSummaryCard({
 	};
 
 	return (
-		<Card className="border">
-			<CardHeader className="flex flex-col gap-3">
-				<div className="flex items-start gap-3">
-					{logoPath ? (
-						<div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/60 bg-background">
-							<Image
-								src={logoPath}
-								alt={`Logo do cartão ${cardName}`}
-								width={48}
-								height={48}
-								className="h-full w-full object-contain"
-							/>
-						</div>
-					) : cardBrand ? (
-						<span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background text-sm font-semibold text-muted-foreground">
-							{cardBrand}
-						</span>
-					) : null}
-
-					<div className="flex w-full items-start justify-between gap-3">
-						<div className="space-y-1">
-							<CardTitle className="text-xl font-semibold text-foreground">
-								{cardName}
-							</CardTitle>
-							<p className="text-sm text-muted-foreground">
-								Invoice de {periodLabel}
-							</p>
+		<Card className="gap-0 py-0">
+			<CardContent className="px-4 py-4 sm:px-5 sm:py-5">
+				<div className="flex flex-col gap-4">
+					{/* Linha 1 — identidade */}
+					<div className="flex items-center justify-between gap-3">
+						<div className="flex min-w-0 items-center gap-3">
+							{logoPath ? (
+								<div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full">
+									<Image
+										src={logoPath}
+										alt={`Logo ${cardName}`}
+										width={42}
+										height={42}
+										className="h-full w-full object-contain"
+									/>
+								</div>
+							) : cardBrand ? (
+								<span className="flex size-10 shrink-0 items-center justify-center rounded-full border bg-background text-xs font-semibold text-muted-foreground">
+									{cardBrand.slice(0, 2).toUpperCase()}
+								</span>
+							) : null}
+							<div className="min-w-0">
+								<h2 className="truncate text-sm font-semibold text-foreground">
+									{cardName}
+								</h2>
+								<p className="text-xs text-muted-foreground">
+									Fatura de {periodLabel}
+								</p>
+							</div>
 						</div>
 						{actions ? <div className="shrink-0">{actions}</div> : null}
 					</div>
-				</div>
-			</CardHeader>
 
-			<CardContent className="space-y-4 border-t border-border/60 border-dashed pt-4">
-				{/* Destaque Principal */}
-				<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-					<DetailItem
-						label="Valor total"
-						value={
-							<MoneyValues
-								amount={totalAmount}
-								className="text-2xl text-foreground"
-							/>
-						}
-					/>
-					<DetailItem
-						label="Status da fatura"
-						value={
+					{/* Linha 2 — valor da fatura (hero) */}
+					<div className="space-y-4">
+						<p className="text-sm font-medium text-muted-foreground">
+							Valor da fatura
+						</p>
+						<MoneyValues
+							amount={totalAmount}
+							className={cn(
+								"text-3xl leading-none font-semibold tracking-tight sm:text-[2rem]",
+								isPaid ? "text-success" : "text-foreground",
+							)}
+						/>
+						<div className="flex items-center gap-2">
 							<Badge
 								variant={INVOICE_STATUS_BADGE_VARIANT[invoiceStatus]}
-								className="text-xs"
+								className="text-[11px]"
 							>
 								{INVOICE_STATUS_LABEL[invoiceStatus]}
 							</Badge>
-						}
-					/>
-				</div>
-
-				{/* Informações Gerais */}
-				<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-					<DetailItem
-						label="Fechamento"
-						value={
-							<span className="font-medium">Dia {formatDay(closingDay)}</span>
-						}
-					/>
-					<DetailItem
-						label="Vencimento"
-						value={<span className="font-medium">Dia {formatDay(dueDay)}</span>}
-					/>
-					<DetailItem
-						label="Bandeira"
-						value={
-							brandAsset ? (
-								<div className="flex items-center gap-2">
-									<Image
-										src={brandAsset}
-										alt={`Bandeira ${cardBrand}`}
-										width={32}
-										height={32}
-										className="h-5 w-auto rounded"
-									/>
-									<span className="truncate">{cardBrand}</span>
-								</div>
-							) : cardBrand ? (
-								<span className="truncate">{cardBrand}</span>
-							) : (
-								<span className="text-muted-foreground">—</span>
-							)
-						}
-					/>
-					<DetailItem
-						label="Status cartão"
-						value={
-							cardStatus ? (
-								<div className="flex items-center gap-1.5">
+							{cardStatus ? (
+								<div className="flex items-center gap-1.5 text-xs text-muted-foreground">
 									<StatusDot color={getCardStatusDotColor(cardStatus)} />
-									<span className="truncate">{cardStatus}</span>
+									<span>{cardStatus}</span>
 								</div>
-							) : (
-								<span className="text-muted-foreground">—</span>
-							)
-						}
-					/>
-				</div>
+							) : null}
+						</div>
+					</div>
 
-				<DetailItem
-					label="Limite do cartão"
-					value={limitLabel}
-					className="sm:w-1/2"
-				/>
+					{/* Linha 3 — metadados do cartão */}
+					<div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+						<MetaItem label="Vencimento">
+							<span className="text-sm font-semibold text-foreground">
+								Dia {formatDay(dueDay)}
+							</span>
+						</MetaItem>
 
-				{/* Ações */}
-				<div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-center sm:justify-between">
-					<p className="text-xs text-muted-foreground">
-						{INVOICE_STATUS_DESCRIPTION[invoiceStatus]}
-					</p>
-					<div className="flex items-center gap-2">
-						<Button
-							type="button"
-							variant={actionVariantByStatus[invoiceStatus]}
-							disabled={isPending}
-							onClick={handleAction}
-							className="w-full shrink-0 sm:w-auto"
-						>
-							{isPending ? "Salvando..." : actionLabelByStatus[invoiceStatus]}
-						</Button>
-						{invoiceStatus === INVOICE_PAYMENT_STATUS.PAID && (
-							<EditPaymentDateDialog
-								trigger={
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon"
-										className="shrink-0"
-										aria-label="Editar data de pagamento"
-									>
-										<RiEditLine className="size-4" />
-									</Button>
-								}
-								currentDate={paymentDate}
-								onDateChange={handleDateChange}
-							/>
-						)}
+						<MetaItem label="Fechamento">
+							<span className="text-sm font-semibold text-foreground">
+								Dia {formatDay(closingDay)}
+							</span>
+						</MetaItem>
+
+						{typeof limitAmount === "number" ? (
+							<MetaItem label="Limite">
+								<span className="text-sm font-semibold text-foreground">
+									{formatCurrency(limitAmount)}
+								</span>
+							</MetaItem>
+						) : null}
+
+						{cardBrand ? (
+							<MetaItem label="Bandeira">
+								<div className="flex items-center gap-1.5">
+									{brandAsset ? (
+										<Image
+											src={brandAsset}
+											alt={cardBrand}
+											width={24}
+											height={24}
+											className="h-4 w-auto shrink-0"
+										/>
+									) : null}
+									<span className="text-sm font-semibold text-foreground truncate">
+										{cardBrand}
+									</span>
+								</div>
+							</MetaItem>
+						) : null}
+					</div>
+
+					{/* Linha 4 — ação */}
+					<div className="flex flex-col gap-3 rounded-md border border-dashed bg-muted/30 px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+						<div className="space-y-1">
+							<p className="text-xs text-muted-foreground">
+								{actionDescription}
+							</p>
+						</div>
+						<div className="flex shrink-0 items-center gap-1.5">
+							<Button
+								type="button"
+								size="sm"
+								variant={actionVariantByStatus[invoiceStatus]}
+								disabled={isPending}
+								onClick={handleAction}
+								className="min-w-32"
+							>
+								{isPending ? "Salvando..." : actionLabelByStatus[invoiceStatus]}
+							</Button>
+							{isPaid ? (
+								<EditPaymentDateDialog
+									trigger={
+										<Button
+											type="button"
+											variant="ghost"
+											size="icon-sm"
+											className="text-muted-foreground hover:text-foreground"
+											aria-label="Editar data de pagamento"
+										>
+											<RiEditLine className="size-4" />
+										</Button>
+									}
+									currentDate={paymentDate}
+									onDateChange={handleDateChange}
+								/>
+							) : null}
+						</div>
 					</div>
 				</div>
 			</CardContent>
@@ -303,21 +300,13 @@ export function InvoiceSummaryCard({
 	);
 }
 
-type DetailItemProps = {
-	label?: string;
-	value: React.ReactNode;
-	className?: string;
-};
-
-function DetailItem({ label, value, className }: DetailItemProps) {
+function MetaItem({ label, children }: { label: string; children: ReactNode }) {
 	return (
-		<div className={cn("space-y-1", className)}>
-			{label && (
-				<span className="block text-xs font-medium uppercase text-muted-foreground/80">
-					{label}
-				</span>
-			)}
-			<div className="text-base text-foreground">{value}</div>
+		<div className="rounded-md border border-border/60 px-3 py-2">
+			<span className="block text-sm font-medium text-muted-foreground">
+				{label}
+			</span>
+			<div className="mt-1">{children}</div>
 		</div>
 	);
 }
