@@ -1,6 +1,6 @@
 import {
 	RiBarcodeFill,
-	RiCheckboxCircleLine,
+	RiCalendarLine,
 	RiLoader4Line,
 	RiMoneyDollarCircleLine,
 } from "@remixicon/react";
@@ -11,6 +11,7 @@ import {
 } from "@/features/dashboard/bills-helpers";
 import type { DashboardBill } from "@/features/dashboard/bills-queries";
 import MoneyValues from "@/shared/components/money-values";
+import { PaymentSuccess } from "@/shared/components/payment-success";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -68,68 +69,46 @@ export function BillPaymentDialog({
 				}}
 			>
 				{modalState === "success" ? (
-					<div className="flex flex-col items-center gap-4 py-6 text-center">
-						<div className="flex size-16 items-center justify-center rounded-full bg-success/10 text-success">
-							<RiCheckboxCircleLine className="size-8" />
-						</div>
-						<div className="space-y-2">
-							<DialogTitle className="text-base">
-								Pagamento registrado!
-							</DialogTitle>
-							<DialogDescription className="text-sm">
-								Atualizamos o status do boleto para pago. Em instantes ele
-								aparecerá como baixado no histórico.
-							</DialogDescription>
-						</div>
-						<DialogFooter className="sm:justify-center">
-							<Button type="button" onClick={onClose} className="sm:w-auto">
-								Fechar
-							</Button>
-						</DialogFooter>
-					</div>
+					<PaymentSuccess
+						title="Pagamento registrado!"
+						description="Atualizamos o status do boleto para pago. Em instantes ele aparecerá como baixado no histórico."
+						onClose={onClose}
+					/>
 				) : (
 					<>
 						<DialogHeader>
-							<DialogTitle>Confirmar pagamento do boleto</DialogTitle>
-							<DialogDescription>
-								Confirme os dados para registrar o pagamento. Você poderá editar
-								o lançamento depois, se necessário.
-							</DialogDescription>
+							<div className="mb-1 flex items-center gap-3">
+								<div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
+									<RiBarcodeFill className="size-5 text-primary" />
+								</div>
+								<div>
+									<DialogTitle>Confirmar pagamento</DialogTitle>
+									<DialogDescription className="mt-0.5 text-xs">
+										Boleto
+									</DialogDescription>
+								</div>
+							</div>
 						</DialogHeader>
 
 						{bill ? (
-							<div className="space-y-4">
-								<div className="rounded-lg border p-4">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-3">
-											<div className="flex size-10 items-center justify-center rounded-full bg-primary/10">
-												<RiBarcodeFill className="size-5 text-primary" />
-											</div>
-											<div>
-												<p className="text-sm font-medium text-muted-foreground">
-													Boleto
-												</p>
-												<p className="text-lg font-bold text-foreground">
-													{bill.name}
-												</p>
-											</div>
-										</div>
-										{dueLabel ? (
-											<div className="text-right">
-												<p className="text-sm text-muted-foreground">
-													{dueLabel}
-												</p>
-											</div>
-										) : null}
-									</div>
+							<div className="space-y-3">
+								{/* Card principal */}
+								<div className="rounded-xl border bg-muted/30 p-4">
+									<p className="mb-1 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+										Boleto
+									</p>
+									<p className="text-base font-semibold text-foreground">
+										{bill.name}
+									</p>
 								</div>
 
-								<div className="grid gap-3 sm:grid-cols-2">
-									<div className="rounded-lg border p-3">
-										<div className="mb-2 flex items-center gap-2 text-muted-foreground">
-											<RiMoneyDollarCircleLine className="size-4" />
-											<span className="text-xs font-semibold uppercase">
-												Valor do Boleto
+								{/* Métricas */}
+								<div className="grid grid-cols-2 gap-3">
+									<div className="rounded-xl border p-3">
+										<div className="mb-1.5 flex items-center gap-1.5 text-muted-foreground">
+											<RiMoneyDollarCircleLine className="size-3.5" />
+											<span className="text-[11px] font-semibold uppercase tracking-wide">
+												Valor
 											</span>
 										</div>
 										<MoneyValues
@@ -137,22 +116,38 @@ export function BillPaymentDialog({
 											className="text-lg font-bold"
 										/>
 									</div>
-									<div className="rounded-lg border p-3">
-										<div className="mb-2 flex items-center gap-2 text-muted-foreground">
-											<RiCheckboxCircleLine className="size-4" />
-											<span className="text-xs font-semibold uppercase">
-												Status
+
+									<div className="rounded-xl border p-3">
+										<div className="mb-1.5 flex items-center gap-1.5 text-muted-foreground">
+											<RiCalendarLine className="size-3.5" />
+											<span className="text-[11px] font-semibold uppercase tracking-wide">
+												Vencimento
 											</span>
 										</div>
-										<Badge
-											variant={getBillStatusBadgeVariant(
-												bill.isSettled ? "Pago" : "Pendente",
-											)}
-										>
-											{bill.isSettled ? "Pago" : "Pendente"}
-										</Badge>
+										<p className="text-sm font-semibold text-foreground">
+											{dueLabel?.replace("Vencimento: ", "") ?? "—"}
+										</p>
 									</div>
 								</div>
+
+								{/* Status */}
+								<div className="flex items-center justify-between rounded-xl border p-3">
+									<span className="text-sm text-muted-foreground">
+										Status atual
+									</span>
+									<Badge
+										variant={getBillStatusBadgeVariant(
+											bill.isSettled ? "Pago" : "Pendente",
+										)}
+									>
+										{bill.isSettled ? "Pago" : "Pendente"}
+									</Badge>
+								</div>
+
+								{/* Aviso */}
+								<p className="px-1 text-xs text-muted-foreground">
+									Você poderá editar o lançamento depois, se necessário.
+								</p>
 							</div>
 						) : null}
 
@@ -169,7 +164,6 @@ export function BillPaymentDialog({
 								type="button"
 								onClick={onConfirm}
 								disabled={isProcessing || !bill || bill.isSettled}
-								className="relative"
 							>
 								{isProcessing ? (
 									<>

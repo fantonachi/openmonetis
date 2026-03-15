@@ -47,7 +47,7 @@ type ActionResult =
 	| { success: false; error: string };
 
 const successMessageByStatus: Record<InvoicePaymentStatus, string> = {
-	[INVOICE_PAYMENT_STATUS.PAID]: "Invoice marcada como paga.",
+	[INVOICE_PAYMENT_STATUS.PAID]: "Fatura marcada como paga.",
 	[INVOICE_PAYMENT_STATUS.PENDING]: "Pagamento da fatura foi revertido.",
 };
 

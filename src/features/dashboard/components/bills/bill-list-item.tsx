@@ -19,8 +19,8 @@ export function BillListItem({ bill, onPay }: BillListItemProps) {
 	const overdue = isBillOverdue(bill);
 
 	return (
-		<li className="flex items-center justify-between border-b border-dashed last:border-b-0 last:pb-0">
-			<div className="flex min-w-0 flex-1 items-center gap-2 py-2">
+		<li className="flex items-center justify-between transition-all duration-300 py-1.5">
+			<div className="flex min-w-0 flex-1 items-center gap-2 py-1">
 				<EstabelecimentoLogo name={bill.name} size={37} />
 
 				<div className="min-w-0">
@@ -54,7 +54,7 @@ export function BillListItem({ bill, onPay }: BillListItemProps) {
 				>
 					{bill.isSettled ? (
 						<span className="flex items-center gap-1 text-success">
-							<RiCheckboxCircleFill className="size-3" /> Pago
+							<RiCheckboxCircleFill className="size-4" /> Pago
 						</span>
 					) : overdue ? (
 						<span className="overdue-blink">

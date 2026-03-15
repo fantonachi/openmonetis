@@ -55,8 +55,8 @@ export function InvoiceListItem({ invoice, onPay }: InvoiceListItemProps) {
 	);
 
 	return (
-		<li className="flex items-center justify-between border-b border-dashed last:border-b-0 last:pb-0">
-			<div className="flex min-w-0 flex-1 items-center gap-2 py-2">
+		<div className="flex items-center justify-between transition-all duration-300 py-1.5">
+			<div className="flex min-w-0 flex-1 items-center gap-2 py-1">
 				<InvoiceLogo
 					cardName={invoice.cardName}
 					logo={invoice.logo}
@@ -133,7 +133,7 @@ export function InvoiceListItem({ invoice, onPay }: InvoiceListItemProps) {
 				>
 					{isPaid ? (
 						<span className="flex items-center gap-1 text-success">
-							<RiCheckboxCircleFill className="size-3" /> Pago
+							<RiCheckboxCircleFill className="size-4" /> Pago
 						</span>
 					) : isOverdue ? (
 						<span className="overdue-blink">
@@ -147,6 +147,6 @@ export function InvoiceListItem({ invoice, onPay }: InvoiceListItemProps) {
 					)}
 				</Button>
 			</div>
-		</li>
+		</div>
 	);
 }
