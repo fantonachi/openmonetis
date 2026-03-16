@@ -63,6 +63,7 @@ export interface CurrencyInputProps
 	> {
 	value: string;
 	onValueChange: (value: string) => void;
+	onChange?: React.ComponentProps<typeof Input>["onChange"];
 }
 
 export const CurrencyInput = React.forwardRef<

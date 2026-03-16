@@ -91,7 +91,7 @@ export function IncomeExpenseBalanceWidget({
 
 											return (
 												<div
-													key={entry.dataKey}
+													key={String(entry.dataKey ?? entry.name)}
 													className="flex items-center gap-2"
 												>
 													<div

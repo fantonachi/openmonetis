@@ -6,7 +6,9 @@ import {
 	Area,
 	AreaChart,
 	CartesianGrid,
-	type TooltipProps,
+	type TooltipContentProps,
+	type TooltipPayloadEntry,
+	type TooltipValueType,
 	XAxis,
 } from "recharts";
 import type { CategoryChartData } from "@/features/reports/category-chart-queries";
@@ -35,12 +37,19 @@ import {
 import { CATEGORY_COLORS } from "@/shared/utils/category-colors";
 import { currencyFormatter } from "@/shared/utils/currency";
 
-function AreaTooltip({ active, payload, label }: TooltipProps<number, string>) {
+function AreaTooltip({
+	active,
+	payload,
+	label,
+}: Partial<TooltipContentProps<TooltipValueType, string>>) {
 	if (!active || !payload?.length) return null;
 
 	const items = payload
-		.filter((entry) => Number(entry.value) > 0)
-		.sort((a, b) => Number(b.value) - Number(a.value));
+		.filter((entry: TooltipPayloadEntry) => Number(entry.value) > 0)
+		.sort(
+			(a: TooltipPayloadEntry, b: TooltipPayloadEntry) =>
+				Number(b.value) - Number(a.value),
+		);
 
 	if (items.length === 0) return null;
 
@@ -50,9 +59,9 @@ function AreaTooltip({ active, payload, label }: TooltipProps<number, string>) {
 				{label}
 			</p>
 			<div className="space-y-1.5">
-				{items.map((entry) => (
+				{items.map((entry: TooltipPayloadEntry) => (
 					<div
-						key={entry.dataKey}
+						key={String(entry.dataKey ?? entry.name)}
 						className="flex items-center justify-between gap-6"
 					>
 						<div className="flex min-w-0 items-center gap-1.5">

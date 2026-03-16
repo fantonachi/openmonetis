@@ -26,7 +26,7 @@ export type EligibleInstallment = {
  * Antecipação com dados completos
  */
 export type InstallmentAnticipationWithRelations = InstallmentAnticipation & {
-	transaction: Transaction;
+	transaction: Transaction | null;
 	payer: Payer | null;
 	category: Category | null;
 };

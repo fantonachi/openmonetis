@@ -387,7 +387,7 @@ export function CategoryHistoryWidget({ data }: CategoryHistoryWidgetProps) {
 
 													return (
 														<div
-															key={entry.dataKey}
+															key={String(entry.dataKey ?? entry.name)}
 															className="flex items-center justify-between gap-4"
 														>
 															<div className="flex items-center gap-2">

@@ -231,7 +231,7 @@ export default async function Page() {
 					<div className="mx-auto flex max-w-5xl flex-col items-center text-center gap-5 md:gap-6">
 						<Logo variant="small" className="h-12 w-12 mb-1" />
 
-						<Badge variant="primary">
+						<Badge variant="default">
 							<RiGithubFill size={14} className="mr-1" />
 							Projeto Open Source
 						</Badge>
@@ -378,7 +378,7 @@ export default async function Page() {
 					<div className="mx-auto max-w-6xl">
 						<AnimateOnScroll>
 							<div className="text-center mb-8 md:mb-12">
-								<Badge variant="primary" className="mb-4">
+								<Badge variant="default" className="mb-4">
 									Conheça as telas
 								</Badge>
 								<h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
@@ -430,7 +430,7 @@ export default async function Page() {
 					<div className="mx-auto max-w-5xl">
 						<AnimateOnScroll>
 							<div className="text-center mb-8 md:mb-12">
-								<Badge variant="primary" className="mb-4">
+								<Badge variant="default" className="mb-4">
 									O que tem aqui
 								</Badge>
 								<h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
@@ -514,7 +514,7 @@ export default async function Page() {
 							<div className="grid gap-8 md:gap-12 md:grid-cols-2 items-center">
 								{/* Text content */}
 								<div className="order-2 md:order-1">
-									<Badge variant="primary" className="mb-4">
+									<Badge variant="default" className="mb-4">
 										<RiSmartphoneLine size={14} className="mr-1" />
 										App Android
 									</Badge>
@@ -625,7 +625,7 @@ export default async function Page() {
 					<div className="mx-auto max-w-5xl">
 						<AnimateOnScroll>
 							<div className="text-center mb-8 md:mb-12">
-								<Badge variant="primary" className="mb-4">
+								<Badge variant="default" className="mb-4">
 									Stack técnica
 								</Badge>
 								<h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">
@@ -748,7 +748,7 @@ export default async function Page() {
 					<div className="mx-auto max-w-3xl">
 						<AnimateOnScroll>
 							<div className="text-center mb-8 md:mb-12">
-								<Badge variant="primary" className="mb-4">
+								<Badge variant="default" className="mb-4">
 									Como usar
 								</Badge>
 								<h2 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 md:mb-4">

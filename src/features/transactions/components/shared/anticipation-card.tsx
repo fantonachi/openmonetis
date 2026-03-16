@@ -34,7 +34,7 @@ export function AnticipationCard({
 }: AnticipationCardProps) {
 	const [isPending, startTransition] = useTransition();
 
-	const isSettled = anticipation.transaction.isSettled === true;
+	const isSettled = anticipation.transaction?.isSettled === true;
 	const canCancel = !isSettled;
 
 	const formatDate = (date: Date) => {

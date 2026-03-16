@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	boolean,
 	date,
 	index,
@@ -536,7 +537,7 @@ export const installmentAnticipations = pgTable(
 			.default("0"),
 		transactionId: uuid("lancamento_id")
 			.notNull()
-			.references(() => transactions.id, { onDelete: "cascade" }),
+			.references((): AnyPgColumn => transactions.id, { onDelete: "cascade" }),
 		payerId: uuid("pagador_id").references(() => payers.id, {
 			onDelete: "cascade",
 		}),
@@ -585,7 +586,7 @@ export const transactions = pgTable(
 		isDivided: boolean("dividido").default(false),
 		isAnticipated: boolean("antecipado").default(false),
 		anticipationId: uuid("antecipacao_id").references(
-			() => installmentAnticipations.id,
+			(): AnyPgColumn => installmentAnticipations.id,
 			{ onDelete: "set null" },
 		),
 		createdAt: timestamp("created_at", {
