@@ -231,6 +231,29 @@ export function InboxPage({
 		setIds(ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
 	};
 
+	const allPendingSelected =
+		sortedPending.length > 0 &&
+		selectedPendingIds.length === sortedPending.length;
+	const allProcessedSelected =
+		sortedProcessed.length > 0 &&
+		selectedProcessedIds.length === sortedProcessed.length;
+	const allDiscardedSelected =
+		sortedDiscarded.length > 0 &&
+		selectedDiscardedIds.length === sortedDiscarded.length;
+
+	const toggleSelectAllPending = () => {
+		if (allPendingSelected) setSelectedPendingIds([]);
+		else setSelectedPendingIds(sortedPending.map((item) => item.id));
+	};
+	const toggleSelectAllProcessed = () => {
+		if (allProcessedSelected) setSelectedProcessedIds([]);
+		else setSelectedProcessedIds(sortedProcessed.map((item) => item.id));
+	};
+	const toggleSelectAllDiscarded = () => {
+		if (allDiscardedSelected) setSelectedDiscardedIds([]);
+		else setSelectedDiscardedIds(sortedDiscarded.map((item) => item.id));
+	};
+
 	const handleSelectionBulkRequest = (
 		status: "pending" | "processed" | "discarded",
 	) => {
@@ -412,16 +435,27 @@ export function InboxPage({
 				</TabsList>
 
 				<TabsContent value="pending" className="mt-4">
-					{selectedPendingIds.length > 0 && (
-						<div className="mb-4 flex justify-end">
+					{sortedPending.length > 0 && (
+						<div className="mb-4 flex items-center justify-end gap-2">
 							<Button
-								variant="destructive"
+								variant="outline"
 								size="sm"
-								onClick={() => handleSelectionBulkRequest("pending")}
+								onClick={toggleSelectAllPending}
 							>
-								<RiDeleteBinLine className="mr-1.5 size-4" />
-								Descartar selecionados ({selectedPendingIds.length})
+								{allPendingSelected
+									? "Desselecionar todos"
+									: "Selecionar todos"}
 							</Button>
+							{selectedPendingIds.length > 0 && (
+								<Button
+									variant="destructive"
+									size="sm"
+									onClick={() => handleSelectionBulkRequest("pending")}
+								>
+									<RiDeleteBinLine className="mr-1.5 size-4" />
+									Descartar selecionados ({selectedPendingIds.length})
+								</Button>
+							)}
 						</div>
 					)}
 					{renderGrid(sortedPending, false, selectedPendingIds, (id) =>
@@ -431,6 +465,15 @@ export function InboxPage({
 				<TabsContent value="processed" className="mt-4">
 					{sortedProcessed.length > 0 && (
 						<div className="mb-4 flex items-center justify-end gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={toggleSelectAllProcessed}
+							>
+								{allProcessedSelected
+									? "Desselecionar todos"
+									: "Selecionar todos"}
+							</Button>
 							{selectedProcessedIds.length > 0 && (
 								<Button
 									variant="destructive"
@@ -458,6 +501,15 @@ export function InboxPage({
 				<TabsContent value="discarded" className="mt-4">
 					{sortedDiscarded.length > 0 && (
 						<div className="mb-4 flex items-center justify-end gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={toggleSelectAllDiscarded}
+							>
+								{allDiscardedSelected
+									? "Desselecionar todos"
+									: "Selecionar todos"}
+							</Button>
 							{selectedDiscardedIds.length > 0 && (
 								<Button
 									variant="destructive"
@@ -500,6 +552,7 @@ export function InboxPage({
 				defaultAmount={defaultAmount}
 				defaultCardId={matchedCartaoId}
 				defaultPaymentMethod={matchedCartaoId ? "Cartão de crédito" : null}
+				defaultTransactionType="Despesa"
 				forceShowTransactionType
 				onSuccess={handleLancamentoSuccess}
 			/>
@@ -508,6 +561,7 @@ export function InboxPage({
 				open={detailsOpen}
 				onOpenChange={handleDetailsOpenChange}
 				item={itemDetails}
+				onProcess={handleProcessRequest}
 			/>
 
 			<ConfirmActionDialog

@@ -5,7 +5,6 @@ import {
 	RiCheckLine,
 	RiDeleteBinLine,
 	RiFileList2Line,
-	RiMoreLine,
 } from "@remixicon/react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -15,21 +14,41 @@ import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
 	Card,
-	CardAction,
 	CardContent,
 	CardFooter,
 	CardHeader,
 	CardTitle,
 } from "@/shared/components/ui/card";
 import { Checkbox } from "@/shared/components/ui/checkbox";
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/shared/components/ui/dropdown-menu";
 import { resolveLogoSrc } from "@/shared/lib/logo";
 import type { InboxItem } from "./types";
+
+// O timestamp vem do app Android em horário local mas salvo como UTC.
+// Adicionamos o offset de Brasília para corrigir o cálculo de "há X tempo".
+const BRASILIA_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+function adjustToBrasilia(date: Date): Date {
+	return new Date(date.getTime() + BRASILIA_OFFSET_MS);
+}
+
+function findMatchingLogo(
+	sourceAppName: string | null,
+	appLogoMap: Record<string, string>,
+): string | null {
+	if (!sourceAppName) return null;
+
+	const appName = sourceAppName.toLowerCase();
+
+	if (appLogoMap[appName]) return resolveLogoSrc(appLogoMap[appName]);
+
+	for (const [name, logo] of Object.entries(appLogoMap)) {
+		if (name.includes(appName) || appName.includes(name)) {
+			return resolveLogoSrc(logo);
+		}
+	}
+
+	return null;
+}
 
 interface InboxCardProps {
 	item: InboxItem;
@@ -42,27 +61,6 @@ interface InboxCardProps {
 	onRestoreToPending?: (item: InboxItem) => void | Promise<void>;
 	selected?: boolean;
 	onSelectToggle?: (id: string) => void;
-}
-
-function findMatchingLogo(
-	sourceAppName: string | null,
-	appLogoMap: Record<string, string>,
-): string | null {
-	if (!sourceAppName) return null;
-
-	const appName = sourceAppName.toLowerCase();
-
-	// Exact match first
-	if (appLogoMap[appName]) return resolveLogoSrc(appLogoMap[appName]);
-
-	// Partial match: card/account name contains app name or vice versa
-	for (const [name, logo] of Object.entries(appLogoMap)) {
-		if (name.includes(appName) || appName.includes(name)) {
-			return resolveLogoSrc(logo);
-		}
-	}
-
-	return null;
 }
 
 export function InboxCard({
@@ -83,27 +81,13 @@ export function InboxCard({
 
 	const amount = item.parsedAmount ? parseFloat(item.parsedAmount) : null;
 
-	// O timestamp vem do app Android em horário local mas salvo como UTC
-	// Precisamos interpretar o valor UTC como se fosse horário de Brasília
 	const rawDate = new Date(item.notificationTimestamp);
-
-	// Ajusta adicionando o offset de Brasília (3 horas) para corrigir o cálculo do "há X tempo"
-	const BRASILIA_OFFSET_MS = 3 * 60 * 60 * 1000;
-	const notificationDate = new Date(rawDate.getTime() + BRASILIA_OFFSET_MS);
+	const notificationDate = adjustToBrasilia(rawDate);
 
 	const timeAgo = formatDistanceToNow(notificationDate, {
 		addSuffix: true,
 		locale: ptBR,
 	});
-
-	// Para exibição, usa UTC pois o valor já representa horário de Brasília
-	const _formattedTime = new Intl.DateTimeFormat("pt-BR", {
-		day: "2-digit",
-		month: "short",
-		hour: "2-digit",
-		minute: "2-digit",
-		timeZone: "UTC",
-	}).format(rawDate);
 
 	const statusDate =
 		item.status === "processed"
@@ -118,12 +102,11 @@ export function InboxCard({
 
 	return (
 		<Card
-			className={`flex flex-col gap-0 py-0 h-54 transition-colors ${selected ? "ring-2 ring-primary" : ""}`}
+			className={`flex h-54 flex-col gap-0 py-0 transition-colors ${selected ? "ring-2 ring-primary" : ""}`}
 		>
-			{/* Header com app e valor */}
 			<CardHeader className="pt-4">
-				<div className="flex items-center justify-between">
-					<CardTitle className="flex items-center gap-1.5 text-md">
+				<div className="flex items-center justify-between gap-2">
+					<CardTitle className="flex min-w-0 items-center gap-1.5 text-sm">
 						{matchedLogo && (
 							<Image
 								src={matchedLogo}
@@ -133,64 +116,30 @@ export function InboxCard({
 								className="shrink-0 rounded-full"
 							/>
 						)}
-						{item.sourceAppName || item.sourceApp}
-						{"  "}
-						<span className="text-xs font-normal text-muted-foreground">
+						<span className="truncate">
+							{item.sourceAppName || item.sourceApp}
+						</span>
+						<span className="shrink-0 text-xs font-normal text-muted-foreground">
 							{timeAgo}
 						</span>
 					</CardTitle>
 					{amount !== null && (
-						<MoneyValues amount={amount} className="text-sm" />
+						<MoneyValues amount={amount} className="shrink-0 text-sm" />
 					)}
 				</div>
-
-				{!readonly && (
-					<CardAction>
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button
-									variant="ghost"
-									size="icon"
-									className="size-7 -mr-2 -mt-1"
-								>
-									<RiMoreLine className="size-4" />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align="end">
-								<DropdownMenuItem onClick={() => onViewDetails?.(item)}>
-									<RiFileList2Line className="mr-2 size-4" />
-									Ver detalhes
-								</DropdownMenuItem>
-								<DropdownMenuItem onClick={() => onProcess?.(item)}>
-									<RiCheckLine className="mr-2 size-4" />
-									Processar
-								</DropdownMenuItem>
-								<DropdownMenuItem
-									onClick={() => onDiscard?.(item)}
-									className="text-destructive"
-								>
-									<RiDeleteBinLine className="mr-2 size-4" />
-									Descartar
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					</CardAction>
-				)}
 			</CardHeader>
 
-			{/* Conteúdo da notificação */}
 			<CardContent className="flex-1 py-2">
 				{item.originalTitle && (
 					<p className="mb-1 text-sm font-bold">{item.originalTitle}</p>
 				)}
-				<p className="whitespace-pre-wrap text-sm text-muted-foreground line-clamp-4">
+				<p className="line-clamp-4 whitespace-pre-wrap text-sm text-muted-foreground">
 					{item.originalText}
 				</p>
 			</CardContent>
 
-			{/* Botões de ação ou badge de status */}
 			{readonly ? (
-				<CardFooter className="gap-2 pt-3 pb-4">
+				<CardFooter className="gap-2 pb-4 pt-3">
 					<Badge
 						variant={item.status === "processed" ? "default" : "secondary"}
 					>
@@ -201,7 +150,7 @@ export function InboxCard({
 							{formattedStatusDate}
 						</span>
 					)}
-					<div className="ml-auto flex items-center gap-1">
+					<div className="ml-auto flex items-center gap-2">
 						{item.status === "discarded" && onRestoreToPending && (
 							<Button
 								variant="ghost"
@@ -220,6 +169,7 @@ export function InboxCard({
 								size="icon-sm"
 								className="text-muted-foreground hover:text-destructive"
 								onClick={() => onDelete(item)}
+								aria-label="Excluir notificação"
 							>
 								<RiDeleteBinLine className="size-4" />
 							</Button>
@@ -234,7 +184,7 @@ export function InboxCard({
 					</div>
 				</CardFooter>
 			) : (
-				<CardFooter className="gap-2 pt-3 pb-4">
+				<CardFooter className="gap-2 pb-4 pt-3">
 					<Button
 						size="sm"
 						className="flex-1"
@@ -242,6 +192,16 @@ export function InboxCard({
 					>
 						<RiCheckLine className="mr-1.5 size-4" />
 						Processar
+					</Button>
+					<Button
+						size="icon-sm"
+						variant="ghost"
+						onClick={() => onViewDetails?.(item)}
+						className="text-muted-foreground hover:text-foreground"
+						aria-label="Ver detalhes"
+						title="Ver detalhes"
+					>
+						<RiFileList2Line className="size-4" />
 					</Button>
 					<Button
 						size="icon-sm"
