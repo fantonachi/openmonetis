@@ -43,19 +43,19 @@ export function NoteCard({
 
 	const actions = [
 		{
-			label: "Editar",
+			label: "editar",
 			icon: <RiPencilLine className="size-4" aria-hidden />,
 			onClick: onEdit,
 			destructive: false,
 		},
 		{
-			label: "Detalhes",
+			label: "detalhes",
 			icon: <RiFileList2Line className="size-4" aria-hidden />,
 			onClick: onDetails,
 			destructive: false,
 		},
 		{
-			label: isArquivadas ? "Desarquivar" : "Arquivar",
+			label: isArquivadas ? "desarquivar" : "arquivar",
 			icon: isArquivadas ? (
 				<RiInboxUnarchiveLine className="size-4" aria-hidden />
 			) : (
@@ -65,7 +65,7 @@ export function NoteCard({
 			destructive: false,
 		},
 		{
-			label: "Remover",
+			label: "remover",
 			icon: <RiDeleteBin5Line className="size-4" aria-hidden />,
 			onClick: onRemove,
 			destructive: true,
