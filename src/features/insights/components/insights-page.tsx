@@ -157,7 +157,7 @@ export function InsightsPage({ period, onAnalyze }: InsightsPageProps) {
 				<Button
 					onClick={handleAnalyze}
 					disabled={isPending || isLoading}
-					className="bg-linear-to-r from-primary to-violet-500 dark:from-primary-dark dark:to-emerald-600"
+					className="bg-linear-to-r from-primary via-violet-400 to-cyan-400 dark:from-primary-dark dark:to-cyan-600"
 				>
 					<RiSparklingLine className="mr-2 size-5" aria-hidden="true" />
 					{isPending ? "Analisando..." : "Gerar análise inteligente"}

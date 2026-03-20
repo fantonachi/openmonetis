@@ -33,61 +33,47 @@ export const PROVIDERS = {
  * Lista de modelos de IA disponíveis para análise de insights
  */
 export const AVAILABLE_MODELS = [
-	// OpenAI Models - GPT-5.2 Family (Latest)
-	{ id: "gpt-5.2", name: "GPT-5.2", provider: "openai" as const },
-	{
-		id: "gpt-5.2-instant",
-		name: "GPT-5.2 Instant",
-		provider: "openai" as const,
-	},
-	{
-		id: "gpt-5.2-thinking",
-		name: "GPT-5.2 Thinking",
-		provider: "openai" as const,
-	},
+	// OpenAI
+	{ id: "gpt-5.4", name: "GPT-5.4", provider: "openai" as const },
+	{ id: "gpt-5.4-mini", name: "GPT-5.4 Mini", provider: "openai" as const },
+	{ id: "gpt-5.4-nano", name: "GPT-5.4 Nano", provider: "openai" as const },
 
-	// OpenAI Models - GPT-5 Family
-	{ id: "gpt-5", name: "GPT-5", provider: "openai" as const },
-	{ id: "gpt-5-instant", name: "GPT-5 Instant", provider: "openai" as const },
-
-	// Anthropic Models - Claude 4.5
+	// Anthropic
 	{
-		id: "claude-4.5-haiku",
-		name: "Claude 4.5 Haiku",
+		id: "claude-opus-4-6",
+		name: "Claude Opus 4.6",
 		provider: "anthropic" as const,
 	},
 	{
-		id: "claude-4.5-sonnet",
-		name: "Claude 4.5 Sonnet",
+		id: "claude-sonnet-4-6",
+		name: "Claude Sonnet 4.6",
 		provider: "anthropic" as const,
 	},
 	{
-		id: "claude-opus-4.1",
-		name: "Claude 4.1 Opus",
+		id: "claude-haiku-4-5-20251001",
+		name: "Claude Haiku 4.5",
 		provider: "anthropic" as const,
 	},
 
-	// Google Models - Gemini 3 (Latest)
+	// Google
+	{
+		id: "gemini-3.1-pro-preview",
+		name: "Gemini 3.1 Pro",
+		provider: "google" as const,
+	},
 	{
 		id: "gemini-3-flash-preview",
 		name: "Gemini 3 Flash",
 		provider: "google" as const,
 	},
 	{
-		id: "gemini-3-pro-preview",
-		name: "Gemini 3 Pro",
-		provider: "google" as const,
-	},
-
-	// Google Models - Gemini 2.0
-	{
-		id: "gemini-2.0-flash",
-		name: "Gemini 2.0 Flash",
+		id: "gemini-3.1-flash-lite-preview",
+		name: "Gemini 3.1 Flash Lite",
 		provider: "google" as const,
 	},
 ] as const;
 
-export const DEFAULT_MODEL = "gpt-5.2";
+export const DEFAULT_MODEL = "gpt-5.4";
 export const DEFAULT_PROVIDER = "openai";
 
 /**
