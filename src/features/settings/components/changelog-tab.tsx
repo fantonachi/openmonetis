@@ -14,12 +14,12 @@ function parseContributorLine(content: string) {
 
 const sectionBadgeVariant: Record<
 	string,
-	"success" | "info" | "destructive" | "secondary"
+	"success" | "info" | "destructive" | "secondary" | "outline"
 > = {
 	Adicionado: "success",
 	Alterado: "info",
-	Corrigido: "destructive",
-	Removido: "secondary",
+	Corrigido: "outline",
+	Removido: "destructive",
 };
 
 function getSectionVariant(type: string) {
@@ -37,7 +37,7 @@ export function ChangelogTab({ versions }: { versions: ChangelogVersion[] }) {
 							{version.date}
 						</span>
 					</div>
-					<div className="space-y-4">
+					<div className="space-y-4 w-full mx-auto sm:w-3/4">
 						{version.sections.map((section) => (
 							<div key={section.type}>
 								<Badge
@@ -46,10 +46,10 @@ export function ChangelogTab({ versions }: { versions: ChangelogVersion[] }) {
 								>
 									{section.type}
 								</Badge>
-								<ul className="space-y-1.5 text-muted-foreground">
+								<ul className="space-y-2 text-muted-foreground leading-relaxed text-pretty">
 									{section.items.map((item) => (
 										<li key={item} className="flex gap-2">
-											<span className="text-primary select-none">&bull;</span>
+											<span className="text-primary">&bull;</span>
 											<span className="text-sm">{item}</span>
 										</li>
 									))}

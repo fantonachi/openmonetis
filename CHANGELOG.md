@@ -5,78 +5,49 @@ Todas as mudanças notáveis deste projeto serão documentadas neste arquivo.
 O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [2.0.0] - 2026-03-21
+
+### Adicionado
+
+- Infraestrutura: script `scripts/backup.sh` para backup automático do banco PostgreSQL (Supabase) em dois formatos (`.dump` e `.sql.gz`), com upload para Google Drive via `rclone` e retenção de 7 dias local e 30 dias na nuvem; disponível via `pnpm backup` e agendado diariamente às 00:01 (horário de Brasília) via cron.
 
 ### Alterado
 
-- Refatoração de identificadores: todos os identificadores internos (variáveis, props, tipos, funções) foram migrados de PT-BR para inglês (`lancamento` → `transaction`, `pagador` → `payer`, `conta` → `account`, `cartao` → `card`, `categoria` → `category`, `orcamento` → `budget`, entre outros). Strings de UI e mensagens para o usuário foram mantidas em português.
-- Consistência interna: filtros de lançamentos passaram a usar search params em inglês (`type`, `condition`, `payment`, `payer`, `category`, `accountCard`), e resíduos de naming PT-BR foram limpos em dialogs, pages e helpers de `transactions`, `payers` e dashboard.
-- Lançamentos recorrentes: a criação de recorrências voltou a gerar todos os meses diretamente no fluxo de lançamento, com seleção explícita da quantidade de meses no formulário.
-- UI compartilhada: `type-badge` foi renomeado para `transaction-type-badge`, ganhou mapeamento centralizado por tipo financeiro e passou a usar o mesmo visual refinado em tabela, detalhe de transação e cabeçalho de categoria.
-- Navbar: a barra superior passou a usar um `dot pattern` SVG sutil sobre a cor primária, com máscara horizontal e camada de luz suave para dar textura sem perder a leitura limpa.
-- Autenticação: os cards de login e cadastro agora compartilham uma base visual com `dot pattern` suave e leve brilho em `primary`, reaproveitando a mesma linguagem aplicada na navbar sem prejudicar a legibilidade do formulário.
-- Autenticação: login e cadastro foram reequilibrados com espaçamentos mais consistentes, conteúdo centralizado em largura útil fixa, cabeçalhos com descrição e sidebar com composição mais harmônica, sem alterar a estrutura principal das telas.
-- Interface e textos: labels que ainda misturavam inglês com português foram padronizados em formulários, tabelas, relatórios e estados vazios, junto de pequenos ajustes de ícones e acabamentos visuais.
-- Skeletons e loadings: os estados de carregamento ficaram com cantos menos arredondados em todo o dashboard e páginas relacionadas, e o loading da home passou a espelhar a estrutura atual com boas-vindas, navegação mensal, cards de métricas e toolbar de widgets.
-- Faturas: o card de resumo da fatura foi refinado com hierarquia mais clara para valor, vencimento e status, metadados em blocos discretos e uma faixa de ação mais contextual para pagamento e edição da data.
-
-### Corrigido
-
-- Lançamentos: o schema compartilhado de observação voltou a aceitar `null`, corrigindo o erro `Invalid input: expected string, received null` ao salvar novos lançamentos sem anotação.
-- Cartões/Faturas: o pagamento da fatura passou a usar o valor líquido do período no cartão, evitando que o extrato da conta registre o total bruto das despesas quando houver receitas como estornos ou créditos na mesma fatura.
-
-### Removido
-
-- Recorrência legada: a tabela `recurring_series`, seus schemas, actions, geração lazy e o widget correspondente da dashboard foram removidos do projeto.
-
-### Alterado
-
-- Tipografia: a aplicação passou a carregar apenas a família `America` (`regular`, `medium` e `bold`) como fonte global, removendo a personalização por usuário e a distinção de fonte para valores monetários.
-- Queries e organização de domínios: o dashboard passou a nomear queries de leitura com sufixo `-queries.ts` e `preferences-queries.ts`, relatórios adotaram nomes explícitos como `cards-report-queries.ts`, `category-report-queries.ts`, `category-chart-queries.ts` e `establishments/queries.ts`, `insights/queries.ts` foi renomeado para `constants.ts` e as leituras reutilizáveis de lançamentos foram concentradas em `transactions/queries.ts`, deixando `page-helpers.ts` focado em parsing, filtros e transformação.
-
-## [2.0.0] - 2026-03-09
-
-### Alterado
-
-- Hooks e memoização: removidos `useCallback`/`useMemo` preventivos em páginas de listagem, navegação, formulários de ajustes, calendário e controllers da dashboard; também foi corrigido o uso indevido de `setState` dentro de `useMemo` no relatório por categoria.
+- Ajustes: aba de exclusão da conta passa a oferecer opção de zerar dados financeiros (preferências, tokens do Companion, compartilhamentos) sem excluir o usuário; categorias e pagador admin são recriados em seguida.
+- Performance: paginação server-side real com `count`, `limit` e `offset` em transações, extrato e inbox, com sincronização de `page`, `pageSize` e `status` na URL; `fetchInboxDialogData()` restrito ao fluxo de processamento.
+- Performance: dashboard reduzido de 19 fetchers para 7 blocos com agregações compartilhadas; snapshots dedicados para navbar (avatar do pagador admin, notificações, inbox) e quick actions, ambos com cache por usuário.
+- Performance: exportações de lançamentos e relatório por categoria carregam `xlsx`, `jspdf` e `jspdf-autotable` sob demanda, apenas no clique.
+- Performance: agregação de insights busca o pagador admin uma vez por request, remove joins repetidos com `pagadores` e paraleliza consultas independentes do período.
+- Cache: invalidação do dashboard segmentada por `userId` nas server actions; `revalidateForEntity()` agora exige `userId`, sem fallback global para dashboard.
+- Cache: agregação de insights com cache por usuário e período, reaproveitando a invalidação financeira segmentada.
+- Arquitetura: `getAdminPayerId` adotado em contas, orçamentos, calendário, detalhe de categoria, extrato e actions, eliminando JOINs repetidos com `payers.role`.
+- Banco: unique constraints compostas em `faturas` e `orcamentos`, com migration que aborta em caso de duplicatas históricas; actions tratam conflitos de concorrência com `upsert` para status de fatura e `onConflictDoNothing` para orçamentos.
+- Qualidade: `pnpm run lint` e `next build` passam sem erros de TypeScript; validação de tipos ativa no build.
+- Refatoração: identificadores internos migrados de PT-BR para inglês (`lancamento` → `transaction`, `pagador` → `payer`, `conta` → `account`, `cartao` → `card`, `categoria` → `category`, `orcamento` → `budget`); strings de UI permanecem em português. Search params de lançamentos também migrados (`type`, `condition`, `payment`, `payer`, `category`, `accountCard`).
+- Lançamentos recorrentes: criação de todos os meses diretamente no fluxo do lançamento, com seleção explícita da quantidade de meses no formulário.
+- UI: `type-badge` renomeado para `transaction-type-badge` com mapeamento centralizado por tipo financeiro; visual unificado em tabela, detalhe de transação e cabeçalho de categoria.
+- UI: navbar com `dot pattern` SVG sutil sobre a cor primária, máscara horizontal e camada de luz suave; cards de login/cadastro reaproveitam a mesma linguagem visual com `dot pattern` e brilho em `primary`.
+- UI: login e cadastro reequilibrados com espaçamentos mais consistentes, largura útil fixa e cabeçalhos com descrição.
+- UI: labels padronizados em formulários, tabelas, relatórios e estados vazios; skeletons com cantos menos arredondados; loading da home espelha estrutura atual (boas-vindas, navegação mensal, cards de métricas e toolbar de widgets).
+- Faturas: card de resumo refinado com hierarquia clara para valor, vencimento e status; metadados em blocos discretos e faixa de ação contextual para pagamento e edição de data.
+- Tipografia: aplicação carrega apenas a família `America` (`regular`, `medium` e `bold`) como fonte global, removendo personalização por usuário e distinção de fonte para valores monetários.
 - Pagadores: a tela de detalhe agora mantém o card principal do pagador visível durante a navegação entre abas, sem repetir o bloco completo dentro de cada seção.
 - Pagadores: detalhes sensíveis como envio automático, último envio e observações agora ficam ocultos quando o acesso ao pagador é somente leitura.
 - Pagadores: o e-mail do pagador agora aparece apenas no cabeçalho fixo, evitando repetição dentro do card de detalhes.
 - Relatório de tendências: a tabela e os cards mobile agora exibem a média mensal do período filtrado ao lado do total, com destaque visual em azul; a coluna de categoria também ficou mais compacta com truncamento para nomes longos.
 - Dashboard: o welcome banner deixou de ser um bloco colorido para virar apenas texto destacado.
-- Tema global: removidos do `globals.css` os tokens legados de `welcome-banner`, que não eram mais usados após a simplificação do dashboard.
 - UI base: o `Card` compartilhado agora mantém a borda neutra no estado padrão e aplica um gradiente entre `border` e `primary` no hover.
 - Assets: imagens que estavam soltas na raiz de `public/` foram movidas para `public/imagens/`, com atualização dos caminhos usados por landing page, logos, exports e manifesto do app.
-- Dashboard: `section-cards` foi renomeado para `dashboard-metrics-cards`, deixando mais claro que o componente representa os cards de métricas no topo da dashboard.
-- Dashboard: nomes em `lib/dashboard` foram padronizados por responsabilidade, com domínio `bills` em inglês no código, helpers mais explícitos e remoção do `common.ts` genérico.
+- Dashboard: `section-cards` foi renomeado para `dashboard-metrics-cards`; `boletos-widget` renomeado para `bill-widget`; widgets componentizados internamente por domínio (`invoices/`, `bills/`, `notes/`, `goals-progress/`, `payment-overview/`, `installment-expenses/`).
 - Widgets: `widget-card` foi separado entre um card base e uma versão expansível, isolando a lógica de overflow sem alterar o visual atual dos widgets.
-- Dashboard: `invoices-widget` foi dividido em componentes locais (`invoices/`) e teve helpers/controle movidos para `lib/dashboard`, deixando o arquivo principal focado na composição visual.
-- Dashboard: `boletos-widget` foi renomeado para `bill-widget`, ganhou componentes locais em `bills/` e teve o estado/formatadores extraídos para `lib/dashboard`.
-- Dashboard: `payment-status-widget` teve os componentes visuais internos separados em uma pasta local, deixando o arquivo principal só como ponto de composição.
-- Dashboard: `notes-widget` teve lista, item e composição dos dialogs separados em `notes/`, com helpers/controller extraídos para `lib/dashboard` para manter responsabilidades mais claras.
-- Dashboard: `goals-progress-widget` agora separa lista, item e diálogo em `goals-progress/`, com helpers/controller extraídos para `lib/dashboard` para manter o componente principal focado em composição.
-- Dashboard: `payment-overview-widget` passou a separar o shell de abas da regra de estado, isolando a composição dos widgets de condições e formas de pagamento.
-- Dashboard: `payment-conditions-widget` e `payment-methods-widget` passaram a usar uma base visual compartilhada para listas de distribuição, reduzindo duplicação e deixando cada widget responsável só por mapear seus dados.
-- Dashboard: os componentes internos de comportamento de pagamento foram reunidos em `payment-overview/`, deixando apenas o widget pai na raiz de `components/dashboard`.
-- Dashboard: `installment-expenses-widget` teve item/lista/view separados em `installment-expenses/`, com cálculos auxiliares movidos para `lib/dashboard` para deixar o componente principal focado na composição.
-- Datas: helpers de `YYYY-MM-DD`, labels de vencimento/pagamento e o relógio de negócio foram centralizados em `lib/utils/date.ts`, com adoção inicial em dashboard, pagadores, calendário, exports e actions de pagamento para reduzir drift de timezone.
-- Dashboard: `bill-widget` e `invoices-widget` agora compartilham um hook base de confirmação de pagamento em `lib/dashboard`, mantendo os wrappers específicos só com as regras de cada domínio.
-- Dashboard: os widgets de receita e despesa por categoria passaram a compartilhar uma view de breakdown no client e um builder de agregação no server, preservando queries separadas para não misturar regras financeiras específicas.
-- Dashboard: filtros repetidos de `lancamentos` passaram a usar helpers compartilhados em `lib/dashboard/lancamento-filters.ts`, reduzindo duplicação nas queries centrais de métricas, categorias, pagamentos, compras e estabelecimentos.
-- Lançamentos: a tabela deixou de quebrar ao formatar datas inválidas ou serializadas como ISO completo, normalizando `purchaseDate` para `YYYY-MM-DD` e adicionando fallback seguro no `formatDate`.
-- Períodos: `lib/utils/period` passou a concentrar conversões `Date <-> YYYY-MM` e labels reutilizáveis, com adoção inicial em pickers, calendário e filtros de relatórios.
-- Períodos: a adoção dos helpers centrais avançou para histórico de categorias, relatórios de cartões, exportações, insights, actions e cálculos de parcelas, reduzindo parse manual de `YYYY-MM` em regras de domínio.
-- Dashboard e faturas: labels financeiros de vencimento/pagamento agora compartilham uma base em `lib/utils/financial-dates.ts`, reduzindo duplicação entre `bills` e `invoices`.
-- Formatadores: porcentagens passaram a usar um util compartilhado em `lib/utils/percentage.ts`, com adoção inicial em breakdowns, metas, relatórios e cabeçalhos de categoria.
-- Formatadores: moeda passou a ter base compartilhada em `lib/utils/currency.ts`, com adoção inicial em componentes compartilhados, notificações e cards de relatórios.
-- Formatadores: a adoção do util de moeda avançou em resumo de fatura, extrato de conta, diálogo de orçamento, cabeçalho de pagador e histórico de categorias.
-- Datas e labels: `formatDateTime` foi adicionado em `lib/utils/date.ts`, com adoção em pagadores, notificações relacionadas e no modal de calendário para reduzir repetição de `toLocaleString`/`toLocaleDateString`.
-- Logos e cartões: resolução de logos e brand assets foi consolidada em `lib/logo/index.ts` e `lib/cartoes/brand-assets.ts`, com adoção principal em cartões, contas, notificações, inbox, relatórios e seletores.
-- Notas: helpers transversais saíram de `lib/dashboard` e foram separados entre `lib/notes/formatters.ts` e `lib/dashboard/notes-mappers.ts`, deixando o dashboard responsável apenas pela adaptação dos dados do widget.
-- Documentação: o relatório de duplicações de datas e utils agora inclui um checklist executivo com itens feitos, pendentes e o que não vale abstrair agora.
+- Datas: helpers de `YYYY-MM-DD`, labels de vencimento/pagamento e o relógio de negócio foram centralizados em `lib/utils/date.ts`, reduzindo drift de timezone em dashboard, pagadores, calendário, exports e actions.
+- Lançamentos: a tabela deixou de quebrar ao formatar datas inválidas ou serializadas como ISO completo, normalizando `purchaseDate` para `YYYY-MM-DD` com fallback seguro.
+- Logos e cartões: resolução de logos e brand assets foi consolidada em `lib/logo/index.ts` e `lib/cartoes/brand-assets.ts`, com adoção em cartões, contas, notificações, inbox, relatórios e seletores.
 
 ### Corrigido
 
+- Lançamentos: o schema compartilhado de observação voltou a aceitar `null`, corrigindo o erro `Invalid input: expected string, received null` ao salvar novos lançamentos sem anotação.
+- Cartões/Faturas: o pagamento da fatura passou a usar o valor líquido do período no cartão, evitando que o extrato da conta registre o total bruto das despesas quando houver receitas como estornos ou créditos na mesma fatura.
 - Hooks e sincronização: o provider de privacidade voltou a reagir corretamente às mudanças do modo privado, e o resumo de fatura agora reseta a data de pagamento quando a prop inicial deixa de existir.
 - Compatibilidade da refatoração de hooks e relatórios: `useMobile`/`useIsMobile` voltaram a ter exports compatíveis, o shim de `components/ui/use-mobile.ts` foi restaurado para o sidebar e `lib/relatorios/types.ts` voltou a reexportar os tipos usados pelos fetchers legados.
 - Widgets expansíveis: o shell compartilhado voltou a aplicar `relative` e `overflow-hidden`, mantendo o gradiente e o botão "Ver tudo" presos ao card.
