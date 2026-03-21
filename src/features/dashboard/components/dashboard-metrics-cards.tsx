@@ -33,7 +33,7 @@ const CARDS = [
 		label: "Receitas",
 		subtitle: "Entradas do período",
 		key: "receitas",
-		icon: RiArrowUpLine,
+		icon: RiArrowDownLine,
 		invertTrend: false,
 		iconClass: "text-success",
 	},
@@ -41,7 +41,7 @@ const CARDS = [
 		label: "Despesas",
 		subtitle: "Saídas do período",
 		key: "despesas",
-		icon: RiArrowDownLine,
+		icon: RiArrowUpLine,
 		invertTrend: true,
 		iconClass: "text-destructive",
 	},
@@ -59,7 +59,7 @@ const CARDS = [
 		key: "previsto",
 		icon: RiCalendarCheckLine,
 		invertTrend: false,
-		iconClass: "text-primary",
+		iconClass: "text-cyan-600",
 	},
 ] as const;
 
