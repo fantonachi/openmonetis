@@ -1,19 +1,21 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth/config";
+import { auth } from "@/shared/lib/auth/config";
 
 // Rotas protegidas que requerem autenticação
 const PROTECTED_ROUTES = [
-	"/ajustes",
-	"/anotacoes",
-	"/calendario",
-	"/cartoes",
-	"/categorias",
-	"/contas",
+	"/settings",
+	"/notes",
+	"/calendar",
+	"/cards",
+	"/categories",
+	"/accounts",
 	"/dashboard",
 	"/insights",
-	"/lancamentos",
-	"/orcamentos",
-	"/pagadores",
+	"/transactions",
+	"/budgets",
+	"/payers",
+	"/inbox",
+	"/reports",
 ];
 
 // Rotas públicas (não requerem autenticação)
@@ -65,17 +67,19 @@ export const config = {
 	// Apply middleware to protected and auth routes
 	matcher: [
 		"/",
-		"/ajustes/:path*",
-		"/anotacoes/:path*",
-		"/calendario/:path*",
-		"/cartoes/:path*",
-		"/categorias/:path*",
-		"/contas/:path*",
+		"/settings/:path*",
+		"/notes/:path*",
+		"/calendar/:path*",
+		"/cards/:path*",
+		"/categories/:path*",
+		"/accounts/:path*",
 		"/dashboard/:path*",
 		"/insights/:path*",
-		"/lancamentos/:path*",
-		"/orcamentos/:path*",
-		"/pagadores/:path*",
+		"/transactions/:path*",
+		"/budgets/:path*",
+		"/payers/:path*",
+		"/inbox/:path*",
+		"/reports/:path*",
 		"/login",
 		"/signup",
 	],

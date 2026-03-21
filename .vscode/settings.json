@@ -27,5 +27,9 @@
 	},
 	"eslint.enable": false,
 	"prettier.enable": false,
-	"typescript.preferences.organizeImportsCollation": "ordinal"
+	"typescript.preferences.organizeImportsCollation": "ordinal",
+	"editor.fontSize": 15,
+	"[jsonc]": {
+		"editor.defaultFormatter": "vscode.json-language-features"
+	}
 }
