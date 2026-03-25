@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "next dev --turbopack",
 		"dev-env": "tsx scripts/dev.ts",
+		"mockup": "tsx scripts/mock-data.ts",
 		"build": "next build",
 		"start": "next start",
 		"lint": "biome check .",

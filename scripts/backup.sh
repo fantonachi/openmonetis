@@ -81,7 +81,7 @@ fi
 
 # Extrai dados puros do dump custom (sem nova conexão ao banco)
 pg_restore --data-only --schema=public --no-owner --no-privileges \
-  "$DUMP_FILE" | gzip > "$DATA_FILE"
+  -f - "$DUMP_FILE" | gzip > "$DATA_FILE"
 
 log "Dump concluído: $(du -sh "$DUMP_FILE" | cut -f1) (.dump) | $(du -sh "$SQL_FILE" | cut -f1) (.sql.gz) | $(du -sh "$DATA_FILE" | cut -f1) (.data.sql.gz)"
 

@@ -75,7 +75,9 @@ function getItemDateKey(date: Date): string {
 // Para "hoje" e "ontem", precisamos da data real de Brasília (UTC-3).
 function getBrasiliaDateKey(date: Date): string {
 	const BRASILIA_OFFSET_MS = 3 * 60 * 60 * 1000;
-	return new Date(date.getTime() - BRASILIA_OFFSET_MS).toISOString().slice(0, 10);
+	return new Date(date.getTime() - BRASILIA_OFFSET_MS)
+		.toISOString()
+		.slice(0, 10);
 }
 
 function getGroupLabel(dateKey: string): string {

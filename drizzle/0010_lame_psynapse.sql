@@ -1,0 +1,1 @@
+-- placeholder: migration aplicada via db:push, arquivo original não preservado

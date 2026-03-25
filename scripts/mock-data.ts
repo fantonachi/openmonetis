@@ -135,11 +135,11 @@ type SeedSummary = {
 function printUsage() {
 	console.log(`
 Uso:
-  pnpm seed:empty-account -- --userId=<id> --startPeriod=YYYY-MM [--months=${DEFAULT_MONTHS}]
+  pnpm mockup -- --userId=<id> --startPeriod=YYYY-MM [--months=${DEFAULT_MONTHS}]
 
 Exemplos:
-  pnpm seed:empty-account -- --userId=user_123 --startPeriod=2026-01
-  pnpm seed:empty-account -- --userId=user_123 --startPeriod=2025-10 --months=8
+  pnpm mockup -- --userId=user_123 --startPeriod=2026-01
+  pnpm mockup -- --userId=user_123 --startPeriod=2025-10 --months=8
 `);
 }
 
@@ -766,11 +766,12 @@ async function seedInvoicesForCards(params: {
 }
 
 async function main() {
+	const options = parseArgs(process.argv.slice(2));
+
 	if (!process.env.DATABASE_URL) {
 		throw new Error("DATABASE_URL não está configurada no ambiente.");
 	}
 
-	const options = parseArgs(process.argv.slice(2));
 	const logoOptions = await loadLogoOptions();
 	const avatarOptions = await loadAvatarOptions();
 	const businessToday = getBusinessTodayInfo();
@@ -794,9 +795,8 @@ async function main() {
 		throw new Error(`Usuário ${options.userId} não foi encontrado.`);
 	}
 
-	await ensureCategories(targetUser.id);
-	const adminPayer = await ensureAdminPayer(targetUser);
 	await assertFinancialSpaceIsEmpty(targetUser.id);
+	const adminPayer = await ensureAdminPayer(targetUser);
 
 	const categoriesByName = await ensureCategories(targetUser.id);
 
