@@ -1,6 +1,6 @@
 {
 	"name": "openmonetis",
-	"version": "2.0.3",
+	"version": "2.1.0",
 	"private": true,
 	"scripts": {
 		"dev": "next dev --turbopack",
@@ -29,10 +29,12 @@
 		"backup": "bash scripts/backup.sh"
 	},
 	"dependencies": {
-		"@ai-sdk/anthropic": "^3.0.63",
-		"@ai-sdk/google": "^3.0.52",
-		"@ai-sdk/openai": "^3.0.47",
-		"@better-auth/passkey": "^1.5.5",
+		"@ai-sdk/anthropic": "^3.0.64",
+		"@ai-sdk/google": "^3.0.53",
+		"@ai-sdk/openai": "^3.0.48",
+		"@aws-sdk/client-s3": "^3.1019.0",
+		"@aws-sdk/s3-request-presigner": "^3.1019.0",
+		"@better-auth/passkey": "^1.5.6",
 		"@dnd-kit/core": "^6.3.1",
 		"@dnd-kit/sortable": "^10.0.0",
 		"@dnd-kit/utilities": "^3.2.2",
@@ -61,14 +63,14 @@
 		"@tanstack/react-virtual": "^3.13.23",
 		"@vercel/analytics": "^2.0.1",
 		"@vercel/speed-insights": "^2.0.0",
-		"ai": "^6.0.134",
-		"better-auth": "1.5.5",
+		"ai": "^6.0.141",
+		"better-auth": "1.5.6",
 		"canvas-confetti": "^1.9.4",
 		"class-variance-authority": "0.7.1",
 		"clsx": "2.1.1",
 		"cmdk": "^1.1.1",
 		"date-fns": "^4.1.0",
-		"drizzle-orm": "0.45.1",
+		"drizzle-orm": "0.45.2",
 		"jspdf": "^4.2.1",
 		"jspdf-autotable": "^5.0.7",
 		"next": "16.1.7",
@@ -78,7 +80,7 @@
 		"react": "19.2.4",
 		"react-day-picker": "^9.14.0",
 		"react-dom": "19.2.4",
-		"recharts": "3.8.0",
+		"recharts": "3.8.1",
 		"resend": "^6.9.4",
 		"sonner": "2.0.7",
 		"tailwind-merge": "3.5.0",
@@ -87,7 +89,7 @@
 		"zod": "4.3.6"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "2.4.8",
+		"@biomejs/biome": "2.4.9",
 		"@tailwindcss/postcss": "4.2.2",
 		"@types/canvas-confetti": "^1.9.0",
 		"@types/node": "25.5.0",
@@ -98,6 +100,6 @@
 		"drizzle-kit": "0.31.10",
 		"tailwindcss": "4.2.2",
 		"tsx": "4.21.0",
-		"typescript": "5.9.3"
+		"typescript": "6.0.2"
 	}
 }
