@@ -23,7 +23,7 @@ export default function RootLayout({
 	return (
 		<html
 			lang="pt-BR"
-			className={`${america.variable} ${america.className}`}
+			className={`${america.variable} ${america.className} `}
 			suppressHydrationWarning
 		>
 			<head>
