@@ -8,7 +8,7 @@
 
 > **⚠️ Não há versão online hospedada.** Você precisa clonar o repositório e rodar localmente ou no seu próprio servidor.
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue?style=flat-square)](CHANGELOG.md)
 [![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-blue?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
@@ -32,6 +32,7 @@
 - [Início Rápido (manual)](#-início-rápido)
 - [Scripts Disponíveis](#-scripts-disponíveis)
 - [Docker](#-docker)
+- [Storage S3 Compatível](#-storage-s3-compatível)
 - [Variáveis de Ambiente](#-variáveis-de-ambiente)
 - [Arquitetura](#-arquitetura)
 - [Contribuindo](#-contribuindo)
@@ -238,6 +239,30 @@ DB_PORT=5433    # Padrão: 5432
 
 ---
 
+## ☁️ Storage S3 Compatível
+
+O suporte a anexos de lançamentos usa upload direto com URL pré-assinada. Essa configuração é opcional, mas passa a ser necessária se você quiser habilitar anexos no app.
+
+### Variáveis
+
+```env
+S3_ENDPOINT=
+S3_REGION=
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_BUCKET=
+```
+
+### Compatibilidade
+
+- O código atual espera um provider com API compatível com S3 e suporte a `PutObject`, `GetObject`, `HeadObject`, `DeleteObject` e URLs pré-assinadas.
+- A implementação usa `endpoint` customizado e `forcePathStyle: true` em [`src/shared/lib/storage/s3-client.ts`](/home/ubuntu/github/openmonetis/src/shared/lib/storage/s3-client.ts).
+- Em geral isso cobre MinIO, Cloudflare R2, Backblaze B2 S3-Compatible, DigitalOcean Spaces e AWS S3. Mas foi testado apenas no Supabase Storage.
+- Se o seu provider exigir `virtual-hosted-style` em vez de `path-style`, você vai precisar ajustar essa configuração antes de usar anexos.
+- Se as variáveis de S3 não forem configuradas, mantenha os anexos desabilitados no seu fluxo de uso.
+
+---
+
 ## 🔐 Variáveis de Ambiente
 
 Copie `.env.example` para `.env` e configure:
@@ -257,6 +282,13 @@ BETTER_AUTH_URL=http://localhost:3000
 POSTGRES_USER=openmonetis
 POSTGRES_PASSWORD=openmonetis_dev_password
 POSTGRES_DB=openmonetis_db
+
+# S3 Server (opcional, necessario para anexos)
+S3_ENDPOINT=
+S3_REGION=
+S3_ACCESS_KEY_ID=
+S3_SECRET_ACCESS_KEY=
+S3_BUCKET=
 
 # Multi-domínio (landing-only no domínio público)
 # PUBLIC_DOMAIN=openmonetis.com

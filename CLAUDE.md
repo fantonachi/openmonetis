@@ -18,6 +18,7 @@
 5. **Revalidation**: usar `revalidateForEntity("entity")` de `src/shared/lib/actions/helpers.ts` apos mutations.
 6. **Versionamento**: registrar mudancas no `CHANGELOG.md` seguindo Keep a Changelog.
 7. **Comunicacao**: responder em portugues clara e direta com o time.
+8. **Commit messages**: agrupar por natureza. em pt-br. seguindo o padrao do sistema.
 
 ---
 
