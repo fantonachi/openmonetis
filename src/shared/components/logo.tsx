@@ -1,20 +1,20 @@
 import Image from "next/image";
-import { version } from "@/package.json";
 import { cn } from "@/shared/utils/ui";
 
 interface LogoProps {
 	variant?: "full" | "small" | "compact";
 	className?: string;
-	showVersion?: boolean;
+	/** Apenas nos variants "full" e "compact" */
 	invertTextOnDark?: boolean;
-	/** Exibe o ícone na cor original, sem filtro preto */
+	/** Exibe o ícone na cor original, sem filtro preto. Apenas nos variants "full" e "compact" */
 	colorIcon?: boolean;
 }
+
+const iconFilterClass = "brightness-0 saturate-0";
 
 export function Logo({
 	variant = "full",
 	className,
-	showVersion = false,
 	invertTextOnDark = true,
 	colorIcon = false,
 }: LogoProps) {
@@ -26,10 +26,7 @@ export function Logo({
 					alt="OpenMonetis"
 					width={32}
 					height={32}
-					className={cn(
-						"object-contain",
-						!colorIcon && "brightness-0 saturate-0",
-					)}
+					className={cn("object-contain", !colorIcon && iconFilterClass)}
 					priority
 				/>
 				<Image
@@ -67,7 +64,7 @@ export function Logo({
 				alt="OpenMonetis"
 				width={28}
 				height={28}
-				className="object-contain"
+				className={cn("object-contain", !colorIcon && iconFilterClass)}
 				priority
 			/>
 			<Image
@@ -78,11 +75,6 @@ export function Logo({
 				className={cn("object-contain", invertTextOnDark && "dark:invert")}
 				priority
 			/>
-			{showVersion && (
-				<span className="text-[9px] font-medium text-muted-foreground">
-					{version}
-				</span>
-			)}
 		</div>
 	);
 }
