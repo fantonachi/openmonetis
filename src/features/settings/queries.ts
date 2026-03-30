@@ -5,6 +5,7 @@ import { db, schema } from "@/shared/lib/db";
 export interface UserPreferences {
 	statementNoteAsColumn: boolean;
 	transactionsColumnOrder: string[] | null;
+	attachmentMaxSizeMb: number;
 }
 
 export interface ApiToken {
@@ -32,6 +33,7 @@ export async function fetchUserPreferences(
 		.select({
 			statementNoteAsColumn: schema.userPreferences.statementNoteAsColumn,
 			transactionsColumnOrder: schema.userPreferences.transactionsColumnOrder,
+			attachmentMaxSizeMb: schema.userPreferences.attachmentMaxSizeMb,
 		})
 		.from(schema.userPreferences)
 		.where(eq(schema.userPreferences.userId, userId))

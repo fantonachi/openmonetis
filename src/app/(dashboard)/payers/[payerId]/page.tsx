@@ -390,6 +390,7 @@ export default async function Page({ params, searchParams }: PageProps) {
 							allowCreate={canEdit}
 							noteAsColumn={userPreferences?.statementNoteAsColumn ?? false}
 							columnOrder={userPreferences?.transactionsColumnOrder ?? null}
+							attachmentMaxSizeMb={userPreferences?.attachmentMaxSizeMb ?? 50}
 							importPayerOptions={loggedUserOptionSets?.payerOptions}
 							importSplitPayerOptions={loggedUserOptionSets?.splitPayerOptions}
 							importDefaultPayerId={loggedUserOptionSets?.defaultPayerId}

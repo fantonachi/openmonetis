@@ -102,6 +102,7 @@ export default async function Page({ searchParams }: PageProps) {
 				}}
 				noteAsColumn={userPreferences?.statementNoteAsColumn ?? false}
 				columnOrder={userPreferences?.transactionsColumnOrder ?? null}
+				attachmentMaxSizeMb={userPreferences?.attachmentMaxSizeMb ?? 50}
 			/>
 		</main>
 	);

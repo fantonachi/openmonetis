@@ -22,16 +22,26 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { updatePreferencesAction } from "@/features/settings/actions";
 import {
+	ATTACHMENT_SIZE_OPTIONS,
+	type AttachmentSizeOption,
+} from "@/features/transactions/attachments-config";
+import {
 	DEFAULT_LANCAMENTOS_COLUMN_ORDER,
 	LANCAMENTOS_COLUMN_LABELS,
 } from "@/features/transactions/column-order";
 import { Button } from "@/shared/components/ui/button";
 import { Label } from "@/shared/components/ui/label";
+import { Separator } from "@/shared/components/ui/separator";
 import { Switch } from "@/shared/components/ui/switch";
+import {
+	ToggleGroup,
+	ToggleGroupItem,
+} from "@/shared/components/ui/toggle-group";
 
 interface PreferencesFormProps {
 	statementNoteAsColumn: boolean;
 	transactionsColumnOrder: string[] | null;
+	attachmentMaxSizeMb: number;
 }
 
 function SortableColumnItem({ id }: { id: string }) {
@@ -74,6 +84,7 @@ function SortableColumnItem({ id }: { id: string }) {
 export function PreferencesForm({
 	statementNoteAsColumn: initialExtratoNoteAsColumn,
 	transactionsColumnOrder: initialColumnOrder,
+	attachmentMaxSizeMb: initialAttachmentMaxSizeMb,
 }: PreferencesFormProps) {
 	const router = useRouter();
 	const [isPending, startTransition] = useTransition();
@@ -85,6 +96,14 @@ export function PreferencesForm({
 			? initialColumnOrder
 			: DEFAULT_LANCAMENTOS_COLUMN_ORDER,
 	);
+	const [attachmentMaxSizeMb, setAttachmentMaxSizeMb] =
+		useState<AttachmentSizeOption>(
+			(ATTACHMENT_SIZE_OPTIONS.includes(
+				initialAttachmentMaxSizeMb as AttachmentSizeOption,
+			)
+				? initialAttachmentMaxSizeMb
+				: 50) as AttachmentSizeOption,
+		);
 
 	const sensors = useSensors(
 		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -109,6 +128,7 @@ export function PreferencesForm({
 			const result = await updatePreferencesAction({
 				statementNoteAsColumn,
 				transactionsColumnOrder: columnOrder,
+				attachmentMaxSizeMb,
 			});
 
 			if (result.success) {
@@ -122,19 +142,18 @@ export function PreferencesForm({
 
 	return (
 		<form onSubmit={handleSubmit} className="flex flex-col gap-8">
-			{/* Seção: Extrato / Lançamentos */}
+			{/* Seção: Lançamentos */}
 			<section className="space-y-4">
 				<div>
-					<h3 className="text-base font-semibold">Extrato e lançamentos</h3>
+					<h3 className="text-base font-semibold">Lançamentos</h3>
 					<p className="text-sm text-muted-foreground">
-						Como exibir anotações e a ordem das colunas na tabela de
-						movimentações.
+						Configurações de exibição da tabela de movimentações.
 					</p>
 				</div>
 
-				<div className="flex items-center justify-between rounded-lg border p-4 max-w-md">
-					<div className="space-y-0.5">
-						<Label htmlFor="extrato-note-column" className="text-base">
+				<section className="flex items-center justify-between max-w-md">
+					<div className="space-y-2">
+						<Label htmlFor="extrato-note-column" className="text-sm">
 							Anotações em coluna
 						</Label>
 						<p className="text-sm text-muted-foreground">
@@ -149,10 +168,12 @@ export function PreferencesForm({
 						onCheckedChange={setExtratoNoteAsColumn}
 						disabled={isPending}
 					/>
-				</div>
+				</section>
 
-				<div className="space-y-2 max-w-md">
-					<Label className="text-base">Ordem das colunas</Label>
+				<Separator />
+
+				<section className="space-y-2 max-w-md">
+					<Label className="text-sm">Ordem das colunas</Label>
 					<p className="text-sm text-muted-foreground">
 						Arraste os itens para definir a ordem em que as colunas aparecem na
 						tabela do extrato e dos lançamentos.
@@ -173,7 +194,43 @@ export function PreferencesForm({
 							</div>
 						</SortableContext>
 					</DndContext>
-				</div>
+				</section>
+
+				<Separator />
+
+				<section className="space-y-2">
+					<Label className="text-sm">Anexos</Label>
+					<p className="text-sm text-muted-foreground">
+						Configurações de upload de arquivos nos lançamentos.
+					</p>
+
+					<div className="space-y-2 max-w-md mt-4">
+						<Label>Tamanho máximo por arquivo</Label>
+						<p className="text-sm text-muted-foreground">
+							Limite aplicado ao upload de PDFs e imagens.
+						</p>
+						<ToggleGroup
+							type="single"
+							value={String(attachmentMaxSizeMb)}
+							onValueChange={(val) => {
+								if (val)
+									setAttachmentMaxSizeMb(Number(val) as AttachmentSizeOption);
+							}}
+							className="flex flex-wrap gap-2 justify-start"
+						>
+							{ATTACHMENT_SIZE_OPTIONS.map((size) => (
+								<ToggleGroupItem
+									key={size}
+									value={String(size)}
+									aria-label={`${size} MB`}
+									className="min-w-14"
+								>
+									{size} MB
+								</ToggleGroupItem>
+							))}
+						</ToggleGroup>
+					</div>
+				</section>
 			</section>
 
 			<div className="flex justify-end">

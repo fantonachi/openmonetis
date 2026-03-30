@@ -5,19 +5,22 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import {
 	ALLOWED_MIME_TYPES,
-	MAX_FILE_SIZE,
+	DEFAULT_MAX_FILE_SIZE_MB,
 } from "@/features/transactions/attachments-config";
 import { Button } from "@/shared/components/ui/button";
 
 interface AttachmentFilePickerProps {
 	file: File | null;
 	onChange: (file: File | null) => void;
+	maxSizeMb?: number;
 }
 
 export function AttachmentFilePicker({
 	file,
 	onChange,
+	maxSizeMb = DEFAULT_MAX_FILE_SIZE_MB,
 }: AttachmentFilePickerProps) {
+	const maxFileSizeBytes = maxSizeMb * 1024 * 1024;
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -37,8 +40,8 @@ export function AttachmentFilePicker({
 			return;
 		}
 
-		if (selected.size > MAX_FILE_SIZE) {
-			toast.error("O arquivo deve ter no máximo 50MB.");
+		if (selected.size > maxFileSizeBytes) {
+			toast.error(`O arquivo deve ter no máximo ${maxSizeMb}MB.`);
 			return;
 		}
 
@@ -83,7 +86,7 @@ export function AttachmentFilePicker({
 						Adicionar anexo
 					</span>
 					<span className="text-[11px]">
-						PDF, JPEG, PNG ou WebP · máx. 50 MB
+						PDF, JPEG, PNG ou WebP · máx. {maxSizeMb} MB
 					</span>
 				</button>
 			)}

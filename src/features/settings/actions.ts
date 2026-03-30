@@ -65,6 +65,7 @@ const resetAccountSchema = z.object({
 const updatePreferencesSchema = z.object({
 	statementNoteAsColumn: z.boolean(),
 	transactionsColumnOrder: z.array(z.string()).nullable(),
+	attachmentMaxSizeMb: z.number().int().min(1).max(100),
 });
 
 type ResettableUser = {
@@ -561,6 +562,7 @@ export async function updatePreferencesAction(
 				.set({
 					statementNoteAsColumn: validated.statementNoteAsColumn,
 					transactionsColumnOrder: validated.transactionsColumnOrder,
+					attachmentMaxSizeMb: validated.attachmentMaxSizeMb,
 					updatedAt: new Date(),
 				})
 				.where(eq(schema.userPreferences.userId, session.user.id));
@@ -570,6 +572,7 @@ export async function updatePreferencesAction(
 				userId: session.user.id,
 				statementNoteAsColumn: validated.statementNoteAsColumn,
 				transactionsColumnOrder: validated.transactionsColumnOrder,
+				attachmentMaxSizeMb: validated.attachmentMaxSizeMb,
 			});
 		}
 
