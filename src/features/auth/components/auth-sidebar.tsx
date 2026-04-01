@@ -1,5 +1,28 @@
+import {
+	RiBankCardLine,
+	RiBarChart2Line,
+	RiShieldCheckLine,
+} from "@remixicon/react";
 import { Logo } from "@/shared/components/logo";
 import { DotPattern } from "@/shared/components/ui/dot-pattern";
+import { AuthSidebarInvoicesMock } from "./auth-sidebar-invoices-mock";
+
+function FeatureItem({
+	icon: Icon,
+	text,
+}: {
+	icon: React.ComponentType<{ className?: string }>;
+	text: string;
+}) {
+	return (
+		<div className="flex items-center gap-3">
+			<div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-black/12">
+				<Icon className="h-3.5 w-3.5 text-black/55" />
+			</div>
+			<span className="text-sm font-medium text-black/68">{text}</span>
+		</div>
+	);
+}
 
 function AuthSidebar() {
 	return (
@@ -15,6 +38,7 @@ function AuthSidebar() {
 				/>
 				<div className="absolute inset-0 bg-linear-to-br from-white/9 via-transparent to-black/7" />
 			</div>
+
 			<div className="relative flex flex-1 flex-col justify-between p-10 lg:p-12">
 				<Logo
 					variant="compact"
@@ -22,14 +46,25 @@ function AuthSidebar() {
 					className="opacity-92 [&_img]:brightness-0 [&_img]:saturate-0"
 				/>
 
-				<div className="max-w-sm space-y-4.5">
-					<h2 className="text-[2rem] font-semibold leading-[1.04] tracking-[-0.03em] text-black/84 lg:text-[2.35rem]">
-						Controle suas finanças com clareza e foco diário.
-					</h2>
-					<p className="max-w-2xs text-sm leading-6 text-black/68">
-						Centralize despesas, organize cartões e acompanhe metas mensais em
-						um painel inteligente feito para o seu dia a dia.
-					</p>
+				<div className="flex flex-1 items-center justify-center py-10">
+					<div className="w-full rotate-[1.5deg]">
+						<AuthSidebarInvoicesMock />
+					</div>
+				</div>
+
+				<div className="space-y-3">
+					<FeatureItem
+						icon={RiBarChart2Line}
+						text="Controle de gastos por categoria"
+					/>
+					<FeatureItem
+						icon={RiBankCardLine}
+						text="Faturas e cartões centralizados"
+					/>
+					<FeatureItem
+						icon={RiShieldCheckLine}
+						text="Seus dados, sem rastreamento"
+					/>
 				</div>
 			</div>
 		</div>
