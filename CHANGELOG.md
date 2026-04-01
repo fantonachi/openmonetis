@@ -7,6 +7,8 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-04-01
+
 ### Adicionado
 
 - Anexos: nova página de galeria em `/attachments` com miniaturas, visualização inline de imagem e PDF, download direto e acesso a partir do lançamento
