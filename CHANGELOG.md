@@ -7,6 +7,24 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+### Adicionado
+
+- Anexos: nova página de galeria em `/attachments` com miniaturas, visualização inline de imagem e PDF, download direto e acesso a partir do lançamento
+- Anexos: suporte a visualização de PDF diretamente no app via `pdfjs-dist`
+- Autenticação: sidebar redesenhado com mockup de faturas e três itens de funcionalidade; páginas de login e cadastro ganham gradiente decorativo e logo visível no mobile
+- Notificações: alertas de vencimento para boletos e faturas do período seguinte exibidos quando o vencimento está dentro de 5 dias
+- Documentação: novo arquivo público `public/llms.txt` com resumo do projeto e links curados para documentação, setup e arquitetura
+
+### Alterado
+
+- Performance: queries de cache do dashboard migradas de `unstable_cache` para a diretiva `use cache` com `cacheTag` e `cacheLife`; todas as páginas do dashboard passam a chamar `connection()` para renderização dinâmica; `next.config.ts` adota `cacheComponents: true`
+- Tipografia: adicionada fonte America Medium (weight 500); pesos tipográficos padronizados para `font-medium` em títulos, valores e rótulos em todos os componentes
+- Anexos: `AttachmentPreview` foi simplificado para exibir apenas nome da transação, nome do arquivo, navegação entre anexos e ações de download, abrir em nova aba e fechar com ícone `X`
+
+### Corrigido
+
+- Lançamentos: uploads e remoções de anexo agora funcionam para todos os lançamentos, não apenas os pertencentes a séries
+
 ## [2.1.2] - 2026-03-30
 
 ### Adicionado

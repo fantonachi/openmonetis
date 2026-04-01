@@ -89,7 +89,7 @@ export async function fetchDashboardInvoices(
 	const paymentMap = new Map<string, string>();
 	for (const row of paymentRows) {
 		const note = row.note;
-		if (!note || !note.startsWith(ACCOUNT_AUTO_INVOICE_NOTE_PREFIX)) {
+		if (!note?.startsWith(ACCOUNT_AUTO_INVOICE_NOTE_PREFIX)) {
 			continue;
 		}
 		const parts = note.split(":");
