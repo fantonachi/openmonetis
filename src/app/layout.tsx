@@ -34,7 +34,7 @@ export default function RootLayout({
 					data-domains="openmonetis.com"
 				/>
 			</head>
-			<body className="subpixel-antialiased" suppressHydrationWarning>
+			<body className="antialiased" suppressHydrationWarning>
 				<ThemeProvider attribute="class" defaultTheme="light">
 					<Suspense>{children}</Suspense>
 					<Toaster position="top-right" />
