@@ -1,9 +1,5 @@
 import type { MetadataRoute } from "next";
 
-const BASE_URL = process.env.PUBLIC_DOMAIN
-	? `https://${process.env.PUBLIC_DOMAIN}`
-	: "https://openmonetis.com";
-
 export default function robots(): MetadataRoute.Robots {
 	return {
 		rules: [
@@ -21,15 +17,15 @@ export default function robots(): MetadataRoute.Robots {
 					"/notes",
 					"/insights",
 					"/calendar",
-					"/consultor",
+					"/attachments",
 					"/settings",
 					"/reports",
 					"/inbox",
 					"/login",
+					"/signup",
 					"/api/",
 				],
 			},
 		],
-		sitemap: `${BASE_URL}/sitemap.xml`,
 	};
 }

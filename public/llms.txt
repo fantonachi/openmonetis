@@ -27,6 +27,10 @@ The public website is mainly a landing page; the main technical documentation li
 
 - [CLAUDE.md](https://github.com/felipegcoutinho/openmonetis/blob/main/CLAUDE.md): Project architecture, naming rules, query rules, and feature checklist
 
+## Optional
+
+- [robots.txt](/robots.txt): Crawl policy for the public site
+
 ## Related Projects
 
 - [OpenMonetis Companion](https://github.com/felipegcoutinho/openmonetis-companion): Android app that captures bank notifications and sends them to the OpenMonetis inbox for review
