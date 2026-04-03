@@ -10,14 +10,16 @@ import {
 import { Button } from "@/shared/components/ui/button";
 
 interface AttachmentFilePickerProps {
-	file: File | null;
-	onChange: (file: File | null) => void;
+	files: File[];
+	onAdd: (file: File) => void;
+	onRemove: (file: File) => void;
 	maxSizeMb?: number;
 }
 
 export function AttachmentFilePicker({
-	file,
-	onChange,
+	files,
+	onAdd,
+	onRemove,
 	maxSizeMb = DEFAULT_MAX_FILE_SIZE_MB,
 }: AttachmentFilePickerProps) {
 	const maxFileSizeBytes = maxSizeMb * 1024 * 1024;
@@ -45,12 +47,12 @@ export function AttachmentFilePicker({
 			return;
 		}
 
-		onChange(selected);
+		onAdd(selected);
 	}
 
 	return (
 		<div className="space-y-1.5">
-			<p className="text-xs">Anexo</p>
+			<p className="text-xs font-medium">Anexos</p>
 			<input
 				ref={inputRef}
 				type="file"
@@ -59,37 +61,44 @@ export function AttachmentFilePicker({
 				onChange={handleFileChange}
 			/>
 
-			{file ? (
-				<div className="flex min-w-0 items-center gap-2 overflow-hidden rounded-md border px-3 py-2 text-sm">
-					<RiAttachment2 className="size-4 shrink-0 text-muted-foreground" />
-					<span className="min-w-0 flex-1 truncate" title={file.name}>
-						{file.name}
-					</span>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						className="size-6 shrink-0"
-						onClick={() => onChange(null)}
-					>
-						<RiCloseLine className="size-4" />
-					</Button>
+			{files.length > 0 && (
+				<div className="space-y-1.5">
+					{files.map((file) => (
+						<div
+							key={`${file.name}-${file.size}-${file.lastModified}`}
+							className="flex min-w-0 items-center gap-2 overflow-hidden rounded-md border px-3 py-2 text-sm"
+						>
+							<RiAttachment2 className="size-4 shrink-0 text-muted-foreground" />
+							<span className="min-w-0 flex-1 truncate" title={file.name}>
+								{file.name}
+							</span>
+							<Button
+								type="button"
+								variant="ghost"
+								size="icon"
+								className="size-6 shrink-0"
+								onClick={() => onRemove(file)}
+							>
+								<RiCloseLine className="size-4" />
+							</Button>
+						</div>
+					))}
 				</div>
-			) : (
-				<button
-					type="button"
-					className="flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed py-4 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
-					onClick={() => inputRef.current?.click()}
-				>
-					<span className="flex items-center gap-2">
-						<RiAttachment2 className="size-4" />
-						Adicionar anexo
-					</span>
-					<span className="text-xs">
-						PDF, JPEG, PNG ou WebP · máx. {maxSizeMb} MB
-					</span>
-				</button>
 			)}
+
+			<button
+				type="button"
+				className="flex w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed py-4 text-sm text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+				onClick={() => inputRef.current?.click()}
+			>
+				<span className="flex items-center gap-2">
+					<RiAttachment2 className="size-4" />
+					Adicionar anexo
+				</span>
+				<span className="text-xs">
+					PDF, JPEG, PNG ou WebP · máx. {maxSizeMb} MB
+				</span>
+			</button>
 		</div>
 	);
 }

@@ -61,11 +61,6 @@ export function deriveCreditCardPeriod(
 }
 
 /**
- * Split type for dividing transactions between payers
- */
-export type SplitType = "equal" | "60-40" | "70-30" | "80-20" | "custom";
-
-/**
  * Form state type for lancamento dialog
  */
 export type TransactionFormState = {
@@ -79,7 +74,6 @@ export type TransactionFormState = {
 	payerId: string | undefined;
 	secondaryPayerId: string | undefined;
 	isSplit: boolean;
-	splitType: SplitType;
 	primarySplitAmount: string;
 	secondarySplitAmount: string;
 	accountId: string | undefined;
@@ -117,7 +111,7 @@ export function buildTransactionInitialState(
 ): TransactionFormState {
 	const purchaseDate = transaction?.purchaseDate
 		? transaction.purchaseDate.slice(0, 10)
-		: (overrides?.defaultPurchaseDate ?? "");
+		: (overrides?.defaultPurchaseDate ?? getTodayDateString());
 
 	const paymentMethod =
 		transaction?.paymentMethod ??
@@ -176,7 +170,7 @@ export function buildTransactionInitialState(
 		payerId: fallbackPayerId ?? undefined,
 		secondaryPayerId: undefined,
 		isSplit: false,
-		splitType: "equal",
+
 		primarySplitAmount: "",
 		secondarySplitAmount: "",
 		accountId:
@@ -207,39 +201,6 @@ export function buildTransactionInitialState(
 			paymentMethod === "Cartão de crédito"
 				? null
 				: (transaction?.isSettled ?? true),
-	};
-}
-
-/**
- * Split presets with their percentages
- */
-const SPLIT_PRESETS: Record<SplitType, { primary: number; secondary: number }> =
-	{
-		equal: { primary: 50, secondary: 50 },
-		"60-40": { primary: 60, secondary: 40 },
-		"70-30": { primary: 70, secondary: 30 },
-		"80-20": { primary: 80, secondary: 20 },
-		custom: { primary: 50, secondary: 50 },
-	};
-
-/**
- * Calculates split amounts based on total and split type
- */
-export function calculateSplitAmounts(
-	totalAmount: number,
-	splitType: SplitType,
-): { primary: string; secondary: string } {
-	if (totalAmount <= 0) {
-		return { primary: "", secondary: "" };
-	}
-
-	const preset = SPLIT_PRESETS[splitType];
-	const primaryAmount = (totalAmount * preset.primary) / 100;
-	const secondaryAmount = totalAmount - primaryAmount;
-
-	return {
-		primary: primaryAmount.toFixed(2),
-		secondary: secondaryAmount.toFixed(2),
 	};
 }
 
@@ -348,7 +309,6 @@ export function applyFieldDependencies(
 	// When split is disabled, clear secondary pagador and split fields
 	if (key === "isSplit" && value === false) {
 		updates.secondaryPayerId = undefined;
-		updates.splitType = "equal";
 		updates.primarySplitAmount = "";
 		updates.secondarySplitAmount = "";
 	}
@@ -367,12 +327,9 @@ export function applyFieldDependencies(
 	if (key === "amount" && typeof value === "string" && currentState.isSplit) {
 		const totalAmount = Number.parseFloat(value) || 0;
 		if (totalAmount > 0) {
-			const splitAmounts = calculateSplitAmounts(
-				totalAmount,
-				currentState.splitType,
-			);
-			updates.primarySplitAmount = splitAmounts.primary;
-			updates.secondarySplitAmount = splitAmounts.secondary;
+			const half = (totalAmount / 2).toFixed(2);
+			updates.primarySplitAmount = half;
+			updates.secondarySplitAmount = half;
 		} else {
 			updates.primarySplitAmount = "";
 			updates.secondarySplitAmount = "";

@@ -16,6 +16,7 @@ import {
 } from "@/shared/lib/payers/notifications";
 import type { ActionResult } from "@/shared/lib/types/actions";
 import { addMonthsToDate, parseLocalDateString } from "@/shared/utils/date";
+import { addMonthsToPeriod, parsePeriod } from "@/shared/utils/period";
 import {
 	centsToDecimalString,
 	type DeleteBulkInput,
@@ -26,6 +27,8 @@ import {
 	fetchOwnedCardIds,
 	fetchOwnedCategoryIds,
 	fetchOwnedPayerIds,
+	formatPaidInvoicePeriods,
+	getPaidInvoicePeriods,
 	type MassAddInput,
 	massAddSchema,
 	resolvePeriod,
@@ -36,6 +39,12 @@ import {
 	updateBulkSchema,
 	validateAllOwnership,
 } from "./core";
+
+const getPeriodOffset = (basePeriod: string, targetPeriod: string) => {
+	const base = parsePeriod(basePeriod);
+	const target = parsePeriod(targetPeriod);
+	return (target.year - base.year) * 12 + (target.month - base.month);
+};
 
 export async function deleteTransactionBulkAction(
 	input: DeleteBulkInput,
@@ -164,8 +173,10 @@ export async function updateTransactionBulkAction(
 				period: true,
 				condition: true,
 				transactionType: true,
+				paymentMethod: true,
 				purchaseDate: true,
 				payerId: true,
+				cardId: true,
 			},
 			where: and(
 				eq(transactions.id, data.id),
@@ -204,6 +215,8 @@ export async function updateTransactionBulkAction(
 
 		const hasDueDateUpdate = data.dueDate !== undefined;
 		const hasBoletoPaymentDateUpdate = data.boletoPaymentDate !== undefined;
+		const hasPurchaseDateUpdate = data.purchaseDate !== undefined;
+		const hasPeriodUpdate = data.period !== undefined;
 
 		const baseDueDate =
 			hasDueDateUpdate && data.dueDate
@@ -218,8 +231,13 @@ export async function updateTransactionBulkAction(
 				: hasBoletoPaymentDateUpdate
 					? null
 					: undefined;
-
-		const basePurchaseDate = existing.purchaseDate ?? null;
+		const referencePurchaseDate = existing.purchaseDate ?? null;
+		const basePurchaseDate =
+			hasPurchaseDateUpdate && data.purchaseDate
+				? parseLocalDateString(data.purchaseDate)
+				: undefined;
+		const basePeriod = hasPeriodUpdate ? data.period : undefined;
+		const targetCardId = data.cardId ?? existing.cardId ?? null;
 
 		const buildDueDateForRecord = (recordPurchaseDate: Date | null) => {
 			if (!hasDueDateUpdate) {
@@ -230,16 +248,46 @@ export async function updateTransactionBulkAction(
 				return null;
 			}
 
-			if (!basePurchaseDate || !recordPurchaseDate) {
+			if (!referencePurchaseDate || !recordPurchaseDate) {
 				return baseDueDate;
 			}
 
 			const monthDiff =
-				(recordPurchaseDate.getFullYear() - basePurchaseDate.getFullYear()) *
+				(recordPurchaseDate.getFullYear() -
+					referencePurchaseDate.getFullYear()) *
 					12 +
-				(recordPurchaseDate.getMonth() - basePurchaseDate.getMonth());
+				(recordPurchaseDate.getMonth() - referencePurchaseDate.getMonth());
 
 			return addMonthsToDate(baseDueDate, monthDiff);
+		};
+
+		const buildPurchaseDateForRecord = (record: {
+			purchaseDate: Date | null;
+			period: string;
+		}) => {
+			if (!basePurchaseDate) {
+				return undefined;
+			}
+
+			if (existing.condition === "Recorrente" && existing.period) {
+				const offset = getPeriodOffset(existing.period, record.period);
+				return addMonthsToDate(basePurchaseDate, offset);
+			}
+
+			return basePurchaseDate;
+		};
+
+		const buildPeriodForRecord = (record: { period: string }) => {
+			if (!basePeriod) {
+				return undefined;
+			}
+
+			if (existing.period) {
+				const offset = getPeriodOffset(existing.period, record.period);
+				return addMonthsToPeriod(basePeriod, offset);
+			}
+
+			return basePeriod;
 		};
 
 		const serializeDateKey = (value: Date | null | undefined) => {
@@ -252,8 +300,51 @@ export async function updateTransactionBulkAction(
 			return String(value.getTime());
 		};
 
+		const ensureTargetInvoicesAreOpen = async (
+			records: Array<{ period: string }>,
+		) => {
+			if (
+				existing.paymentMethod !== "Cartão de crédito" ||
+				!targetCardId ||
+				(!hasPurchaseDateUpdate &&
+					!hasPeriodUpdate &&
+					data.cardId === undefined)
+			) {
+				return null;
+			}
+
+			const movedPeriods = new Set<string>();
+
+			for (const record of records) {
+				const targetPeriodForRecord =
+					buildPeriodForRecord(record) ?? record.period;
+				const cardChanged = targetCardId !== existing.cardId;
+				const periodChanged = targetPeriodForRecord !== record.period;
+
+				if (cardChanged || periodChanged) {
+					movedPeriods.add(targetPeriodForRecord);
+				}
+			}
+
+			if (movedPeriods.size === 0) {
+				return null;
+			}
+
+			const paidPeriods = await getPaidInvoicePeriods(user.id, targetCardId, [
+				...movedPeriods,
+			]);
+
+			if (paidPeriods.length === 0) {
+				return null;
+			}
+
+			return `As faturas dos meses ${formatPaidInvoicePeriods(
+				paidPeriods,
+			)} já estão pagas. Desfaça o pagamento antes de mover este lançamento.`;
+		};
+
 		const applyUpdates = async (
-			records: Array<{ id: string; purchaseDate: Date | null }>,
+			records: Array<{ id: string; purchaseDate: Date | null; period: string }>,
 		) => {
 			if (records.length === 0) {
 				return;
@@ -269,9 +360,19 @@ export async function updateTransactionBulkAction(
 
 			for (const record of records) {
 				const dueDateForRecord = buildDueDateForRecord(record.purchaseDate);
+				const purchaseDateForRecord = buildPurchaseDateForRecord(record);
+				const periodForRecord = buildPeriodForRecord(record);
 				const perRecordPayload: Record<string, unknown> = {
 					...baseUpdatePayload,
 				};
+
+				if (purchaseDateForRecord !== undefined) {
+					perRecordPayload.purchaseDate = purchaseDateForRecord;
+				}
+
+				if (periodForRecord !== undefined) {
+					perRecordPayload.period = periodForRecord;
+				}
 
 				if (dueDateForRecord !== undefined) {
 					perRecordPayload.dueDate = dueDateForRecord;
@@ -282,6 +383,8 @@ export async function updateTransactionBulkAction(
 				}
 
 				const groupKey = [
+					serializeDateKey(purchaseDateForRecord),
+					periodForRecord ?? "undefined",
 					serializeDateKey(dueDateForRecord),
 					serializeDateKey(
 						hasBoletoPaymentDateUpdate
@@ -318,12 +421,19 @@ export async function updateTransactionBulkAction(
 		};
 
 		if (data.scope === "current") {
-			await applyUpdates([
+			const currentRecords = [
 				{
 					id: data.id,
 					purchaseDate: existing.purchaseDate ?? null,
+					period: existing.period,
 				},
-			]);
+			];
+			const invoiceError = await ensureTargetInvoicesAreOpen(currentRecords);
+			if (invoiceError) {
+				return { success: false, error: invoiceError };
+			}
+
+			await applyUpdates(currentRecords);
 
 			revalidate(user.id);
 			return { success: true, message: "Lançamento atualizado com sucesso." };
@@ -338,7 +448,7 @@ export async function updateTransactionBulkAction(
 			}
 
 			const periodLancamentos = await db.query.transactions.findMany({
-				columns: { id: true, purchaseDate: true },
+				columns: { id: true, purchaseDate: true, period: true },
 				where: and(
 					eq(transactions.seriesId, existing.seriesId),
 					eq(transactions.userId, user.id),
@@ -347,10 +457,16 @@ export async function updateTransactionBulkAction(
 				orderBy: asc(transactions.purchaseDate),
 			});
 
+			const invoiceError = await ensureTargetInvoicesAreOpen(periodLancamentos);
+			if (invoiceError) {
+				return { success: false, error: invoiceError };
+			}
+
 			await applyUpdates(
 				periodLancamentos.map((item: (typeof periodLancamentos)[number]) => ({
 					id: item.id,
 					purchaseDate: item.purchaseDate ?? null,
+					period: item.period,
 				})),
 			);
 
@@ -370,6 +486,7 @@ export async function updateTransactionBulkAction(
 				columns: {
 					id: true,
 					purchaseDate: true,
+					period: true,
 				},
 				where: and(
 					eq(transactions.seriesId, existing.seriesId),
@@ -380,10 +497,16 @@ export async function updateTransactionBulkAction(
 				orderBy: asc(transactions.purchaseDate),
 			});
 
+			const invoiceError = await ensureTargetInvoicesAreOpen(futureLancamentos);
+			if (invoiceError) {
+				return { success: false, error: invoiceError };
+			}
+
 			await applyUpdates(
 				futureLancamentos.map((item: (typeof futureLancamentos)[number]) => ({
 					id: item.id,
 					purchaseDate: item.purchaseDate ?? null,
+					period: item.period,
 				})),
 			);
 
@@ -399,6 +522,7 @@ export async function updateTransactionBulkAction(
 				columns: {
 					id: true,
 					purchaseDate: true,
+					period: true,
 				},
 				where: and(
 					eq(transactions.seriesId, existing.seriesId),
@@ -408,10 +532,16 @@ export async function updateTransactionBulkAction(
 				orderBy: asc(transactions.purchaseDate),
 			});
 
+			const invoiceError = await ensureTargetInvoicesAreOpen(allLancamentos);
+			if (invoiceError) {
+				return { success: false, error: invoiceError };
+			}
+
 			await applyUpdates(
 				allLancamentos.map((item: (typeof allLancamentos)[number]) => ({
 					id: item.id,
 					purchaseDate: item.purchaseDate ?? null,
+					period: item.period,
 				})),
 			);
 

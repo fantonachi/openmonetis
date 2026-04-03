@@ -67,7 +67,7 @@ export function CategorySection({
 			>
 				<Label htmlFor="categoria">Categoria</Label>
 				<Select
-					value={formState.categoryId}
+					value={formState.categoryId ?? ""}
 					onValueChange={(value) => onFieldChange("categoryId", value)}
 				>
 					<SelectTrigger id="categoria" className="w-full">

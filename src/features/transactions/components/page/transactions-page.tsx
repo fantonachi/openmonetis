@@ -127,6 +127,8 @@ export function TransactionsPage({
 	const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
 	const [pendingEditData, setPendingEditData] = useState<{
 		id: string;
+		purchaseDate: string;
+		period: string;
 		name: string;
 		categoryId: string | undefined;
 		note: string;
@@ -245,6 +247,8 @@ export function TransactionsPage({
 
 	const handleBulkEditRequest = (data: {
 		id: string;
+		purchaseDate: string;
+		period: string;
 		name: string;
 		categoryId: string | undefined;
 		note: string;
@@ -278,6 +282,8 @@ export function TransactionsPage({
 		const result = await updateTransactionBulkAction({
 			id: pendingEditData.id,
 			scope,
+			purchaseDate: pendingEditData.purchaseDate,
+			period: pendingEditData.period,
 			name: pendingEditData.name,
 			categoryId: pendingEditData.categoryId,
 			note: pendingEditData.note,

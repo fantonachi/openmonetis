@@ -46,7 +46,6 @@ import { ConditionSection } from "./condition-section";
 import { NoteSection } from "./note-section";
 import { PayerSection } from "./payer-section";
 import { PaymentMethodSection } from "./payment-method-section";
-import { SplitAndSettlementSection } from "./split-settlement-section";
 import type {
 	FormState,
 	TransactionDialogProps,
@@ -99,7 +98,7 @@ export function TransactionDialog({
 	);
 	const [isPending, startTransition] = useTransition();
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
-	const [pendingFile, setPendingFile] = useState<File | null>(null);
+	const [pendingFiles, setPendingFiles] = useState<File[]>([]);
 	const [pendingDetachIds, setPendingDetachIds] = useState<string[]>([]);
 	const [pendingUploadFiles, setPendingUploadFiles] = useState<File[]>([]);
 
@@ -139,7 +138,7 @@ export function TransactionDialog({
 
 			setFormState(initial);
 			setErrorMessage(null);
-			setPendingFile(null);
+			setPendingFiles([]);
 			setPendingDetachIds([]);
 			setPendingUploadFiles([]);
 		}
@@ -330,27 +329,29 @@ export function TransactionDialog({
 				const result = await createTransactionAction(payload);
 
 				if (result.success) {
-					if (pendingFile && result.data?.ids?.length) {
+					if (pendingFiles.length > 0 && result.data?.ids?.length) {
 						const firstId = result.data.ids[0];
 						const isNewSeries =
 							formState.condition === "Parcelado" ||
 							formState.condition === "Recorrente";
-						const presign = await getPresignedUploadUrlAction({
-							fileName: pendingFile.name,
-							mimeType: pendingFile.type,
-							fileSize: pendingFile.size,
-							transactionId: firstId,
-						});
-						if (presign.success) {
-							await fetch(presign.presignedUrl, {
-								method: "PUT",
-								body: pendingFile,
-								headers: { "Content-Type": pendingFile.type },
+						for (const file of pendingFiles) {
+							const presign = await getPresignedUploadUrlAction({
+								fileName: file.name,
+								mimeType: file.type,
+								fileSize: file.size,
+								transactionId: firstId,
 							});
-							await confirmAttachmentUploadAction({
-								uploadToken: presign.uploadToken,
-								scope: isNewSeries ? "all" : "current",
-							});
+							if (presign.success) {
+								await fetch(presign.presignedUrl, {
+									method: "PUT",
+									body: file,
+									headers: { "Content-Type": file.type },
+								});
+								await confirmAttachmentUploadAction({
+									uploadToken: presign.uploadToken,
+									scope: isNewSeries ? "all" : "current",
+								});
+							}
 						}
 					}
 					toast.success(result.message);
@@ -371,6 +372,8 @@ export function TransactionDialog({
 				// o upload após o escopo ser escolhido (sem upload antecipado ao S3)
 				onBulkEditRequest({
 					id: transaction?.id ?? "",
+					purchaseDate: formState.purchaseDate,
+					period: formState.period,
 					name: formState.name.trim(),
 					categoryId: formState.categoryId,
 					note: formState.note.trim() || "",
@@ -493,30 +496,30 @@ export function TransactionDialog({
 					onSubmit={handleSubmit}
 					noValidate
 				>
-					<div className="min-w-0 space-y-3 -mx-6 max-h-[90vh] overflow-x-hidden overflow-y-auto px-6 pb-1">
-						<BasicFieldsSection
-							formState={formState}
-							onFieldChange={handleFieldChange}
-							estabelecimentos={estabelecimentos}
-						/>
+					<div className="min-w-0 -mx-6 max-h-[90vh] overflow-x-hidden overflow-y-auto px-6 pb-1">
+						{/* Detalhes */}
+						<div className="space-y-3">
+							<BasicFieldsSection
+								formState={formState}
+								onFieldChange={handleFieldChange}
+								estabelecimentos={estabelecimentos}
+							/>
 
-						<CategorySection
-							formState={formState}
-							onFieldChange={handleFieldChange}
-							categoryOptions={categoryOptions}
-							categoryGroups={categoryGroups}
-							isUpdateMode={isUpdateMode}
-							hideTransactionType={
-								Boolean(isNewWithType) && !forceShowTransactionType
-							}
-						/>
+							<CategorySection
+								formState={formState}
+								onFieldChange={handleFieldChange}
+								categoryOptions={categoryOptions}
+								categoryGroups={categoryGroups}
+								isUpdateMode={isUpdateMode}
+								hideTransactionType={
+									Boolean(isNewWithType) && !forceShowTransactionType
+								}
+							/>
+						</div>
 
-						<SplitAndSettlementSection
-							formState={formState}
-							onFieldChange={handleFieldChange}
-							showSettledToggle={showSettledToggle}
-						/>
+						<div className="border-t border-border/40 my-3" />
 
+						{/* Pagador */}
 						<PayerSection
 							formState={formState}
 							onFieldChange={handleFieldChange}
@@ -525,56 +528,66 @@ export function TransactionDialog({
 							totalAmount={totalAmount}
 						/>
 
-						<PaymentMethodSection
-							formState={formState}
-							onFieldChange={handleFieldChange}
-							accountOptions={accountOptions}
-							cardOptions={cardOptions}
-							isUpdateMode={isUpdateMode}
-							disablePaymentMethod={disablePaymentMethod}
-							disableCardSelect={disableCardSelect}
-						/>
+						<div className="border-t border-border/40 my-3" />
 
-						{showDueDate ? (
-							<BoletoFieldsSection
+						{/* Pagamento */}
+						<div className="space-y-3">
+							<PaymentMethodSection
 								formState={formState}
 								onFieldChange={handleFieldChange}
-								showPaymentDate={showPaymentDate}
+								accountOptions={accountOptions}
+								cardOptions={cardOptions}
+								isUpdateMode={isUpdateMode}
+								disablePaymentMethod={disablePaymentMethod}
+								disableCardSelect={disableCardSelect}
+								showSettledToggle={showSettledToggle}
 							/>
-						) : null}
 
-						{isUpdateMode ? (
-							<>
-								<NoteSection
+							{showDueDate ? (
+								<BoletoFieldsSection
 									formState={formState}
 									onFieldChange={handleFieldChange}
+									showPaymentDate={showPaymentDate}
 								/>
-								<div className="space-y-2">
-									<Label className="text-xs font-medium leading-none">
-										Anexos
-									</Label>
-									<AttachmentSection
-										transactionId={transaction?.id ?? ""}
-										maxSizeMb={maxSizeMb}
-										pendingDetachIds={pendingDetachIds}
-										onPendingDetach={(id) =>
-											setPendingDetachIds((prev) => [...prev, id])
-										}
-										onUndoPendingDetach={(id) =>
-											setPendingDetachIds((prev) =>
-												prev.filter((x) => x !== id),
-											)
-										}
-										pendingUploadFiles={pendingUploadFiles}
-										onPendingUpload={(file) =>
-											setPendingUploadFiles((prev) => [...prev, file])
-										}
-										onCancelPendingUpload={(file) =>
-											setPendingUploadFiles((prev) =>
-												prev.filter((f) => f !== file),
-											)
-										}
+							) : null}
+						</div>
+
+						{/* Extras */}
+						{isUpdateMode ? (
+							<>
+								<div className="border-t border-border/40 my-3" />
+								<div className="space-y-3">
+									<NoteSection
+										formState={formState}
+										onFieldChange={handleFieldChange}
 									/>
+									<div className="space-y-2">
+										<Label className="text-xs font-medium leading-none">
+											Anexos
+										</Label>
+										<AttachmentSection
+											transactionId={transaction?.id ?? ""}
+											maxSizeMb={maxSizeMb}
+											pendingDetachIds={pendingDetachIds}
+											onPendingDetach={(id) =>
+												setPendingDetachIds((prev) => [...prev, id])
+											}
+											onUndoPendingDetach={(id) =>
+												setPendingDetachIds((prev) =>
+													prev.filter((x) => x !== id),
+												)
+											}
+											pendingUploadFiles={pendingUploadFiles}
+											onPendingUpload={(file) =>
+												setPendingUploadFiles((prev) => [...prev, file])
+											}
+											onCancelPendingUpload={(file) =>
+												setPendingUploadFiles((prev) =>
+													prev.filter((f) => f !== file),
+												)
+											}
+										/>
+									</div>
 								</div>
 							</>
 						) : (
@@ -598,8 +611,11 @@ export function TransactionDialog({
 										onFieldChange={handleFieldChange}
 									/>
 									<AttachmentFilePicker
-										file={pendingFile}
-										onChange={setPendingFile}
+										files={pendingFiles}
+										onAdd={(file) => setPendingFiles((prev) => [...prev, file])}
+										onRemove={(file) =>
+											setPendingFiles((prev) => prev.filter((f) => f !== file))
+										}
 										maxSizeMb={maxSizeMb}
 									/>
 								</CollapsibleContent>

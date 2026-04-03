@@ -4,6 +4,7 @@ import {
 	cards,
 	categories,
 	financialAccounts,
+	invoices,
 	payers,
 	type transactions,
 } from "@/db/schema";
@@ -20,9 +21,10 @@ import {
 } from "@/shared/lib/accounts/constants";
 import { revalidateForEntity } from "@/shared/lib/actions/helpers";
 import { db } from "@/shared/lib/db";
+import { INVOICE_PAYMENT_STATUS } from "@/shared/lib/invoices";
 import { noteSchema, uuidSchema } from "@/shared/lib/schemas/common";
 import { addMonthsToDate, parseLocalDateString } from "@/shared/utils/date";
-import { addMonthsToPeriod } from "@/shared/utils/period";
+import { addMonthsToPeriod, MONTH_NAMES } from "@/shared/utils/period";
 
 // ============================================================================
 // Authorization Validation Functions
@@ -662,6 +664,43 @@ export const buildLancamentoRecords = ({
 	return records;
 };
 
+export const formatPaidInvoicePeriods = (periods: string[]) =>
+	periods
+		.map((period) => {
+			const [year, month] = period.split("-");
+			const monthName = MONTH_NAMES[Number(month) - 1] ?? month;
+			return `${monthName}/${year}`;
+		})
+		.join(", ");
+
+export async function getPaidInvoicePeriods(
+	userId: string,
+	cardId: string,
+	periods: string[],
+) {
+	if (periods.length === 0) {
+		return [];
+	}
+
+	const rows = await db.query.invoices.findMany({
+		columns: { period: true },
+		where: and(
+			eq(invoices.userId, userId),
+			eq(invoices.cardId, cardId),
+			eq(invoices.paymentStatus, INVOICE_PAYMENT_STATUS.PAID),
+			inArray(invoices.period, periods),
+		),
+	});
+
+	return [
+		...new Set(
+			rows
+				.map((row) => row.period)
+				.filter((period): period is string => Boolean(period)),
+		),
+	];
+}
+
 export const deleteBulkSchema = z.object({
 	id: uuidSchema("Lançamento"),
 	scope: z.enum(["current", "period", "future", "all"], {
@@ -676,6 +715,20 @@ export const updateBulkSchema = z.object({
 	scope: z.enum(["current", "period", "future", "all"], {
 		message: "Escopo de ação inválido.",
 	}),
+	purchaseDate: z
+		.string()
+		.trim()
+		.refine((value) => !value || isValidDateInput(value), {
+			message: "Data da transação inválida.",
+		})
+		.optional(),
+	period: z
+		.string()
+		.trim()
+		.regex(/^(\d{4})-(\d{2})$/, {
+			message: "Selecione um período válido.",
+		})
+		.optional(),
 	name: z
 		.string({ message: "Informe o estabelecimento." })
 		.trim()

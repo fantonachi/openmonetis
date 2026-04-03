@@ -1,18 +1,16 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import {
 	attachments,
 	financialAccounts,
-	invoices,
 	transactionAttachments,
 	transactions,
 } from "@/db/schema";
 import { handleActionError } from "@/shared/lib/actions/helpers";
 import { getUser } from "@/shared/lib/auth/server";
 import { db } from "@/shared/lib/db";
-import { INVOICE_PAYMENT_STATUS } from "@/shared/lib/invoices";
 import {
 	buildEntriesByPayer,
 	sendPayerAutoEmails,
@@ -23,7 +21,6 @@ import {
 	getBusinessTodayDate,
 	parseLocalDateString,
 } from "@/shared/utils/date";
-import { MONTH_NAMES } from "@/shared/utils/period";
 import { cleanupAttachmentsAfterTransactionDelete } from "./attachments";
 import {
 	buildLancamentoRecords,
@@ -33,6 +30,8 @@ import {
 	createSchema,
 	type DeleteInput,
 	deleteSchema,
+	formatPaidInvoicePeriods,
+	getPaidInvoicePeriods,
 	isInitialBalanceLancamento,
 	resolvePeriod,
 	resolveUserLabel,
@@ -118,27 +117,18 @@ export async function createTransactionAction(
 				),
 			];
 
-			const paidInvoices = await db.query.invoices.findMany({
-				columns: { period: true },
-				where: and(
-					eq(invoices.userId, user.id),
-					eq(invoices.cardId, data.cardId),
-					eq(invoices.paymentStatus, INVOICE_PAYMENT_STATUS.PAID),
-					inArray(invoices.period, uniquePeriods),
-				),
-			});
+			const paidPeriods = await getPaidInvoicePeriods(
+				user.id,
+				data.cardId,
+				uniquePeriods,
+			);
 
-			if (paidInvoices.length > 0) {
-				const labels = paidInvoices
-					.map((inv) => {
-						const [year, month] = (inv.period ?? "").split("-");
-						const monthName = MONTH_NAMES[Number(month) - 1] ?? month;
-						return `${monthName}/${year}`;
-					})
-					.join(", ");
+			if (paidPeriods.length > 0) {
 				return {
 					success: false,
-					error: `As faturas dos meses ${labels} já estão pagas. Desfaça o pagamento antes de adicionar este lançamento.`,
+					error: `As faturas dos meses ${formatPaidInvoicePeriods(
+						paidPeriods,
+					)} já estão pagas. Desfaça o pagamento antes de adicionar este lançamento.`,
 				} as ActionResult<{ ids: string[] }>;
 			}
 		}
@@ -204,10 +194,12 @@ export async function updateTransactionAction(
 			columns: {
 				id: true,
 				note: true,
+				period: true,
 				transactionType: true,
 				condition: true,
 				paymentMethod: true,
 				accountId: true,
+				cardId: true,
 				categoryId: true,
 			},
 			where: and(
@@ -225,10 +217,12 @@ export async function updateTransactionAction(
 			| {
 					id: string;
 					note: string | null;
+					period: string;
 					transactionType: string;
 					condition: string;
 					paymentMethod: string;
 					accountId: string | null;
+					cardId: string | null;
 					categoryId: string | null;
 					category: { name: string } | null;
 			  }
@@ -264,6 +258,25 @@ export async function updateTransactionAction(
 				? parseLocalDateString(data.boletoPaymentDate)
 				: getBusinessTodayDate()
 			: null;
+		const targetCardId = data.cardId ?? existing.cardId;
+		const movedInvoice =
+			data.paymentMethod === "Cartão de crédito" &&
+			targetCardId &&
+			(targetCardId !== existing.cardId || period !== existing.period);
+
+		if (movedInvoice) {
+			const paidPeriods = await getPaidInvoicePeriods(user.id, targetCardId, [
+				period,
+			]);
+			if (paidPeriods.length > 0) {
+				return {
+					success: false,
+					error: `As faturas dos meses ${formatPaidInvoicePeriods(
+						paidPeriods,
+					)} já estão pagas. Desfaça o pagamento antes de mover este lançamento.`,
+				};
+			}
+		}
 
 		await db
 			.update(transactions)

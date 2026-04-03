@@ -34,6 +34,8 @@ export interface TransactionDialogProps {
 	maxSizeMb?: number;
 	onBulkEditRequest?: (data: {
 		id: string;
+		purchaseDate: string;
+		period: string;
 		name: string;
 		categoryId: string | undefined;
 		note: string;
@@ -71,10 +73,6 @@ export interface CategorySectionProps extends BaseFieldSectionProps {
 	hideTransactionType?: boolean;
 }
 
-export interface SplitAndSettlementSectionProps extends BaseFieldSectionProps {
-	showSettledToggle: boolean;
-}
-
 export interface PayerSectionProps extends BaseFieldSectionProps {
 	payerOptions: SelectOption[];
 	secondaryPayerOptions: SelectOption[];
@@ -87,6 +85,7 @@ export interface PaymentMethodSectionProps extends BaseFieldSectionProps {
 	isUpdateMode: boolean;
 	disablePaymentMethod: boolean;
 	disableCardSelect: boolean;
+	showSettledToggle: boolean;
 }
 
 export interface BoletoFieldsSectionProps extends BaseFieldSectionProps {
