@@ -16,5 +16,3 @@ export const america = localFont({
 	display: "swap",
 	variable: "--font-america",
 });
-
-export const americaFontVariable = america.variable;

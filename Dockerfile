@@ -5,8 +5,7 @@
 # ============================================
 FROM node:22-alpine AS deps
 
-# Instalar pnpm globalmente
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
@@ -24,8 +23,7 @@ RUN pnpm install --frozen-lockfile
 # ============================================
 FROM node:22-alpine AS builder
 
-# Instalar pnpm globalmente
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
@@ -35,13 +33,14 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copiar todo o código fonte
 COPY . .
 
+# Garantir que o pdf.worker vem da versão instalada no stage 1, não do host
+COPY --from=deps /app/public/pdf.worker.min.mjs ./public/pdf.worker.min.mjs
+
 # Variáveis de ambiente necessárias para o build
-# DATABASE_URL será fornecida em runtime, mas precisa estar definida para validação
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NODE_ENV=production
 
 # Build da aplicação Next.js
-# Nota: Se houver erros de tipo, ajuste typescript.ignoreBuildErrors no next.config.ts
 RUN pnpm build
 
 # ============================================
@@ -49,8 +48,7 @@ RUN pnpm build
 # ============================================
 FROM node:22-alpine AS runner
 
-# Instalar pnpm globalmente
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 WORKDIR /app
 
@@ -60,8 +58,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 # Copiar apenas arquivos necessários para produção
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
 
 # Copiar arquivos de build do Next.js
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -72,8 +68,25 @@ COPY --from=builder --chown=nextjs:nodejs /app/drizzle ./drizzle
 COPY --from=builder --chown=nextjs:nodejs /app/drizzle.config.ts ./drizzle.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/src/db ./src/db
 
-# Copiar node_modules para ter drizzle-kit disponível para migrations
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Instalar apenas as deps necessárias para drizzle-kit migrate
+# Gera package.json mínimo a partir do original para evitar version drift
+COPY --from=builder /app/package.json /tmp/pkg.json
+RUN node -e "\
+  const p=JSON.parse(require('fs').readFileSync('/tmp/pkg.json','utf8'));\
+  require('fs').writeFileSync('package.json',JSON.stringify({\
+    name:'openmonetis',version:p.version,\
+    dependencies:{\
+      'drizzle-orm':p.dependencies['drizzle-orm'],\
+      'pg':p.dependencies['pg']\
+    },\
+    devDependencies:{'drizzle-kit':p.devDependencies['drizzle-kit']}\
+  }));" && \
+  pnpm install --no-frozen-lockfile --ignore-scripts && \
+  chown nextjs:nodejs package.json
+
+# Copiar entrypoint de migrations
+COPY docker-entrypoint.sh ./
+RUN chmod +x /app/docker-entrypoint.sh && chown nextjs:nodejs /app/docker-entrypoint.sh
 
 # Definir variáveis de ambiente de produção
 ENV NODE_ENV=production \
@@ -89,8 +102,8 @@ USER nextjs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+  CMD wget --quiet --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-# Comando de inicialização
-# Nota: Em produção com standalone build, o servidor é iniciado pelo arquivo server.js
+# Entrypoint: roda migrations e depois executa o CMD
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 CMD ["node", "server.js"]

@@ -1,0 +1,22 @@
+{
+	"$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+	// Exclude shared UI primitives from dead code reporting while we focus the
+	// cleanup on feature and domain code first.
+	"ignore": [
+		"src/shared/components/ui/**"
+	],
+	// Runtime asset referenced by string in the PDF viewer.
+	"ignoreFiles": [
+		"public/pdf.worker.min.mjs",
+		"setup.mjs"
+	],
+	// PostCSS is inferred from the config file, but the project only depends on
+	// the Tailwind PostCSS plugin directly.
+	"ignoreDependencies": [
+		"postcss"
+	],
+	"next": true,
+	"postcss": true,
+	"biome": true,
+	"drizzle": true
+}

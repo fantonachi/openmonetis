@@ -8,12 +8,18 @@ const nextConfig: NextConfig = {
 	output: "standalone",
 	cacheComponents: true,
 	reactCompiler: true,
+
 	images: {
 		remotePatterns: [new URL("https://lh3.googleusercontent.com/**")],
 	},
 	devIndicators: {
 		position: "bottom-right",
 	},
+	experimental: {
+		prefetchInlining: true,
+		turbopackFileSystemCacheForDev: true,
+	},
+
 	// Headers for Safari compatibility
 	async headers() {
 		return [
