@@ -7,6 +7,41 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-04-03
+
+### Adicionado
+
+- Dependências: adiciona `@tanstack/react-query` e um provider global para padronizar cache, deduplicação e invalidação de leituras client-side
+- Dashboard: widget "Minhas Contas" ganha preferência persistida para mostrar ou ocultar contas marcadas como não consideradas no saldo total
+- Dashboard: cards de métricas ganham botão de ajuda com explicação do cálculo exibido no app
+- Versionamento: menu do usuário na navbar passa a avisar quando existe release mais recente publicada no GitHub
+- Qualidade: adiciona `knip` ao projeto com o script `pnpm run lint:deadcode` para auditar arquivos, exports e tipos sem uso
+- Infraestrutura: imagem Docker passa a rodar migrations automaticamente via `docker-entrypoint.sh` antes de iniciar a aplicação
+
+### Alterado
+
+- Anexos: listagem no modal de edição/detalhes, URLs temporárias da galeria e preview deixam de depender de `useEffect` para data fetching direto no componente e passam a usar React Query sobre rotas GET dedicadas
+- Insights: carregamento de análises salvas passa a usar React Query com cache por período, mantendo estado draft local apenas para análises recém-geradas ou removidas
+- Parcelamentos: histórico de antecipações no diálogo passa a usar React Query com invalidação automática após cancelamento
+- Dashboard, insights e relatórios passam a excluir movimentações de contas marcadas como não consideradas no saldo total; balanço e previsto também passam a considerar ajustes de transferências entre contas consideradas e não consideradas
+- UX: boletos e faturas passam a exibir labels relativas como "vence hoje", "vence amanhã" e "pago ontem", com tooltip para a data completa
+- Lançamentos: diálogo foi reorganizado em blocos mais claros; a criação passa a aceitar múltiplos anexos e a edição em lote preserva `purchaseDate` e `period` ao propagar alterações por série
+- Inbox e tabela de lançamentos foram componentizados em partes menores, mantendo paginação e ações em lote mais simples de evoluir
+- Infraestrutura: workflow de publish ganha etapa obrigatória de qualidade; `docker-compose` passa a suportar perfil local ou banco remoto; build fixa `pnpm@10.33.0`; projeto atualizado para `Next.js 16.2.2`, `Biome 2.4.10` e dependências correlatas
+- Qualidade: `knip` ganha configuração inicial para reduzir falsos positivos, ignorando `src/shared/components/ui/**`, o worker público de PDF, `setup.mjs` e o falso positivo de `postcss`
+
+### Corrigido
+
+- Segurança: criação de antecipações agora valida se `payerId` e `categoryId` informados pertencem ao usuário autenticado antes de persistir referências cruzadas
+- Segurança: histórico de antecipações endurece os joins de `transactions`, `payers` e `categories` com filtro por `userId`, evitando exposição de nomes relacionados caso exista referência inconsistente no banco
+- Segurança: domínio público deixa de responder rotas `/api/*`, e o Better Auth passa a aplicar rate limits explícitos para login e cadastro por e-mail
+- APIs privadas: rotas de anexos, insights salvos, histórico de antecipações e presign de download passam a responder com `Cache-Control: private, no-store`; a rota de antecipações também deixa de devolver mensagens internas de erro ao cliente
+- Build: rotas web de tokens do Companion passam a ser explicitamente dinâmicas, removendo o warning de prerender no `next build`
+- Lançamentos: edição em série de compras parceladas volta a persistir `purchaseDate` e `period`, permitindo mover parcelas para a fatura ou competência correta conforme o escopo escolhido
+- Lançamentos: edições que tentam mover compras de cartão para faturas já pagas agora são bloqueadas com mensagem clara também no fluxo de atualização e propagação em lote
+- Imagens: logos institucionais, avatares padrão e componentes com `next/image` em modo `fill` passam a usar containers fixos com `sizes`, removendo avisos de proporção e performance
+- Gráficos: `ChartContainer` passa a definir `initialDimension` no `ResponsiveContainer` do Recharts, evitando avisos `width(-1)` e `height(-1)` durante a medição inicial em widgets e relatórios
+
 ## [2.2.1] - 2026-04-01
 
 ### Corrigido
