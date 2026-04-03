@@ -2,7 +2,7 @@ import { RiCheckLine, RiFileCopyLine } from "@remixicon/react";
 import { Button } from "@/shared/components/ui/button";
 import { cn } from "@/shared/utils/ui";
 
-export type CalculatorDisplayProps = {
+type CalculatorDisplayProps = {
 	history: string | null;
 	expression: string;
 	resultText: string | null;

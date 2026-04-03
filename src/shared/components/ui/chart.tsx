@@ -31,6 +31,13 @@ type ChartContextProps = {
 
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
+const CHART_MIN_WIDTH = 280;
+const CHART_MIN_HEIGHT = 200;
+const CHART_INITIAL_DIMENSION = {
+	width: CHART_MIN_WIDTH,
+	height: CHART_MIN_HEIGHT,
+} as const;
+
 function useChart() {
 	const context = React.useContext(ChartContext);
 
@@ -80,8 +87,9 @@ function ChartContainer({
 						<RechartsPrimitive.ResponsiveContainer
 							width="100%"
 							height="100%"
-							minWidth={280}
-							minHeight={200}
+							minWidth={CHART_MIN_WIDTH}
+							minHeight={CHART_MIN_HEIGHT}
+							initialDimension={CHART_INITIAL_DIMENSION}
 						>
 							{children}
 						</RechartsPrimitive.ResponsiveContainer>

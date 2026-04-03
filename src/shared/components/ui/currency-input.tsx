@@ -56,7 +56,7 @@ const formatDigits = (digits: string) => {
 	return BRL_FORMATTER.format(numeric);
 };
 
-export interface CurrencyInputProps
+interface CurrencyInputProps
 	extends Omit<
 		React.ComponentProps<typeof Input>,
 		"value" | "defaultValue" | "type" | "inputMode" | "onChange"

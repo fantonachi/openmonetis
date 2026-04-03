@@ -3,6 +3,7 @@
 import {
 	RiHistoryLine,
 	RiLogoutCircleLine,
+	RiMegaphoneLine,
 	RiMessageLine,
 	RiSettings2Line,
 } from "@remixicon/react";
@@ -24,6 +25,7 @@ import {
 import { Spinner } from "@/shared/components/ui/spinner";
 import { authClient } from "@/shared/lib/auth/client";
 import { getAvatarSrc } from "@/shared/lib/payers/utils";
+import type { UpdateCheckResult } from "@/shared/lib/version/check-update";
 import { cn } from "@/shared/utils/ui";
 
 const itemClass =
@@ -37,9 +39,14 @@ type NavbarUserProps = {
 		image: string | null;
 	};
 	pagadorAvatarUrl: string | null;
+	updateCheck: UpdateCheckResult;
 };
 
-export function NavbarUser({ user, pagadorAvatarUrl }: NavbarUserProps) {
+export function NavbarUser({
+	user,
+	pagadorAvatarUrl,
+	updateCheck,
+}: NavbarUserProps) {
 	const router = useRouter();
 	const [logoutLoading, setLogoutLoading] = useState(false);
 	const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -61,33 +68,42 @@ export function NavbarUser({ user, pagadorAvatarUrl }: NavbarUserProps) {
 	return (
 		<Dialog open={feedbackOpen} onOpenChange={setFeedbackOpen}>
 			<DropdownMenu>
-				<DropdownMenuTrigger asChild>
-					<button
-						className="relative flex size-9 items-center justify-center overflow-hidden rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:outline-none"
-						aria-label="Menu do usuário"
-					>
-						<Image
-							src={avatarSrc}
-							alt={`Avatar de ${user.name}`}
-							width={40}
-							height={40}
-							className="size-10 rounded-full object-cover"
-						/>
-					</button>
-				</DropdownMenuTrigger>
+				<div className="relative">
+					<DropdownMenuTrigger asChild>
+						<button
+							className="flex size-9 items-center justify-center overflow-hidden rounded-full transition-colors focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:outline-none"
+							aria-label="Menu do usuário"
+						>
+							<div className="relative size-10 overflow-hidden rounded-full">
+								<Image
+									src={avatarSrc}
+									alt={`Avatar de ${user.name}`}
+									fill
+									sizes="40px"
+									className="object-cover"
+								/>
+							</div>
+						</button>
+					</DropdownMenuTrigger>
+					{updateCheck.hasUpdate && (
+						<span className="pointer-events-none absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-success" />
+					)}
+				</div>
 				<DropdownMenuContent
 					align="end"
 					className="w-60 border-border/60 p-2 shadow-none"
 					sideOffset={10}
 				>
 					<DropdownMenuLabel className="flex items-center gap-3 px-2 py-2">
-						<Image
-							src={avatarSrc}
-							alt={user.name}
-							width={36}
-							height={36}
-							className="size-9 rounded-full object-cover shrink-0"
-						/>
+						<div className="relative size-9 shrink-0 overflow-hidden rounded-full">
+							<Image
+								src={avatarSrc}
+								alt={user.name}
+								fill
+								sizes="36px"
+								className="object-cover"
+							/>
+						</div>
 						<div className="flex flex-col min-w-0">
 							<span className="text-sm font-medium truncate">{user.name}</span>
 							<span className="text-xs text-muted-foreground truncate">
@@ -122,6 +138,20 @@ export function NavbarUser({ user, pagadorAvatarUrl }: NavbarUserProps) {
 								Enviar Feedback
 							</button>
 						</DialogTrigger>
+
+						{updateCheck.hasUpdate && (
+							<Link
+								href={updateCheck.releaseUrl}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={cn(itemClass, "text-success")}
+							>
+								<RiMegaphoneLine className="size-4 text-success shrink-0" />
+								<span className="flex-1 tracking-wide text-xs font-medium">
+									Atualização {updateCheck.latestVersion} disponível
+								</span>
+							</Link>
+						)}
 					</div>
 
 					<DropdownMenuSeparator />

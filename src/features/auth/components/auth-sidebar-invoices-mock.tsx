@@ -14,13 +14,13 @@ const MOCK_INVOICES: MockInvoice[] = [
 		cardName: "Nubank",
 		logo: "nubank.png",
 		amount: 1898,
-		dueLabel: "Vence em 3 dias",
+		dueLabel: "Vence hoje",
 	},
 	{
 		cardName: "Itaú",
 		logo: "itau.png",
 		amount: 1923,
-		dueLabel: "Vence em 8 dias",
+		dueLabel: "Vence amanhã",
 	},
 ];
 

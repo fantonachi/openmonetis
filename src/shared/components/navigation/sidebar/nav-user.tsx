@@ -30,13 +30,15 @@ export function NavUser({ user, pagadorAvatarUrl }: NavUserProps) {
 					size="lg"
 					className="data-popup-open:bg-sidebar-accent data-popup-open:text-sidebar-accent-foreground "
 				>
-					<Image
-						src={avatarSrc}
-						alt={user.name}
-						width={32}
-						height={32}
-						className="size-8 shrink-0 rounded-full object-cover"
-					/>
+					<div className="relative size-8 shrink-0 overflow-hidden rounded-full">
+						<Image
+							src={avatarSrc}
+							alt={user.name}
+							fill
+							sizes="32px"
+							className="object-cover"
+						/>
+					</div>
 					<div className="grid flex-1 text-left text-sm leading-tight">
 						<span className="truncate font-medium">{user.name}</span>
 						<span className="text-muted-foreground truncate text-xs">
