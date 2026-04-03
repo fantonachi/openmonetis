@@ -117,13 +117,15 @@ export const InboxCard = memo(function InboxCard({
 								className="shrink-0"
 							/>
 						)}
-						<Image
-							src={displayLogo}
-							alt=""
-							width={32}
-							height={32}
-							className="shrink-0 rounded-full"
-						/>
+						<div className="relative size-8 shrink-0 overflow-hidden rounded-full">
+							<Image
+								src={displayLogo}
+								alt=""
+								fill
+								sizes="32px"
+								className="object-cover"
+							/>
+						</div>
 						<span className="truncate">
 							{item.sourceAppName || item.sourceApp}
 						</span>
