@@ -7,6 +7,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [2.3.1] - 2026-04-03
+
+### Corrigido
+
+- Infraestrutura: deps do drizzle-kit agora são instaladas em `/app/migrate/` separado do `node_modules` do standalone, corrigindo erro `Cannot find module 'next'` no startup do container
+
 ## [2.3.0] - 2026-04-03
 
 ### Adicionado
