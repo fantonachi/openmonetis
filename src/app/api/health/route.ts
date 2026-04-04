@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { version as APP_VERSION } from "@/package.json";
 import { db } from "@/shared/lib/db";
 
 /**
@@ -20,7 +19,6 @@ export async function GET() {
 			{
 				status: "ok",
 				name: "OpenMonetis",
-				version: APP_VERSION,
 				timestamp: new Date().toISOString(),
 			},
 			{ status: 200 },
@@ -33,7 +31,6 @@ export async function GET() {
 			{
 				status: "error",
 				name: "OpenMonetis",
-				version: APP_VERSION,
 				timestamp: new Date().toISOString(),
 				message: "Database connection failed",
 			},

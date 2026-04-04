@@ -649,7 +649,7 @@ export async function createApiTokenAction(
 				name: validated.name,
 				tokenHash,
 				tokenPrefix,
-				expiresAt: null, // No expiration for now
+				expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 ano
 			})
 			.returning({ id: apiTokens.id });
 

@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { attachments } from "@/db/schema";
-import { getUserId } from "@/shared/lib/auth/server";
+import { getOptionalUserSession } from "@/shared/lib/auth/server";
 import { db } from "@/shared/lib/db";
 import { createPresignedGetUrl } from "@/shared/lib/storage/presign";
 
@@ -13,7 +13,19 @@ export async function GET(
 	_request: Request,
 	{ params }: { params: Promise<{ attachmentId: string }> },
 ) {
-	const [userId, { attachmentId }] = await Promise.all([getUserId(), params]);
+	const [session, { attachmentId }] = await Promise.all([
+		getOptionalUserSession(),
+		params,
+	]);
+
+	if (!session?.user) {
+		return NextResponse.json(
+			{ error: "Não autenticado" },
+			{ status: 401, headers: PRIVATE_RESPONSE_HEADERS },
+		);
+	}
+
+	const userId = session.user.id;
 
 	const [row] = await db
 		.select({ fileKey: attachments.fileKey })

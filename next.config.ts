@@ -44,7 +44,23 @@ const nextConfig: NextConfig = {
 					},
 					{
 						key: "Content-Security-Policy",
-						value: "frame-ancestors 'none';",
+						value: [
+							"default-src 'self'",
+							"script-src 'self' 'unsafe-inline' https://umami.felipecoutinho.com",
+							"style-src 'self' 'unsafe-inline'",
+							"img-src 'self' https://lh3.googleusercontent.com data: blob:",
+							"font-src 'self'",
+							"connect-src 'self' https://umami.felipecoutinho.com",
+							"frame-ancestors 'none'",
+						].join("; "),
+					},
+					{
+						key: "Referrer-Policy",
+						value: "strict-origin-when-cross-origin",
+					},
+					{
+						key: "X-Permitted-Cross-Domain-Policies",
+						value: "none",
 					},
 					{
 						key: "Permissions-Policy",

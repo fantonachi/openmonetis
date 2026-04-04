@@ -47,6 +47,8 @@ export function parseXls(buffer: ArrayBuffer): ImportStatement {
 	const workbook = XLSX.read(new Uint8Array(buffer), {
 		type: "array",
 		cellDates: false,
+		cellFormula: false,
+		cellNF: false,
 	});
 
 	if (!workbook.SheetNames.length) {

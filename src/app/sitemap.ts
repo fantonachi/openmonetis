@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 const BASE_URL = process.env.PUBLIC_DOMAIN
-	? `https://${process.env.PUBLIC_DOMAIN}`
+	? `https://${process.env.PUBLIC_DOMAIN.replace(/^https?:\/\//, "")}`
 	: "https://openmonetis.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {

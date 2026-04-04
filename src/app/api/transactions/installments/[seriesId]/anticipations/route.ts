@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { fetchInstallmentAnticipations } from "@/features/transactions/anticipation-queries";
-import { getUserId } from "@/shared/lib/auth/server";
+import { getOptionalUserSession } from "@/shared/lib/auth/server";
 
 const PRIVATE_RESPONSE_HEADERS = {
 	"Cache-Control": "private, no-store",
@@ -11,7 +11,19 @@ export async function GET(
 	{ params }: { params: Promise<{ seriesId: string }> },
 ) {
 	try {
-		const [userId, { seriesId }] = await Promise.all([getUserId(), params]);
+		const [session, { seriesId }] = await Promise.all([
+			getOptionalUserSession(),
+			params,
+		]);
+
+		if (!session?.user) {
+			return NextResponse.json(
+				{ error: "Não autenticado" },
+				{ status: 401, headers: PRIVATE_RESPONSE_HEADERS },
+			);
+		}
+
+		const userId = session.user.id;
 		const anticipations = await fetchInstallmentAnticipations(userId, seriesId);
 
 		return NextResponse.json(anticipations, {

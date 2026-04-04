@@ -7,6 +7,21 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [2.3.2] - 2026-04-04
+
+### Segurança
+
+- Tokens: removido aceite de tokens sem expiração (`expiresAt NULL`); tokens criados via settings agora expiram em 1 ano
+- Tokens: corrigido refresh que sobrescrevia hash e invalidava access token anterior; verify agora valida JWT por assinatura
+- xlsx: desabilitado parsing de fórmulas (`cellFormula: false`) para mitigar CVE-2024-44294
+- CSP: expandida Content-Security-Policy com `default-src`, `script-src`, `style-src`, `img-src`, `font-src` e `connect-src`
+- Headers: adicionados `Referrer-Policy` e `X-Permitted-Cross-Domain-Policies`
+- API: rotas autenticadas agora retornam `401 JSON` em vez de redirect `302` para clientes não autenticados
+- Health: removido campo `version` da resposta do `/api/health`
+- robots.txt: simplificado para não expor mapa de rotas internas
+- Sitemap: corrigida URL com protocolo duplicado (`https://https://`)
+- Criado `security.txt` (RFC 9116)
+
 ## [2.3.1] - 2026-04-03
 
 ### Corrigido

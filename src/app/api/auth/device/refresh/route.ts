@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { apiTokens } from "@/db/schema";
 import {
 	extractBearerToken,
-	hashToken,
 	refreshAccessToken,
 	verifyJwt,
 } from "@/shared/lib/auth/api-token";
@@ -59,11 +58,11 @@ export async function POST(request: Request) {
 			);
 		}
 
-		// Atualizar hash do token e último uso
+		// Atualizar último uso e expiração (sem sobrescrever tokenHash,
+		// pois o JWT é auto-verificável por assinatura)
 		await db
 			.update(apiTokens)
 			.set({
-				tokenHash: hashToken(result.accessToken),
 				lastUsedAt: new Date(),
 				lastUsedIp:
 					request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
