@@ -21,6 +21,38 @@ const PROTECTED_ROUTES = [
 // Rotas públicas (não requerem autenticação)
 const PUBLIC_AUTH_ROUTES = ["/login", "/signup"];
 
+function buildCsp(): string {
+	const isDev = process.env.NODE_ENV === "development";
+
+	const s3Origin = (() => {
+		try {
+			return process.env.S3_ENDPOINT
+				? new URL(process.env.S3_ENDPOINT).origin
+				: "";
+		} catch {
+			return "";
+		}
+	})();
+
+	const connectExtras = ["https://umami.felipecoutinho.com", s3Origin]
+		.filter(Boolean)
+		.join(" ");
+
+	const imgExtras = ["https://lh3.googleusercontent.com", s3Origin]
+		.filter(Boolean)
+		.join(" ");
+
+	return [
+		"default-src 'self'",
+		`script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://umami.felipecoutinho.com`,
+		"style-src 'self' 'unsafe-inline'",
+		`img-src 'self' ${imgExtras} data: blob:`,
+		"font-src 'self'",
+		`connect-src 'self' ${connectExtras}`,
+		"frame-ancestors 'none'",
+	].join("; ");
+}
+
 export default async function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
@@ -63,7 +95,9 @@ export default async function proxy(request: NextRequest) {
 		return NextResponse.redirect(new URL("/login", request.url));
 	}
 
-	return NextResponse.next();
+	const response = NextResponse.next();
+	response.headers.set("Content-Security-Policy", buildCsp());
+	return response;
 }
 
 export const config = {

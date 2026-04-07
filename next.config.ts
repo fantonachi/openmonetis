@@ -4,8 +4,6 @@ import type { NextConfig } from "next";
 // Carregar variáveis de ambiente explicitamente
 dotenv.config();
 
-const isDev = process.env.NODE_ENV === "development";
-
 const nextConfig: NextConfig = {
 	output: "standalone",
 	cacheComponents: true,
@@ -43,18 +41,6 @@ const nextConfig: NextConfig = {
 					{
 						key: "X-Frame-Options",
 						value: "DENY",
-					},
-					{
-						key: "Content-Security-Policy",
-						value: [
-							"default-src 'self'",
-							`script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://umami.felipecoutinho.com`,
-							"style-src 'self' 'unsafe-inline'",
-							"img-src 'self' https://lh3.googleusercontent.com data: blob:",
-							"font-src 'self'",
-							`connect-src 'self' https://umami.felipecoutinho.com ${process.env.S3_ENDPOINT ? new URL(process.env.S3_ENDPOINT).origin : ""}`.trim(),
-							"frame-ancestors 'none'",
-						].join("; "),
 					},
 					{
 						key: "Referrer-Policy",

@@ -7,6 +7,12 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 
 ## [Unreleased]
 
+## [2.3.5] - 2026-04-07
+
+### Corrigido
+
+- CSP: movido `Content-Security-Policy` do `next.config.ts` (build time) para `proxy.ts` (runtime), corrigindo bloqueio de upload de anexos quando `S3_ENDPOINT` não estava disponível durante o build do Docker
+
 ## [2.3.4] - 2026-04-05
 
 ### Corrigido
