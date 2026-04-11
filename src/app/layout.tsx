@@ -4,7 +4,7 @@ import { QueryProvider } from "@/shared/components/providers/query-provider";
 import { ThemeProvider } from "@/shared/components/providers/theme-provider";
 import { Toaster } from "@/shared/components/ui/sonner";
 import "./globals.css";
-import { america } from "@/public/fonts/font_index";
+import { inter } from "@/public/fonts/font_index";
 
 export const metadata: Metadata = {
 	title: {
@@ -24,7 +24,7 @@ export default function RootLayout({
 		<html
 			data-scroll-behavior="smooth"
 			lang="pt-BR"
-			className={`${america.variable} ${america.className} `}
+			className={`${inter.variable}`}
 			suppressHydrationWarning
 		>
 			<head>
@@ -36,7 +36,7 @@ export default function RootLayout({
 					data-domains="openmonetis.com"
 				/>
 			</head>
-			<body className="antialiased" suppressHydrationWarning>
+			<body className="subpixel-antialiased" suppressHydrationWarning>
 				<ThemeProvider attribute="class" defaultTheme="light">
 					<QueryProvider>
 						<Suspense>{children}</Suspense>
