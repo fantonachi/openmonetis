@@ -8,7 +8,7 @@
 
 > **⚠️ Não há versão online hospedada.** Você precisa clonar o repositório e rodar localmente ou no seu próprio servidor.
 
-[![Version](https://img.shields.io/badge/version-2.3.6-blue?style=flat-square)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.3.7-blue?style=flat-square)](CHANGELOG.md)
 [![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-blue?style=flat-square&logo=postgresql)](https://www.postgresql.org/)
@@ -23,15 +23,21 @@
   <img src="./public/images/dashboard-preview-light.webp" alt="Dashboard Preview" width="800" />
 </p>
 
+<p align="center">
+  <img src="./public/images/preview-lancamentos-light.webp" alt="Lançamentos" width="800" />
+</p>
+
 ---
 
 ## 📖 Índice
 
 - [Sobre o Projeto](#-sobre-o-projeto)
 - [Instalação via Script](#-instalação-via-script)
+  - [Preparar o servidor (Ubuntu 24.04)](#-preparar-o-servidor-ubuntu-2404)
 - [Início Rápido (manual)](#-início-rápido)
 - [Scripts Disponíveis](#-scripts-disponíveis)
 - [Docker](#-docker)
+- [Backup](#-backup)
 - [Storage S3 Compatível](#-storage-s3-compatível)
 - [Variáveis de Ambiente](#-variáveis-de-ambiente)
 - [Arquitetura](#-arquitetura)
@@ -53,7 +59,7 @@ A ideia é simples: ter um lugar onde consigo ver todas as minhas contas, cartõ
 
 **1. Não há versão hospedada online** — Este projeto é self-hosted. Você precisa rodar no seu próprio computador ou servidor.
 
-**2. Não há Open Finance** — Não há conexão automática com bancos. Você pode registrar transações manualmente ou importar extratos nos formatos OFX e XLS/XLSX.
+**2. Não há Open Finance** — Não há conexão automática com bancos. Você pode registrar transações manualmente, usar o app companion para capturar notificações bancárias ou importar extratos nos formatos OFX e XLS/XLSX.
 
 **3. Requer disciplina** — O OpenMonetis funciona melhor para quem tem disciplina de registrar os gastos regularmente, quer controle total sobre seus dados e gosta de entender exatamente onde o dinheiro está indo.
 
@@ -77,7 +83,11 @@ A ideia é simples: ter um lugar onde consigo ver todas as minhas contas, cartõ
 
 📅 **Calendário financeiro** — Visualize todos os lançamentos em um calendário mensal.
 
-📲 **OpenMonetis Companion** — App Android que captura notificações bancárias (Nubank, Itaú, Bradesco, Inter, C6 e outros) e envia como pré-lançamentos para revisão. [Repositório](https://github.com/felipegcoutinho/openmonetis-companion).
+📲 **OpenMonetis Companion** — App Android que captura notificações bancárias (Nubank, Itaú, Bradesco, Inter, C6 e outros) e envia automaticamente como pré-lançamentos para revisão — sem digitar nada. [Repositório](https://github.com/felipegcoutinho/openmonetis-companion).
+
+<p align="center">
+  <img src="./public/images/companion-preview-light.webp" alt="OpenMonetis Companion" width="300" height="600" />
+</p>
 
 ⚙️ **Personalização** — Tema dark/light e modo privacidade.
 
@@ -96,6 +106,31 @@ A ideia é simples: ter um lugar onde consigo ver todas as minhas contas, cartõ
 ## ⚡ Instalação via Script
 
 A forma mais rápida de instalar. O script verifica dependências, configura o `.env` interativamente e sobe o banco automaticamente.
+
+### 🖥️ Preparar o servidor (Ubuntu 24.04)
+
+Se você está num **servidor Ubuntu limpo** (VPS, Oracle Cloud, DigitalOcean...) sem Node.js, Docker ou pnpm instalados, use o script de preparação antes de continuar.
+
+> ⚠️ **Testado apenas em Ubuntu Server 24.04 LTS.** Em outras distribuições ou versões é necessário testar ou ajustar o script.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/felipegcoutinho/openmonetis/main/scripts/install-deps.sh -o install-deps.sh
+sudo sh install-deps.sh
+```
+
+O script instala (e pula o que já estiver presente):
+
+| Ferramenta | Como instala |
+|---|---|
+| `git`, `curl`, `ca-certificates` | apt |
+| Docker Engine + Docker Compose | Repositório oficial do Docker |
+| Homebrew | Script oficial (como usuário não-root) |
+| Node.js 22 | Via Homebrew |
+| pnpm | Via corepack |
+
+Após a conclusão, adiciona o usuário atual ao grupo `docker` — faça logout/login para ativar. Em seguida, prossiga com o `setup.mjs` abaixo.
+
+---
 
 **Pré-requisito:** Node.js 22+
 
@@ -168,7 +203,7 @@ O script irá:
 
 5. Acesse `http://localhost:3000`
 
-> **Docker completo** (app + banco em containers): use `pnpm docker:up` ao invés dos passos 3-4.
+> **Docker completo** (app + banco em containers): use `pnpm docker:up:local` ao invés dos passos 3-4.
 
 ---
 
@@ -190,26 +225,30 @@ pnpm lint:fix         # Biome auto-fix
 pnpm db:generate      # Gerar migrations
 pnpm db:migrate       # Executar migrations
 pnpm db:push          # Push schema direto (dev)
+pnpm db:extensions    # Habilitar extensões PostgreSQL (rodar uma vez)
 pnpm db:studio        # Drizzle Studio (UI visual)
 ```
 
 ### Utilitários
 
 ```bash
-pnpm backup           # Backup do banco (requer scripts/backup.sh configurado)
+pnpm backup           # Backup completo do banco (ver seção Backup)
 ```
 
 ### Docker
 
 ```bash
-pnpm docker:up        # Subir app + banco
-pnpm docker:up:d      # Subir em background
-pnpm docker:up:db     # Subir apenas o banco
-pnpm docker:down      # Parar containers
-pnpm docker:down:volumes  # Parar e remover volumes (⚠️ apaga dados!)
-pnpm docker:logs      # Logs em tempo real
-pnpm docker:restart   # Reiniciar
-pnpm docker:rebuild   # Rebuild completo
+pnpm docker:up:local      # Sobe app + banco PostgreSQL juntos (imagem do Hub)
+pnpm docker:up            # Sobe apenas o app com build local
+pnpm docker:up:d          # Sobe apenas o app com build local em background
+pnpm docker:up:db         # Sobe apenas o banco em background
+pnpm docker:down          # Para e remove os containers
+pnpm docker:down:volumes  # Para containers e remove volumes (⚠️ apaga dados!)
+pnpm docker:logs          # Logs em tempo real (todos os containers)
+pnpm docker:logs:app      # Logs do container da aplicação
+pnpm docker:logs:db       # Logs do container do banco
+pnpm docker:restart       # Reinicia todos os containers
+pnpm docker:rebuild       # Rebuild completo forçando recriação
 ```
 
 ---
@@ -219,6 +258,46 @@ pnpm docker:rebuild   # Rebuild completo
 O `Dockerfile` usa multi-stage build (deps → builder → runner) com imagem final ~200MB rodando como usuário não-root.
 
 Health checks configurados para ambos os serviços (PostgreSQL via `pg_isready`, app via `GET /api/health`).
+
+### Modos de uso
+
+**Modo 1 — App + banco local (recomendado para self-hosting)**
+
+Puxa a imagem pronta do Docker Hub e sobe app + banco juntos. Não precisa de Node.js instalado.
+
+```bash
+# 1. Baixar o docker-compose.yml
+curl -fsSL https://raw.githubusercontent.com/felipegcoutinho/openmonetis/main/docker-compose.yml -o docker-compose.yml
+
+# 2. Criar o .env (copie o .env.example como referência)
+# DATABASE_URL=postgresql://openmonetis:SUA_SENHA@db:5432/openmonetis_db
+# POSTGRES_PASSWORD=SUA_SENHA
+# BETTER_AUTH_SECRET=string-longa-aleatoria
+# BETTER_AUTH_URL=http://localhost:3000
+
+# 3. Subir
+docker compose --profile local up
+# ou, se tiver o projeto clonado:
+pnpm docker:up:local
+```
+
+**Modo 2 — App com banco remoto**
+
+Use quando o banco está em um provider externo (Supabase, Neon, Railway...).
+
+```bash
+# DATABASE_URL deve apontar para o banco remoto no .env
+docker compose up
+```
+
+**Modo 3 — Build local (desenvolvimento)**
+
+Builda a imagem localmente a partir do código-fonte.
+
+```bash
+pnpm docker:up        # app apenas (banco separado)
+pnpm docker:up:db     # sobe o banco em background
+```
 
 ### Comandos úteis
 
@@ -235,6 +314,68 @@ docker compose exec -T db psql -U openmonetis -d openmonetis_db < backup.sql  # 
 ```env
 APP_PORT=3001   # Padrão: 3000
 DB_PORT=5433    # Padrão: 5432
+```
+
+---
+
+## 💾 Backup
+
+O backup é uma rotina de infraestrutura — não é uma tela no app. Ele opera diretamente sobre o banco PostgreSQL e é executado via linha de comando.
+
+```bash
+pnpm backup
+```
+
+### O que é salvo
+
+Cada execução gera **3 arquivos** em `backup/`:
+
+| Arquivo | Conteúdo | Uso |
+|---|---|---|
+| `openmonetis_YYYY-MM-DD_HH-MM.dump` | Dump custom do PostgreSQL (binário) | Restore completo via `pg_restore` |
+| `openmonetis_YYYY-MM-DD_HH-MM.sql.gz` | Dump SQL completo compactado | Inspeção manual, portabilidade |
+| `openmonetis_YYYY-MM-DD_HH-MM.data.sql.gz` | Apenas os dados da schema `public` | Migração parcial, seed de outro ambiente |
+
+### Modos de conexão
+
+Configure `DB_MODE` no topo de `scripts/backup.sh`:
+
+| Modo | Quando usar | Fonte de dados |
+|---|---|---|
+| `remote` (padrão) | Banco em Supabase, Neon, Railway, etc. | `DATABASE_URL` do `.env` |
+| `docker` | Banco no container local | Container `openmonetis_postgres` |
+
+### Upload para Google Drive (opcional)
+
+Se o [rclone](https://rclone.org/) estiver instalado e configurado com um remote chamado `gdrive`, os arquivos são enviados automaticamente para `gdrive:BACKUP OPENMONETIS`. Sem o rclone, o backup funciona normalmente e fica apenas local.
+
+**Retenção:**
+- Local: 7 dias
+- Google Drive: 30 dias
+
+### Automatizar com cron
+
+Para rodar o backup automaticamente todo dia às 3h:
+
+```bash
+crontab -e
+```
+
+```cron
+0 3 * * * cd /caminho/para/openmonetis && pnpm backup >> /var/log/openmonetis-backup.log 2>&1
+```
+
+### Restore
+
+```bash
+# A partir do .dump (recomendado — mais rápido)
+pg_restore --clean --no-owner --no-privileges \
+  -d "postgresql://user:senha@host:5432/openmonetis_db" \
+  backup/openmonetis_YYYY-MM-DD_HH-MM.dump
+
+# A partir do .sql.gz (banco local via Docker)
+gunzip -c backup/openmonetis_YYYY-MM-DD_HH-MM.sql.gz | \
+  docker compose exec -T db psql -U openmonetis -d openmonetis_db
 ```
 
 ---
@@ -256,7 +397,7 @@ S3_BUCKET=
 ### Compatibilidade
 
 - O código atual espera um provider com API compatível com S3 e suporte a `PutObject`, `GetObject`, `HeadObject`, `DeleteObject` e URLs pré-assinadas.
-- A implementação usa `endpoint` customizado e `forcePathStyle: true` em [`src/shared/lib/storage/s3-client.ts`](/home/ubuntu/github/openmonetis/src/shared/lib/storage/s3-client.ts).
+- A implementação usa `endpoint` customizado e `forcePathStyle: true` em [`src/shared/lib/storage/s3-client.ts`](./src/shared/lib/storage/s3-client.ts).
 - Em geral isso cobre MinIO, Cloudflare R2, Backblaze B2 S3-Compatible, DigitalOcean Spaces e AWS S3. Mas foi testado apenas no Supabase Storage.
 - Se o seu provider exigir `virtual-hosted-style` em vez de `path-style`, você vai precisar ajustar essa configuração antes de usar anexos.
 - Se as variáveis de S3 não forem configuradas, mantenha os anexos desabilitados no seu fluxo de uso.
