@@ -119,7 +119,7 @@ export function PayerDialog({
 		const payerId = payer?.id;
 
 		if (mode === "update" && !payerId) {
-			const message = "Payer inválido.";
+			const message = "Pagador inválido.";
 			setErrorMessage(message);
 			toast.error(message);
 			return;

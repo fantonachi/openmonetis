@@ -42,9 +42,7 @@ export function PayerCard({ payer, onEdit, onRemove }: PayerCardProps) {
 
 				{/* Nome e badges */}
 				<div className="flex items-center gap-1.5">
-					<h3 className="text-base font-medium text-foreground">
-						{payer.name}
-					</h3>
+					<h3 className="font-semibold text-foreground">{payer.name}</h3>
 					{isAdmin ? (
 						<RiVerifiedBadgeFill className="size-4 text-blue-500" aria-hidden />
 					) : null}

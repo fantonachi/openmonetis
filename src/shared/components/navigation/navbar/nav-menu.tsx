@@ -42,7 +42,7 @@ export function NavMenu() {
 	return (
 		<>
 			{/* Desktop */}
-			<nav className="hidden md:flex items-center justify-center flex-1 ">
+			<nav className="hidden md:flex items-center justify-center flex-1">
 				<NavigationMenu viewport={false}>
 					<NavigationMenuList className="gap-0">
 						<NavigationMenuItem>

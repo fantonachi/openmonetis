@@ -120,13 +120,13 @@ export default async function Page() {
 				</div>
 
 				<div className="max-w-8xl mx-auto px-4 relative">
-					<div className="mx-auto flex max-w-3xl flex-col items-center text-center gap-5 md:gap-6 pb-10 md:pb-14">
+					<div className="mx-auto flex max-w-4xl flex-col items-center text-center gap-5 md:gap-6 pb-10 md:pb-14">
 						<Badge variant="outline">
 							<RiGithubFill className="size-4 mr-1" />
 							Projeto Open Source
 						</Badge>
 
-						<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight">
+						<h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-semibold">
 							Suas finanças,
 							<span className="text-primary"> do seu jeito</span>
 						</h1>
@@ -207,9 +207,7 @@ export default async function Page() {
 									className="flex flex-col items-center text-center gap-1.5"
 								>
 									<Icon className="size-5" style={{ color: colorVar }} />
-									<span className="text-2xl md:text-3xl font-medium">
-										{value}
-									</span>
+									<span className="text-2xl md:text-3xl ">{value}</span>
 									<span className="text-xs md:text-sm text-muted-foreground">
 										{label}
 									</span>
@@ -229,7 +227,7 @@ export default async function Page() {
 								<Badge variant="outline" className="mb-4">
 									Conheça as telas
 								</Badge>
-								<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+								<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 									Veja o que você pode fazer
 								</h2>
 								<p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
@@ -254,7 +252,7 @@ export default async function Page() {
 								<Badge variant="outline" className="mb-4">
 									O que tem aqui
 								</Badge>
-								<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+								<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 									Funcionalidades que importam
 								</h2>
 								<p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
@@ -282,7 +280,7 @@ export default async function Page() {
 													/>
 												</div>
 												<div>
-													<h3 className="font-medium text-base md:text-lg mb-1.5 md:mb-2">
+													<h3 className="font-semibold text-base md:text-lg mb-1.5 md:mb-2">
 														{feature.title}
 													</h3>
 													<p className="text-sm text-muted-foreground leading-relaxed">
@@ -298,7 +296,7 @@ export default async function Page() {
 
 						<AnimateOnScroll>
 							<div className="mt-8 md:mt-12">
-								<h3 className="text-sm font-medium text-center mb-4 md:mb-6 text-muted-foreground">
+								<h3 className="text-sm font-semibold text-center mb-4 md:mb-6 text-muted-foreground">
 									Também inclui
 								</h3>
 								<div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -319,7 +317,7 @@ export default async function Page() {
 												/>
 											</div>
 											<div className="min-w-0">
-												<h4 className="font-medium text-sm mb-0.5">
+												<h4 className="font-semibold text-sm mb-0.5">
 													{feature.title}
 												</h4>
 												<p className="text-xs text-muted-foreground leading-relaxed">
@@ -346,7 +344,7 @@ export default async function Page() {
 									<RiSmartphoneLine className="size-3.5 mr-1" />
 									Mobile
 								</Badge>
-								<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+								<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 									Use o OpenMonetis no celular sem perder o fluxo
 								</h2>
 								<p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
@@ -384,7 +382,7 @@ export default async function Page() {
 										<RiSmartphoneLine className="size-3.5 mr-1" />
 										PWA instalável
 									</Badge>
-									<h3 className="text-2xl md:text-3xl font-medium tracking-tight mb-3">
+									<h3 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3">
 										Leve o OpenMonetis para a tela inicial
 									</h3>
 									<p className="text-muted-foreground mb-6 leading-relaxed">
@@ -430,7 +428,7 @@ export default async function Page() {
 											Companion Android
 										</Badge>
 									</div>
-									<h3 className="text-2xl md:text-3xl font-medium tracking-tight mb-3">
+									<h3 className="text-2xl md:text-3xl font-semibold tracking-tight mb-3">
 										Capture, envie e revise no mesmo fluxo
 									</h3>
 									<p className="text-muted-foreground mb-6 leading-relaxed">
@@ -529,7 +527,7 @@ export default async function Page() {
 								<Badge variant="outline" className="mb-4">
 									Stack técnica
 								</Badge>
-								<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+								<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 									O que roda por baixo
 								</h2>
 								<p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4 sm:px-0">
@@ -556,7 +554,7 @@ export default async function Page() {
 													/>
 												</div>
 												<div>
-													<h3 className="font-medium text-base md:text-lg mb-1.5 md:mb-2">
+													<h3 className="font-semibold text-base md:text-lg mb-1.5 md:mb-2">
 														{item.title}
 													</h3>
 													<p className="text-sm text-muted-foreground mb-2 md:mb-3">
@@ -582,7 +580,7 @@ export default async function Page() {
 								<Badge variant="outline" className="mb-4">
 									Como usar
 								</Badge>
-								<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+								<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 									Rode no seu computador
 								</h2>
 								<p className="text-base md:text-lg text-muted-foreground px-4 sm:px-0">
@@ -617,7 +615,7 @@ export default async function Page() {
 								<Badge variant="outline" className="mb-4">
 									Para quem é?
 								</Badge>
-								<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+								<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 									Feito para quem gosta de controle
 								</h2>
 								<p className="text-base md:text-lg text-muted-foreground px-4 sm:px-0">
@@ -644,7 +642,7 @@ export default async function Page() {
 													/>
 												</div>
 												<div>
-													<h3 className="font-medium mb-1">{item.title}</h3>
+													<h3 className="font-semibold mb-1">{item.title}</h3>
 													<p className="text-xs sm:text-sm text-muted-foreground">
 														{item.description}
 													</p>
@@ -664,7 +662,7 @@ export default async function Page() {
 				<div className="max-w-8xl mx-auto px-4">
 					<AnimateOnScroll>
 						<div className="mx-auto max-w-4xl rounded-2xl border bg-card px-8 py-12 md:py-16 text-center">
-							<h2 className="text-2xl sm:text-3xl md:text-4xl font-medium tracking-tight mb-3 md:mb-4">
+							<h2 className="text-2xl sm:text-3xl md:text-4xl  mb-3 md:mb-4">
 								Pronto para testar?
 							</h2>
 							<p className="text-base md:text-lg text-muted-foreground mb-6 md:mb-8">
@@ -715,7 +713,7 @@ export default async function Page() {
 							</div>
 
 							<div>
-								<h3 className="font-medium mb-3 md:mb-4">Projeto</h3>
+								<h3 className="font-semibold mb-3 md:mb-4">Projeto</h3>
 								<ul className="space-y-2.5 md:space-y-3 text-sm text-muted-foreground">
 									<li>
 										<Link
@@ -749,7 +747,7 @@ export default async function Page() {
 							</div>
 
 							<div>
-								<h3 className="font-medium mb-3 md:mb-4">Companion</h3>
+								<h3 className="font-semibold mb-3 md:mb-4">Companion</h3>
 								<ul className="space-y-2.5 md:space-y-3 text-sm text-muted-foreground">
 									<li>
 										<Link

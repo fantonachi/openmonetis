@@ -126,7 +126,9 @@ export function NavbarUser({
 						>
 							<RiHistoryLine className="size-4 text-muted-foreground shrink-0" />
 							<span className="flex-1">Changelog</span>
-							<Badge variant="outline">v{version}</Badge>
+							<Badge variant="outline" className="text-xs font-semibold">
+								v{version}
+							</Badge>
 						</Link>
 
 						<DialogTrigger asChild>
@@ -147,7 +149,7 @@ export function NavbarUser({
 								className={cn(itemClass, "text-success")}
 							>
 								<RiMegaphoneLine className="size-4 text-success shrink-0" />
-								<span className="flex-1 tracking-wide text-xs font-medium">
+								<span className="flex-1 tracking-wide text-xs font-bold">
 									Atualização {updateCheck.latestVersion} disponível
 								</span>
 							</Link>

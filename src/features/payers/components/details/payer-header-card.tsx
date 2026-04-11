@@ -118,7 +118,7 @@ export function PayerHeaderCard({
 
 					<div className="flex flex-1 flex-col gap-2">
 						<div className="flex flex-wrap items-center gap-2">
-							<CardTitle className="text-xl font-medium text-foreground">
+							<CardTitle className="text-xl font-semibold text-foreground">
 								{payer.name}
 							</CardTitle>
 							{isAdmin ? (
@@ -215,10 +215,10 @@ export function PayerHeaderCard({
 											<RiExchangeDollarLine className="size-5 text-primary" />
 										</div>
 										<div>
-											<p className="text-sm font-medium text-muted-foreground">
+											<p className="text-sm text-muted-foreground">
 												Total de Despesas
 											</p>
-											<p className="text-2xl font-medium text-foreground">
+											<p className="text-2xl font-semibold text-foreground">
 												{formatCurrency(summary.totalExpenses)}
 											</p>
 										</div>
@@ -239,7 +239,7 @@ export function PayerHeaderCard({
 											Cartões
 										</span>
 									</div>
-									<p className="text-lg font-medium text-foreground">
+									<p className="text-lg font-semibold text-foreground">
 										{formatCurrency(summary.paymentSplits.card)}
 									</p>
 								</div>
@@ -251,7 +251,7 @@ export function PayerHeaderCard({
 											Boletos
 										</span>
 									</div>
-									<p className="text-lg font-medium text-foreground">
+									<p className="text-lg font-semibold text-foreground">
 										{formatCurrency(summary.paymentSplits.boleto)}
 									</p>
 								</div>
@@ -263,7 +263,7 @@ export function PayerHeaderCard({
 											Pix/Débito
 										</span>
 									</div>
-									<p className="text-lg font-medium text-foreground">
+									<p className="text-lg font-semibold text-foreground">
 										{formatCurrency(summary.paymentSplits.instant)}
 									</p>
 								</div>
