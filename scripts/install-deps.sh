@@ -9,6 +9,9 @@ set -e
 LOG_FILE="/tmp/openmonetis-install.log"
 > "$LOG_FILE"
 
+# Suprimir prompt interativo do corepack ao chamar pnpm/node versioning
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+
 # ── Cores ──────────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -51,8 +54,8 @@ spinner_start() {
 
 spinner_stop() {
   if [ -n "$_spin_pid" ]; then
-    kill "$_spin_pid" 2>/dev/null
-    wait "$_spin_pid" 2>/dev/null
+    kill "$_spin_pid" 2>/dev/null || true
+    wait "$_spin_pid" 2>/dev/null || true
     _spin_pid=""
     printf "\r\033[2K"
   fi
@@ -220,15 +223,19 @@ if command -v pnpm > /dev/null 2>&1; then
 else
   if [ -n "$CURRENT_USER" ] && [ "$CURRENT_USER" != "root" ]; then
     run_as_user "Instalando pnpm via corepack" \
-      'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && corepack enable && corepack prepare pnpm@latest --activate'
+      'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" && corepack enable && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack prepare pnpm@latest --activate'
   else
     run_quiet "Instalando pnpm via corepack" \
-      sh -c 'corepack enable && corepack prepare pnpm@latest --activate'
+      sh -c 'corepack enable && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack prepare pnpm@latest --activate'
   fi
   ok "pnpm instalado"
 fi
 
 # ── Resumo ─────────────────────────────────────────────────────────────────────
+# Garantir que node/pnpm do brew estejam no PATH para o resumo
+export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" 2>/dev/null || true
+
 printf "\n${BOLD}Concluído em $(elapsed)${RESET}\n"
 
 ok "git:            $(git --version | cut -d' ' -f3)"
@@ -236,6 +243,3 @@ ok "docker:         $(docker --version | cut -d',' -f1 | cut -d' ' -f3)"
 ok "docker compose: $(docker compose version | cut -d' ' -f4)"
 ok "node:           $(node --version)"
 ok "pnpm:           $(pnpm --version)"
-
-printf "\n${CYAN}Próximo passo:${RESET}\n"
-printf "  node setup.mjs\n\n"
