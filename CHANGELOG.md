@@ -15,6 +15,7 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - Lançamentos: filtro por status de pagamento (somente pagos / somente não pagos) e filtro por presença de anexo
 - Lançamentos: indicador visual no status de liquidação para lançamentos de cartão de crédito com fatura paga — exibe ícone verde com tooltip explicativo
 - Scripts: `scripts/install-deps.sh` — script de preparação para servidores Ubuntu 24.04 limpos (instala Docker, Node.js 22, pnpm via Homebrew)
+- Docker: variáveis `PUBLIC_DOMAIN`, `UMAMI_URL`, `UMAMI_WEBSITE_ID` e `UMAMI_DOMAINS` passadas ao container da aplicação no `docker-compose.yml`
 
 ### Alterado
 
@@ -32,6 +33,13 @@ e este projeto adere ao [Versionamento Semântico](https://semver.org/lang/pt-BR
 - S3: corrigido `Error: Region is missing` ao usar o app sem S3 configurado — `S3_REGION` vazio (string vazia) não era tratado pelo operador `??`; substituído por `||` em todo o `s3-client.ts`
 - i18n: corrigidas mensagens de erro que exibiam "Payer" em inglês em vez de "Pagador"
 - Logos: corrigido modal seletor de logos de cartões e contas para renderizar miniaturas sem avisos de proporção
+- Scripts: `install-deps.sh` — spinner travava o script por `wait` retornar código não-zero com `set -e` ativo; corrigido com `|| true`
+- Scripts: `install-deps.sh` — prompt interativo do corepack suprimido com `COREPACK_ENABLE_DOWNLOAD_PROMPT=0`
+- Scripts: `install-deps.sh` — PATH do Homebrew não estava configurado na seção de resumo
+
+### Removido
+
+- Scripts: removidos arquivos órfãos `scripts/dev.ts` e `scripts/setup-env.sh` (substituídos pelo `setup.mjs`)
 
 ## [2.3.6] - 2026-04-09
 
