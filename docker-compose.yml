@@ -109,6 +109,14 @@ services:
       GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
 
+      # Multi-domínio (opcional)
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:-}
+
+      # Analytics (opcional)
+      UMAMI_URL: ${UMAMI_URL:-}
+      UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+      UMAMI_DOMAINS: ${UMAMI_DOMAINS:-}
+
     # required: false permite subir sem banco local (banco remoto via DATABASE_URL)
     depends_on:
       db:
