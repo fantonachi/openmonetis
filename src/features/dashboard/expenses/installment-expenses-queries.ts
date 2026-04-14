@@ -53,7 +53,10 @@ export async function fetchInstallmentExpenses(
 				eq(transactions.transactionType, "Despesa"),
 				eq(transactions.condition, "Parcelado"),
 				eq(transactions.isAnticipated, false),
-				eq(transactions.payerId, adminPayerId),
+				or(
+					eq(transactions.isDivided, false),
+					eq(transactions.payerId, adminPayerId),
+				),
 				or(
 					isNull(transactions.note),
 					and(

@@ -44,7 +44,10 @@ export async function fetchRecurringExpenses(
 				eq(transactions.period, period),
 				eq(transactions.transactionType, "Despesa"),
 				eq(transactions.condition, "Recorrente"),
-				eq(transactions.payerId, adminPayerId),
+				or(
+					eq(transactions.isDivided, false),
+					eq(transactions.payerId, adminPayerId),
+				),
 				or(
 					isNull(transactions.note),
 					and(

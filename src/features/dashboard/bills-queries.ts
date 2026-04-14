@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import { transactions } from "@/db/schema";
 import { db } from "@/shared/lib/db";
 import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
@@ -83,7 +83,10 @@ export async function fetchDashboardBills(
 				eq(transactions.userId, userId),
 				eq(transactions.period, period),
 				eq(transactions.paymentMethod, PAYMENT_METHOD_BOLETO),
-				eq(transactions.payerId, adminPayerId),
+				or(
+					eq(transactions.isDivided, false),
+					eq(transactions.payerId, adminPayerId),
+				),
 			),
 		);
 

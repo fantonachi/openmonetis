@@ -22,7 +22,10 @@ export const buildDashboardAdminFilters = ({
 }: DashboardAdminFiltersParams) =>
 	[
 		eq(transactions.userId, userId),
-		eq(transactions.payerId, adminPayerId),
+		or(
+			eq(transactions.isDivided, false),
+			eq(transactions.payerId, adminPayerId),
+		),
 	] as const;
 
 export const buildDashboardAdminPeriodFilters = ({

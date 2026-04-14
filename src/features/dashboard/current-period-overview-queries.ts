@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import {
 	cards,
 	categories,
@@ -580,7 +580,10 @@ export async function fetchDashboardCurrentPeriodOverview(
 			and(
 				eq(transactions.userId, userId),
 				eq(transactions.period, period),
-				eq(transactions.payerId, adminPayerId),
+				or(
+					eq(transactions.isDivided, false),
+					eq(transactions.payerId, adminPayerId),
+				),
 				excludeTransactionsFromExcludedAccounts(),
 			),
 		)

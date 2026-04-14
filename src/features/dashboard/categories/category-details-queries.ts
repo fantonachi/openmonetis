@@ -62,7 +62,10 @@ export async function fetchCategoryDetails(
 					eq(transactions.categoryId, categoryId),
 					eq(transactions.transactionType, transactionType),
 					eq(transactions.period, period),
-					eq(transactions.payerId, adminPayerId),
+					or(
+						eq(transactions.isDivided, false),
+						eq(transactions.payerId, adminPayerId),
+					),
 					...(isInvoiceCategory ? [] : [sanitizedNote]),
 				),
 				with: {
@@ -111,7 +114,10 @@ export async function fetchCategoryDetails(
 						eq(transactions.userId, userId),
 						eq(transactions.categoryId, categoryId),
 						eq(transactions.transactionType, transactionType),
-						eq(transactions.payerId, adminPayerId),
+						or(
+							eq(transactions.isDivided, false),
+							eq(transactions.payerId, adminPayerId),
+						),
 						...(isInvoiceCategory ? [] : [sanitizedNote]),
 						eq(transactions.period, previousPeriod),
 						or(

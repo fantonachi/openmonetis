@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, or, sql } from "drizzle-orm";
 import { financialAccounts, transactions } from "@/db/schema";
 import { INITIAL_BALANCE_NOTE } from "@/shared/lib/accounts/constants";
 import { db } from "@/shared/lib/db";
@@ -64,7 +64,12 @@ export async function fetchDashboardAccounts(
 				eq(transactions.accountId, financialAccounts.id),
 				eq(transactions.userId, userId),
 				eq(transactions.isSettled, true),
-				adminPayerId ? eq(transactions.payerId, adminPayerId) : sql`false`,
+				adminPayerId
+					? or(
+							eq(transactions.isDivided, false),
+							eq(transactions.payerId, adminPayerId),
+						)
+					: eq(transactions.isDivided, false),
 			),
 		)
 		.where(eq(financialAccounts.userId, userId))

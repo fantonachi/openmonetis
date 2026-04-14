@@ -1,4 +1,4 @@
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, ne, or, sql } from "drizzle-orm";
 import { budgets, categories, transactions } from "@/db/schema";
 import { db } from "@/shared/lib/db";
 import { getAdminPayerId } from "@/shared/lib/payers/get-admin-id";
@@ -81,7 +81,10 @@ export async function fetchGoalsProgressData(
 					eq(transactions.categoryId, budgets.categoryId),
 					eq(transactions.userId, budgets.userId),
 					eq(transactions.period, budgets.period),
-					eq(transactions.payerId, adminPayerId),
+					or(
+						eq(transactions.isDivided, false),
+						eq(transactions.payerId, adminPayerId),
+					),
 					eq(transactions.transactionType, "Despesa"),
 					ne(transactions.condition, "cancelado"),
 				),

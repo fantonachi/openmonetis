@@ -96,7 +96,10 @@ export async function fetchInstallmentAnalysis(
 		.where(
 			and(
 				eq(transactions.userId, userId),
-				eq(transactions.payerId, adminPayerId),
+				or(
+					eq(transactions.isDivided, false),
+					eq(transactions.payerId, adminPayerId),
+				),
 				eq(transactions.transactionType, "Despesa"),
 				eq(transactions.condition, "Parcelado"),
 				eq(transactions.isAnticipated, false),

@@ -1,4 +1,4 @@
-import { and, eq, gte, inArray, isNotNull, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lt, ne, or, sql } from "drizzle-orm";
 import {
 	budgets,
 	cards,
@@ -111,7 +111,12 @@ export async function fetchDashboardNotifications(
 		eq(transactions.isSettled, false),
 	];
 	if (adminPayerId) {
-		boletosConditions.push(eq(transactions.payerId, adminPayerId));
+		boletosConditions.push(
+			or(
+				eq(transactions.isDivided, false),
+				eq(transactions.payerId, adminPayerId),
+			)!,
+		);
 	}
 	boletosConditions.push(isNotNull(transactions.dueDate));
 	boletosConditions.push(
@@ -126,7 +131,12 @@ export async function fetchDashboardNotifications(
 		ne(transactions.condition, "cancelado"),
 	];
 	if (adminPayerId) {
-		budgetJoinConditions.push(eq(transactions.payerId, adminPayerId));
+		budgetJoinConditions.push(
+			or(
+				eq(transactions.isDivided, false),
+				eq(transactions.payerId, adminPayerId),
+			)!,
+		);
 	}
 
 	// Helper: monta a query de faturas por período (reutilizada para período atual e próximo)

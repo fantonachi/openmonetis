@@ -114,7 +114,10 @@ export async function fetchCategoryHistory(
 				eq(transactions.userId, userId),
 				eq(categories.userId, userId),
 				inArray(transactions.period, periods),
-				eq(transactions.payerId, adminPayerId),
+				or(
+					eq(transactions.isDivided, false),
+					eq(transactions.payerId, adminPayerId),
+				),
 				or(
 					isNull(transactions.note),
 					sql`${
