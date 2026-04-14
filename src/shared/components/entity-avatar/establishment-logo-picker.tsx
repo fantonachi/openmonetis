@@ -9,11 +9,7 @@ import {
 	PopoverTrigger,
 } from "@/shared/components/ui/popover";
 import { Spinner } from "@/shared/components/ui/spinner";
-import {
-	buildLogoDevUrl,
-	logoQueryKeys,
-	toNameKey,
-} from "@/shared/lib/logo";
+import { buildLogoDevUrl, logoQueryKeys, toNameKey } from "@/shared/lib/logo";
 import {
 	removeEstablishmentLogoAction,
 	saveEstablishmentLogoAction,
@@ -84,7 +80,9 @@ export function EstablishmentLogoPicker({
 	function handleSelect(domain: string) {
 		startTransition(async () => {
 			await saveEstablishmentLogoAction(name, domain);
-			queryClient.setQueryData(logoQueryKeys.mapping(toNameKey(name)), { domain });
+			queryClient.setQueryData(logoQueryKeys.mapping(toNameKey(name)), {
+				domain,
+			});
 			onSelect(domain);
 		});
 	}
@@ -128,7 +126,8 @@ export function EstablishmentLogoPicker({
 								onClick={handleReset}
 								className={cn(
 									"flex flex-col items-center gap-1 rounded-md p-1.5 text-center transition-colors hover:bg-accent disabled:opacity-50",
-									resolvedDomain === null && "ring-2 ring-primary ring-offset-1",
+									resolvedDomain === null &&
+										"ring-2 ring-primary ring-offset-1",
 								)}
 								title="Usar iniciais coloridas"
 							>
@@ -157,7 +156,8 @@ export function EstablishmentLogoPicker({
 									onClick={() => handleSelect(r.domain)}
 									className={cn(
 										"flex flex-col items-center gap-1 rounded-md p-1.5 text-center transition-colors hover:bg-accent disabled:opacity-50",
-										resolvedDomain === r.domain && "ring-2 ring-primary ring-offset-1",
+										resolvedDomain === r.domain &&
+											"ring-2 ring-primary ring-offset-1",
 									)}
 									title={r.name}
 								>

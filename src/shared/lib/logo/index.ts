@@ -48,9 +48,7 @@ export const toNameKey = (name: string): string => name.trim().toLowerCase();
 
 export const LOGO_DEV_TOKEN = process.env.NEXT_PUBLIC_LOGO_DEV_TOKEN;
 
-export function buildLogoDevUrl(
-	domain?: string | null,
-): string | null {
+export function buildLogoDevUrl(domain?: string | null): string | null {
 	if (!LOGO_DEV_TOKEN || !domain) return null;
 	return `https://img.logo.dev/${domain}?token=${LOGO_DEV_TOKEN}&size=64&format=png`;
 }

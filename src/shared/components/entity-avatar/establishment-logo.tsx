@@ -4,8 +4,8 @@ import { RiPencilLine } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
-	LOGO_DEV_TOKEN,
 	buildLogoDevUrl,
+	LOGO_DEV_TOKEN,
 	logoQueryKeys,
 	toNameKey,
 } from "@/shared/lib/logo";
