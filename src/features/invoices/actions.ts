@@ -103,24 +103,21 @@ export async function updateInvoicePaymentStatusAction(
 			const invoiceNote = buildInvoicePaymentNote(card.id, data.period);
 
 			if (shouldMarkAsPaid) {
-				const [adminShareRow] = adminPayerId
-					? await tx
-							.select({
-								total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
-							})
-							.from(transactions)
-							.where(
-								and(
-									eq(transactions.userId, user.id),
-									eq(transactions.cardId, card.id),
-									eq(transactions.period, data.period),
-									eq(transactions.payerId, adminPayerId),
-								),
-							)
-					: [{ total: 0 }];
+				const [invoiceTotalRow] = await tx
+					.select({
+						total: sql<number>`coalesce(sum(${transactions.amount}), 0)`,
+					})
+					.from(transactions)
+					.where(
+						and(
+							eq(transactions.userId, user.id),
+							eq(transactions.cardId, card.id),
+							eq(transactions.period, data.period),
+						),
+					);
 
-				const adminShare = Number(adminShareRow?.total ?? 0);
-				const adminPayableAmount = Math.abs(Math.min(adminShare, 0));
+				const totalInvoiceAmount = Number(invoiceTotalRow?.total ?? 0);
+				const payableAmount = Math.abs(Math.min(totalInvoiceAmount, 0));
 
 				if (card.accountId && adminPayerId) {
 					const paymentCategory = await tx.query.categories.findFirst({
@@ -136,7 +133,7 @@ export async function updateInvoicePaymentStatusAction(
 						? parseLocalDateString(data.paymentDate)
 						: getBusinessTodayDate();
 
-					const amount = `-${formatDecimal(adminPayableAmount)}`;
+					const amount = `-${formatDecimal(payableAmount)}`;
 					const payload = {
 						condition: "À vista",
 						name: `Pagamento fatura - ${card.name}`,

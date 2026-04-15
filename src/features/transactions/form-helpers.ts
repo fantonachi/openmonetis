@@ -81,6 +81,10 @@ export type TransactionFormState = {
 	categoryId: string | undefined;
 	installmentCount: string;
 	recurrenceCount: string;
+	// novo: frequência em meses ("1"=Mensal, "2"=Bimestral, "3"=Trimestral, "6"=Semestral, "12"=Anual)
+	recurrenceFrequency: string;
+	// novo: renovação automática de 12 em 12 meses
+	isAutoRenewal: boolean;
 	dueDate: string;
 	boletoPaymentDate: string;
 	note: string;
@@ -194,6 +198,10 @@ export function buildTransactionInitialState(
 		recurrenceCount: transaction?.recurrenceCount
 			? String(transaction.recurrenceCount)
 			: "",
+		recurrenceFrequency: transaction?.recurrenceFrequency
+			? String(transaction.recurrenceFrequency)
+			: "1",
+		isAutoRenewal: transaction?.isAutoRenewal ?? false,
 		dueDate: transaction?.dueDate ?? "",
 		boletoPaymentDate,
 		note: transaction?.note ?? "",
@@ -255,6 +263,8 @@ export function applyFieldDependencies(
 		}
 		if (value !== "Recorrente") {
 			updates.recurrenceCount = "";
+			updates.recurrenceFrequency = "1";
+			updates.isAutoRenewal = false;
 		}
 	}
 

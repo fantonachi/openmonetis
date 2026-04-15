@@ -621,6 +621,8 @@ export const transactions = pgTable(
 		period: text("periodo").notNull(),
 		currentInstallment: smallint("parcela_atual"),
 		recurrenceCount: integer("qtde_recorrencia"),
+		recurrenceFrequency: integer("recorrencia_frequencia").default(1),
+		isAutoRenewal: boolean("renovacao_automatica").notNull().default(false),
 		dueDate: date("data_vencimento", { mode: "date" }),
 		boletoPaymentDate: date("dt_pagamento_boleto", { mode: "date" }),
 		isSettled: boolean("realizado").default(false),

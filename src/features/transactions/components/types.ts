@@ -24,6 +24,8 @@ export type TransactionItem = {
 	categoriaIcon: string | null;
 	installmentCount: number | null;
 	recurrenceCount: number | null;
+	recurrenceFrequency: number | null;
+	isAutoRenewal: boolean;
 	currentInstallment: number | null;
 	dueDate: string | null;
 	boletoPaymentDate: string | null;

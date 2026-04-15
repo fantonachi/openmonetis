@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import {
 	cards,
@@ -6,7 +6,7 @@ import {
 	financialAccounts,
 	invoices,
 	payers,
-	type transactions,
+	transactions,
 } from "@/db/schema";
 import {
 	PAYMENT_METHODS,
@@ -277,6 +277,14 @@ export const baseFields = z.object({
 		.min(1, "Selecione uma recorrência válida.")
 		.max(60, "Selecione uma recorrência válida.")
 		.optional(),
+	recurrenceFrequency: z.coerce
+		.number()
+		.int()
+		.min(1)
+		.max(12)
+		.optional()
+		.default(1),
+	isAutoRenewal: z.boolean().optional().default(false),
 	dueDate: z
 		.string()
 		.trim()
@@ -323,18 +331,21 @@ const refineLancamento = (
 	}
 
 	if (data.condition === "Recorrente") {
-		if (!data.recurrenceCount) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ["recurrenceCount"],
-				message: "Informe por quantos meses a recorrência acontecerá.",
-			});
-		} else if (data.recurrenceCount < 2) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				path: ["recurrenceCount"],
-				message: "A recorrência deve ter ao menos dois meses.",
-			});
+		const isAutoRenewal = data.isAutoRenewal ?? false;
+		if (!isAutoRenewal) {
+			if (!data.recurrenceCount) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ["recurrenceCount"],
+					message: "Informe por quantos meses a recorrência acontecerá.",
+				});
+			} else if (data.recurrenceCount < 2) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ["recurrenceCount"],
+					message: "A recorrência deve ter ao menos dois meses.",
+				});
+			}
 		}
 	}
 
@@ -555,6 +566,8 @@ export const buildLancamentoRecords = ({
 		cardId: data.cardId ?? null,
 		categoryId: data.categoryId ?? null,
 		recurrenceCount: null as number | null,
+		recurrenceFrequency: null as number | null,
+		isAutoRenewal: false,
 		installmentCount: null as number | null,
 		currentInstallment: null as number | null,
 		isDivided: data.isSplit ?? false,
@@ -615,13 +628,18 @@ export const buildLancamentoRecords = ({
 	}
 
 	if (data.condition === "Recorrente") {
-		const recurrenceTotal = data.recurrenceCount ?? 0;
+		const isAutoRenewal = data.isAutoRenewal ?? false;
+		// Renovação automática cria 12 meses iniciais; com contagem explícita, usa o valor informado
+		const recurrenceTotal = isAutoRenewal ? 12 : (data.recurrenceCount ?? 0);
+		// Passo em meses entre cada meses (1=Mensal, 2=Bimestral, 3=Trimestral, 6=Semestral, 12=Anual)
+		const freq = data.recurrenceFrequency ?? 1;
 
 		for (let index = 0; index < recurrenceTotal; index += 1) {
-			const recurrencePeriod = addMonthsToPeriod(period, index);
-			const recurrencePurchaseDate = addMonthsToDate(purchaseDate, index);
+			const monthOffset = index * freq;
+			const recurrencePeriod = addMonthsToPeriod(period, monthOffset);
+			const recurrencePurchaseDate = addMonthsToDate(purchaseDate, monthOffset);
 			const recurrenceDueDate = dueDate
-				? addMonthsToDate(dueDate, index)
+				? addMonthsToDate(dueDate, monthOffset)
 				: null;
 
 			shares.forEach((share) => {
@@ -633,7 +651,9 @@ export const buildLancamentoRecords = ({
 					purchaseDate: recurrencePurchaseDate,
 					period: recurrencePeriod,
 					isSettled: settled,
-					recurrenceCount: recurrenceTotal,
+					recurrenceCount: isAutoRenewal ? null : recurrenceTotal,
+					recurrenceFrequency: freq,
+					isAutoRenewal,
 					dueDate: recurrenceDueDate,
 					boletoPaymentDate:
 						data.paymentMethod === "Boleto" && settled

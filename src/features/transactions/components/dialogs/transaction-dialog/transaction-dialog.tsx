@@ -309,9 +309,19 @@ export function TransactionDialog({
 					? Number(formState.installmentCount)
 					: undefined,
 			recurrenceCount:
-				formState.condition === "Recorrente" && formState.recurrenceCount
+				formState.condition === "Recorrente" &&
+				!formState.isAutoRenewal &&
+				formState.recurrenceCount
 					? Number(formState.recurrenceCount)
 					: undefined,
+			recurrenceFrequency:
+				formState.condition === "Recorrente"
+					? Number(formState.recurrenceFrequency) || 1
+					: 1,
+			isAutoRenewal:
+				formState.condition === "Recorrente"
+					? (formState.isAutoRenewal ?? false)
+					: false,
 			dueDate:
 				formState.paymentMethod === "Boleto" && formState.dueDate
 					? formState.dueDate
@@ -519,6 +529,15 @@ export function TransactionDialog({
 
 						<div className="border-t border-border/40 my-3" />
 
+						<ConditionSection
+							formState={formState}
+							onFieldChange={handleFieldChange}
+							showInstallments={showInstallments}
+							showRecurrence={showRecurrence}
+						/>
+
+						<div className="border-t border-border/40 my-3" />
+
 						{/* Pagador */}
 						<PayerSection
 							formState={formState}
@@ -600,12 +619,6 @@ export function TransactionDialog({
 									Condições, anotações e anexos
 								</CollapsibleTrigger>
 								<CollapsibleContent className="min-w-0 overflow-hidden space-y-3 pt-3">
-									<ConditionSection
-										formState={formState}
-										onFieldChange={handleFieldChange}
-										showInstallments={showInstallments}
-										showRecurrence={showRecurrence}
-									/>
 									<NoteSection
 										formState={formState}
 										onFieldChange={handleFieldChange}

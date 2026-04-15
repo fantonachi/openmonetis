@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { RiRefreshLine } from "@remixicon/react";
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
+import { cancelAutoRenewalAction } from "@/features/transactions/actions/auto-renewal-action";
+import { RECURRENCE_FREQUENCIES } from "@/features/transactions/constants";
 import {
 	currencyFormatter,
 	formatCondition,
@@ -8,6 +12,15 @@ import {
 	formatPeriod,
 } from "@/features/transactions/formatting-helpers";
 import { TransactionTypeBadge } from "@/shared/components/transaction-type-badge";
+import {
+	AlertDialog,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from "@/shared/components/ui/alert-dialog";
 import { Badge } from "@/shared/components/ui/badge";
 import { Button } from "@/shared/components/ui/button";
 import {
@@ -40,6 +53,8 @@ export function TransactionDetailsDialog({
 	onEdit,
 }: TransactionDetailsDialogProps) {
 	const [attachmentCount, setAttachmentCount] = useState<number | null>(null);
+	const [cancelRenewalOpen, setCancelRenewalOpen] = useState(false);
+	const [isPending, startTransition] = useTransition();
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: transaction?.id é trigger intencional para reset do contador
 	useEffect(() => {
@@ -47,6 +62,21 @@ export function TransactionDetailsDialog({
 	}, [transaction?.id]);
 
 	if (!transaction) return null;
+
+	const handleCancelRenewal = (mode: "keepExisting" | "deleteFuture") => {
+		startTransition(async () => {
+			const result = await cancelAutoRenewalAction({
+				id: transaction.id,
+				mode,
+			});
+			if (result.success) {
+				toast.success(result.message);
+				setCancelRenewalOpen(false);
+			} else {
+				toast.error(result.error);
+			}
+		});
+	};
 
 	const isInstallment =
 		transaction.condition?.toLowerCase() === "parcelado" &&
@@ -71,182 +101,248 @@ export function TransactionDetailsDialog({
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="min-w-0 overflow-x-hidden sm:max-w-xl">
-				<DialogHeader>
-					<DialogTitle>{transaction.name}</DialogTitle>
-					<DialogDescription>
-						{formatDate(transaction.purchaseDate)}
-					</DialogDescription>
-				</DialogHeader>
+		<>
+			<Dialog open={open} onOpenChange={onOpenChange}>
+				<DialogContent className="min-w-0 overflow-x-hidden sm:max-w-xl">
+					<DialogHeader>
+						<DialogTitle>{transaction.name}</DialogTitle>
+						<DialogDescription>
+							{formatDate(transaction.purchaseDate)}
+						</DialogDescription>
+					</DialogHeader>
 
-				<div className="min-w-0 max-h-[60vh] overflow-x-hidden overflow-y-auto text-sm">
-					<div className="min-w-0 space-y-4">
-						<section className="rounded-lg border bg-muted/20 p-3">
-							<div className="flex items-start justify-between gap-3">
-								<div className="min-w-0">
-									<p className="text-xs uppercase tracking-wide text-muted-foreground">
-										Resumo
-									</p>
-									<p className="mt-1 text-2xl font-semibold">
-										{currencyFormatter.format(valorTotal)}
-									</p>
+					<div className="min-w-0 max-h-[60vh] overflow-x-hidden overflow-y-auto text-sm">
+						<div className="min-w-0 space-y-4">
+							<section className="rounded-lg border bg-muted/20 p-3">
+								<div className="flex items-start justify-between gap-3">
+									<div className="min-w-0">
+										<p className="text-xs uppercase tracking-wide text-muted-foreground">
+											Resumo
+										</p>
+										<p className="mt-1 text-2xl font-semibold">
+											{currencyFormatter.format(valorTotal)}
+										</p>
+									</div>
+									<Badge
+										variant="secondary"
+										className={
+											transaction.isSettled
+												? "text-success bg-success/10"
+												: "text-muted-foreground"
+										}
+									>
+										{transaction.isSettled ? "Pago" : "Pendente"}
+									</Badge>
 								</div>
-								<Badge
-									variant="secondary"
-									className={
-										transaction.isSettled
-											? "text-success bg-success/10"
-											: "text-muted-foreground"
-									}
-								>
-									{transaction.isSettled ? "Pago" : "Pendente"}
-								</Badge>
-							</div>
-							<div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-								<TransactionTypeBadge
-									kind={
-										transaction.categoriaName === "Saldo inicial"
-											? "Saldo inicial"
-											: transaction.transactionType
-									}
-								/>
-								<span>{formatCondition(transaction.condition)}</span>
-							</div>
-						</section>
-
-						<section className="space-y-2">
-							<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Detalhes
-							</h3>
-							<ul className="min-w-0 grid gap-2 rounded-lg border p-3">
-								<DetailRow
-									label="Período"
-									value={formatPeriod(transaction.period)}
-								/>
-
-								<li className="flex items-center justify-between">
-									<span className="text-muted-foreground">
-										Forma de Pagamento
-									</span>
-									<span className="flex items-center gap-1.5">
-										{getPaymentMethodIcon(transaction.paymentMethod)}
-										<span>{transaction.paymentMethod}</span>
-									</span>
-								</li>
-
-								<DetailRow
-									label={transaction.cartaoName ? "Cartão" : "Conta"}
-									value={transaction.cartaoName ?? transaction.contaName ?? "—"}
-								/>
-
-								<DetailRow
-									label="Categoria"
-									value={transaction.categoriaName ?? "—"}
-								/>
-
-								<li className="flex items-center justify-between">
-									<span className="text-muted-foreground">Responsável</span>
-									<span>{transaction.pagadorName}</span>
-								</li>
-
-								{isBoleto && transaction.dueDate && (
-									<DetailRow
-										label="Vencimento"
-										value={formatDate(transaction.dueDate)}
+								<div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+									<TransactionTypeBadge
+										kind={
+											transaction.categoriaName === "Saldo inicial"
+												? "Saldo inicial"
+												: transaction.transactionType
+										}
 									/>
-								)}
+									<span>{formatCondition(transaction.condition)}</span>
+									{transaction.isAutoRenewal && (
+										<Badge
+											variant="secondary"
+											className="gap-1 text-primary bg-primary/10"
+										>
+											<RiRefreshLine className="size-3" />
+											Renovação automática
+										</Badge>
+									)}
+								</div>
+							</section>
 
-								{transaction.isDivided && (
+							<section className="space-y-2">
+								<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+									Detalhes
+								</h3>
+								<ul className="min-w-0 grid gap-2 rounded-lg border p-3">
+									<DetailRow
+										label="Período"
+										value={formatPeriod(transaction.period)}
+									/>
+
 									<li className="flex items-center justify-between">
-										<span className="text-muted-foreground">Divisão</span>
-										<Badge variant="outline">Dividido</Badge>
+										<span className="text-muted-foreground">
+											Forma de Pagamento
+										</span>
+										<span className="flex items-center gap-1.5">
+											{getPaymentMethodIcon(transaction.paymentMethod)}
+											<span>{transaction.paymentMethod}</span>
+										</span>
 									</li>
-								)}
-							</ul>
-						</section>
 
-						<section className="space-y-2">
-							<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-								Valores
-							</h3>
-							<ul className="min-w-0 grid gap-2 rounded-lg border p-3">
-								{isInstallment && (
-									<li className="mb-1">
-										<InstallmentTimeline
-											purchaseDate={parseLocalDateString(
-												transaction.purchaseDate,
-											)}
-											currentInstallment={parcelaAtual}
-											totalInstallments={totalParcelas}
-											period={transaction.period}
+									<DetailRow
+										label={transaction.cartaoName ? "Cartão" : "Conta"}
+										value={
+											transaction.cartaoName ?? transaction.contaName ?? "—"
+										}
+									/>
+
+									<DetailRow
+										label="Categoria"
+										value={transaction.categoriaName ?? "—"}
+									/>
+
+									<li className="flex items-center justify-between">
+										<span className="text-muted-foreground">Responsável</span>
+										<span>{transaction.pagadorName}</span>
+									</li>
+
+									{isBoleto && transaction.dueDate && (
+										<DetailRow
+											label="Vencimento"
+											value={formatDate(transaction.dueDate)}
 										/>
-									</li>
-								)}
+									)}
 
-								<DetailRow
-									label={isInstallment ? "Valor da Parcela" : "Valor"}
-									value={currencyFormatter.format(valorParcela)}
-								/>
+									{transaction.isDivided && (
+										<li className="flex items-center justify-between">
+											<span className="text-muted-foreground">Divisão</span>
+											<Badge variant="outline">Dividido</Badge>
+										</li>
+									)}
+								</ul>
+							</section>
 
-								{isInstallment && (
-									<DetailRow
-										label="Valor Restante"
-										value={currencyFormatter.format(valorRestante)}
-									/>
-								)}
-
-								{transaction.recurrenceCount && (
-									<DetailRow
-										label="Quantidade de Recorrências"
-										value={`${transaction.recurrenceCount} meses`}
-									/>
-								)}
-							</ul>
-						</section>
-
-						{transaction.note ? (
 							<section className="space-y-2">
 								<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Notas
+									Valores
 								</h3>
-								<div className="rounded-lg border p-3 text-foreground">
-									{transaction.note}
-								</div>
-							</section>
-						) : null}
+								<ul className="min-w-0 grid gap-2 rounded-lg border p-3">
+									{isInstallment && (
+										<li className="mb-1">
+											<InstallmentTimeline
+												purchaseDate={parseLocalDateString(
+													transaction.purchaseDate,
+												)}
+												currentInstallment={parcelaAtual}
+												totalInstallments={totalParcelas}
+												period={transaction.period}
+											/>
+										</li>
+									)}
 
-						{attachmentCount !== 0 && (
-							<section className="space-y-2">
-								<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Anexos
-								</h3>
-								<div className="min-w-0">
-									<AttachmentSection
-										transactionId={transaction.id}
-										readonly
-										onLoaded={setAttachmentCount}
+									<DetailRow
+										label={isInstallment ? "Valor da Parcela" : "Valor"}
+										value={currencyFormatter.format(valorParcela)}
 									/>
-								</div>
+
+									{isInstallment && (
+										<DetailRow
+											label="Valor Restante"
+											value={currencyFormatter.format(valorRestante)}
+										/>
+									)}
+
+									{transaction.recurrenceCount && (
+										<DetailRow
+											label="Quantidade de Recorrências"
+											value={`${transaction.recurrenceCount} meses`}
+										/>
+									)}
+
+									{transaction.condition === "Recorrente" &&
+										transaction.recurrenceFrequency &&
+										transaction.recurrenceFrequency !== 1 && (
+											<DetailRow
+												label="Frequência"
+												value={
+													RECURRENCE_FREQUENCIES.find(
+														(f) => f.value === transaction.recurrenceFrequency,
+													)?.label ?? "Mensal"
+												}
+											/>
+										)}
+								</ul>
 							</section>
-						)}
+
+							{transaction.note ? (
+								<section className="space-y-2">
+									<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										Notas
+									</h3>
+									<div className="rounded-lg border p-3 text-foreground">
+										{transaction.note}
+									</div>
+								</section>
+							) : null}
+
+							{attachmentCount !== 0 && (
+								<section className="space-y-2">
+									<h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										Anexos
+									</h3>
+									<div className="min-w-0">
+										<AttachmentSection
+											transactionId={transaction.id}
+											readonly
+											onLoaded={setAttachmentCount}
+										/>
+									</div>
+								</section>
+							)}
+						</div>
 					</div>
-				</div>
 
-				<Separator />
+					<Separator />
 
-				<DialogFooter>
-					<DialogClose asChild>
-						<Button type="button" variant="outline">
-							Fechar
+					<DialogFooter>
+						{transaction.isAutoRenewal && !transaction.readonly && (
+							<Button
+								type="button"
+								variant="ghost"
+								className="text-muted-foreground mr-auto"
+								onClick={() => setCancelRenewalOpen(true)}
+							>
+								<RiRefreshLine className="size-4" />
+								Cancelar renovação
+							</Button>
+						)}
+						<DialogClose asChild>
+							<Button type="button" variant="outline">
+								Fechar
+							</Button>
+						</DialogClose>
+						{onEdit && !transaction.readonly && (
+							<Button onClick={handleEdit}>Editar</Button>
+						)}
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			{/* AlertDialog de cancelamento de renovação automática */}
+			<AlertDialog open={cancelRenewalOpen} onOpenChange={setCancelRenewalOpen}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>Cancelar renovação automática</AlertDialogTitle>
+						<AlertDialogDescription>
+							Escolha como deseja cancelar a renovação desta série recorrente.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter className="flex-col gap-2 sm:flex-col">
+						<AlertDialogCancel disabled={isPending}>Voltar</AlertDialogCancel>
+						<Button
+							variant="outline"
+							disabled={isPending}
+							onClick={() => handleCancelRenewal("keepExisting")}
+						>
+							Manter lançamentos existentes
 						</Button>
-					</DialogClose>
-					{onEdit && !transaction.readonly && (
-						<Button onClick={handleEdit}>Editar</Button>
-					)}
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
+						<Button
+							variant="destructive"
+							disabled={isPending}
+							onClick={() => handleCancelRenewal("deleteFuture")}
+						>
+							Remover lançamentos futuros
+						</Button>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	);
 }
 

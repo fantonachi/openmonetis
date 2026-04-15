@@ -146,6 +146,8 @@ export function BulkImportDialog({
 						item.condition === "Recorrente" && item.recurrenceCount
 							? Number(item.recurrenceCount)
 							: undefined,
+					recurrenceFrequency: 1,
+					isAutoRenewal: false,
 					dueDate:
 						item.paymentMethod === "Boleto" && item.dueDate
 							? item.dueDate

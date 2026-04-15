@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { fetchUserPreferences } from "@/features/settings/queries";
+import { verificarEExtenderRenovacaoAutomatica } from "@/features/transactions/actions/auto-renewal-action";
 import { TransactionsPage } from "@/features/transactions/components/page/transactions-page";
 import {
 	buildOptionSets,
@@ -52,6 +53,10 @@ export default async function Page({ searchParams }: PageProps) {
 		filters: searchFilters,
 		slugMaps,
 	});
+
+	// Verifica e estende séries com renovação automática silenciosamente antes de buscar os dados
+	// do período atual. Passamos false para evitar erro de revalidatePath durante a renderização.
+	await verificarEExtenderRenovacaoAutomatica(selectedPeriod, false);
 
 	const [transactionsPage, estabelecimentos] = await Promise.all([
 		fetchTransactionsPage(filters, pagination),
