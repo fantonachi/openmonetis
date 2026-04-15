@@ -79,8 +79,8 @@ export const NAV_SECTIONS: NavSection[] = [
 			},
 			{
 				href: "/budgets",
-				label: "orçamentos",
-				description: "Defina limites de gastos por categoria",
+				label: "metas",
+				description: "Defina limites e metas de gastos por categoria",
 				icon: <RiBarChart2Line className="size-4" />,
 				iconClass: "text-primary",
 				preservePeriod: true,
@@ -92,7 +92,7 @@ export const NAV_SECTIONS: NavSection[] = [
 		items: [
 			{
 				href: "/payers",
-				label: "pagadores",
+				label: "pessoas",
 				description: "Gerencie quem divide as despesas",
 				icon: <RiGroupLine className="size-4" />,
 				iconClass: "text-primary",

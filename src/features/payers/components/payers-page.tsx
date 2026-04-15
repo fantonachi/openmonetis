@@ -60,7 +60,7 @@ export function PayersPage({ payers, avatarOptions }: PayersPageProps) {
 
 	const handleRemoveRequest = (payer: Payer) => {
 		if (payer.role === PAYER_ROLE_ADMIN) {
-			toast.error("Pagadores administradores não podem ser removidos.");
+			toast.error("Pessoas administradoras não podem ser removidas.");
 			return;
 		}
 		setPayerToRemove(payer);

@@ -229,12 +229,12 @@ function buildColumns({
 													aria-hidden
 												/>
 												<span className="sr-only">
-													Dividido entre pagadores
+													Dividido entre pessoas
 												</span>
 											</span>
 										</TooltipTrigger>
 										<TooltipContent side="top">
-											Dividido entre pagadores
+											Dividido entre pessoas
 										</TooltipContent>
 									</Tooltip>
 								)}

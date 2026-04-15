@@ -144,8 +144,8 @@ export const widgetsConfig: WidgetConfig[] = [
 	},
 	{
 		id: "goals-progress",
-		title: "Progresso de Orçamentos",
-		subtitle: "Orçamentos por categoria no período",
+		title: "Progresso de Metas",
+		subtitle: "Metas por categoria no período",
 		icon: <RiExchangeLine className="size-4" />,
 		component: ({ data }) => (
 			<GoalsProgressWidget data={data.goalsProgressData} />
@@ -251,7 +251,7 @@ export const widgetsConfig: WidgetConfig[] = [
 	},
 	{
 		id: "pagadores",
-		title: "Pagadores",
+		title: "Pessoas",
 		subtitle: "Despesas por pagador no período",
 		icon: <RiGroupLine className="size-4" />,
 		component: ({ data }) => (

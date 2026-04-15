@@ -24,8 +24,8 @@ export function NavPill({ href, preservePeriod, children }: NavPillProps) {
 			href={href}
 			preservePeriod={preservePeriod}
 			className={cn(
-				buttonVariants({ variant: "navbar", size: "sm" }),
-				"lowercase",
+				buttonVariants({ variant: "navbar", size: "default" }),
+				"capitalize",
 				isActive && "bg-black/15 text-black",
 			)}
 		>

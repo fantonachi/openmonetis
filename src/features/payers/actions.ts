@@ -187,7 +187,7 @@ export async function deletePayerAction(
 		if (existing.role === PAYER_ROLE_ADMIN) {
 			return {
 				success: false,
-				error: "Pagadores administradores não podem ser removidos.",
+				error: "Pessoas administradoras não podem ser removidas.",
 			};
 		}
 

@@ -394,7 +394,7 @@ export function NotificationBellContent({
 
 			<NotificationSection
 				icon={<RiBarChart2Line className="size-3" />}
-				title="Orçamentos"
+				title="Metas"
 				items={displayedBudgetNotifications}
 				isOverdue={(n) => n.status === "exceeded"}
 				showUnreadIndicator

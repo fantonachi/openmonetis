@@ -13,8 +13,8 @@ export function GoalsProgressList({ items, onEdit }: GoalsProgressListProps) {
 		return (
 			<WidgetEmptyState
 				icon={<RiFundsLine className="size-6 text-muted-foreground" />}
-				title="Nenhum orçamento para o período"
-				description="Cadastre orçamentos para acompanhar o progresso das metas."
+				title="Nenhuma meta para o período"
+				description="Cadastre metas para acompanhar seu progresso e focar em seus gastos."
 			/>
 		);
 	}

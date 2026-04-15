@@ -121,7 +121,7 @@ export function createSidebarNavData(
 						icon: RiBankLine,
 					},
 					{
-						title: "Orçamentos",
+						title: "Metas",
 						url: "/budgets",
 						icon: RiFundsLine,
 					},
@@ -131,7 +131,7 @@ export function createSidebarNavData(
 				title: "Organização",
 				items: [
 					{
-						title: "Pagadores",
+						title: "Pessoas",
 						url: "/payers",
 						icon: RiGroupLine,
 						items: pagadorItemsWithHistory,

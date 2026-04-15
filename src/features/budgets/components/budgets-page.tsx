@@ -92,15 +92,15 @@ export function BudgetsPage({
 	};
 
 	const removeTitle = budgetToRemove
-		? `Remover orçamento de "${
+		? `Remover meta de "${
 				budgetToRemove.category?.name ?? "categoria removida"
 			}"?`
-		: "Remover orçamento?";
+		: "Remover meta?";
 
 	const emptyDescription =
 		categories.length === 0
 			? "Cadastre uma categoria de despesa para começar a planejar seus gastos."
-			: "Crie seu primeiro orçamento para controlar os gastos por categoria.";
+			: "Crie sua primeira meta para controlar os gastos por categoria.";
 
 	return (
 		<>
@@ -116,7 +116,7 @@ export function BudgetsPage({
 								className="w-full sm:w-auto"
 							>
 								<RiAddFill className="size-4" />
-								Novo orçamento
+								Nova meta
 							</Button>
 						}
 					/>
@@ -127,7 +127,7 @@ export function BudgetsPage({
 						className="w-full sm:w-auto"
 					>
 						<RiFileCopyLine className="size-4" />
-						Copiar orçamentos do último mês
+						Copiar metas do último mês
 					</Button>
 				</div>
 
@@ -147,7 +147,7 @@ export function BudgetsPage({
 					<Card className="flex min-h-[50vh] w-full items-center justify-center py-12">
 						<EmptyState
 							media={<RiFundsLine className="size-6 text-primary" />}
-							title="Nenhum orçamento cadastrado"
+							title="Nenhuma meta cadastrada"
 							description={emptyDescription}
 						/>
 					</Card>
@@ -168,7 +168,7 @@ export function BudgetsPage({
 				onOpenChange={handleRemoveOpenChange}
 				title={removeTitle}
 				description="Esta ação remove o limite configurado para a categoria selecionada."
-				confirmLabel="Remover orçamento"
+				confirmLabel="Remover meta"
 				pendingLabel="Removendo..."
 				confirmVariant="destructive"
 				onConfirm={handleRemoveConfirm}
@@ -177,9 +177,9 @@ export function BudgetsPage({
 			<ConfirmActionDialog
 				open={duplicateOpen}
 				onOpenChange={setDuplicateOpen}
-				title="Copiar orçamentos do último mês?"
-				description="Isso copiará os limites definidos no mês anterior para as categorias que ainda não possuem orçamento neste mês."
-				confirmLabel="Copiar orçamentos"
+				title="Copiar metas do último mês?"
+				description="Isso copiará os limites definidos no mês anterior para as categorias que ainda não possuem meta neste mês."
+				confirmLabel="Copiar metas"
 				pendingLabel="Copiando..."
 				onConfirm={handleDuplicateConfirm}
 			/>

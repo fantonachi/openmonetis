@@ -116,7 +116,7 @@ export function BulkActionDialog({
 									htmlFor="period"
 									className="text-sm cursor-pointer font-medium"
 								>
-									Todos os pagadores deste período
+									Todas as pessoas deste período
 								</Label>
 								<p className="text-xs text-muted-foreground">
 									Aplica a todos os lançamentos deste mesmo mês na série

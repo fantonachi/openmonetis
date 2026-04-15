@@ -107,7 +107,7 @@ export function BudgetDialog({
 		setErrorMessage(null);
 
 		if (mode === "update" && !budget?.id) {
-			const message = "Orçamento inválido.";
+			const message = "Meta inválida.";
 			setErrorMessage(message);
 			toast.error(message);
 			return;
@@ -161,13 +161,13 @@ export function BudgetDialog({
 		});
 	};
 
-	const title = mode === "create" ? "Novo orçamento" : "Editar orçamento";
+	const title = mode === "create" ? "Nova meta" : "Editar meta";
 	const description =
 		mode === "create"
 			? "Defina um limite de gastos para acompanhar suas despesas."
-			: "Atualize os detalhes do orçamento selecionado.";
+			: "Atualize os detalhes da meta selecionada.";
 	const submitLabel =
-		mode === "create" ? "Salvar orçamento" : "Atualizar orçamento";
+		mode === "create" ? "Salvar meta" : "Atualizar meta";
 	const disabled = categories.length === 0;
 	const parsedAmount = Number.parseFloat(formState.amount);
 	const sliderValue = Number.isFinite(parsedAmount)
@@ -191,8 +191,8 @@ export function BudgetDialog({
 				{disabled ? (
 					<div className="space-y-4">
 						<div className="rounded-lg border border-dashed bg-muted/10 p-4 text-sm text-muted-foreground">
-							Cadastre pelo menos uma categoria de despesa para criar um
-							orçamento.
+							Cadastre pelo menos uma categoria de despesa para criar uma
+							meta.
 						</div>
 						<DialogFooter>
 							<Button

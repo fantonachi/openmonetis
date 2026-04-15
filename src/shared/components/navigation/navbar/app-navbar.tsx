@@ -1,5 +1,6 @@
 import { AnimatedThemeToggler } from "@/shared/components/animated-theme-toggler";
 import { NotificationBell } from "@/shared/components/navigation/navbar/notification-bell";
+import { PrivacyToggler } from "@/shared/components/privacy-toggler";
 import { RefreshPageButton } from "@/shared/components/refresh-page-button";
 import type { DashboardNotificationsSnapshot } from "@/shared/lib/types/notifications";
 import { checkForUpdate } from "@/shared/lib/version/check-update";
@@ -38,6 +39,7 @@ export async function AppNavbar({
 					budgetNotifications={notificationsSnapshot.budgetNotifications}
 					preLancamentosCount={preLancamentosCount}
 				/>
+				<PrivacyToggler variant="navbar" />
 				<RefreshPageButton variant="navbar" />
 				<AnimatedThemeToggler variant="navbar" />
 			</div>

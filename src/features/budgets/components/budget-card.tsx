@@ -56,7 +56,7 @@ export function BudgetCard({
 							{formatCategoryName(budget)}
 						</h3>
 						<p className="text-xs text-muted-foreground">
-							Orçamento de {periodLabel}
+							Meta de {periodLabel}
 						</p>
 					</div>
 				</div>

@@ -93,8 +93,8 @@ export function DeleteAccountForm() {
 
 						<ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
 							<li>Lançamentos, faturas, antecipações e pré-lançamentos</li>
-							<li>Contas, cartões, orçamentos e anotações</li>
-							<li>Pagadores próprios e compartilhamentos recebidos</li>
+							<li>Contas, cartões, metas e anotações</li>
+							<li>Pessoas próprias e compartilhamentos recebidos</li>
 							<li>
 								Preferências do app, insights salvos e tokens do Companion
 							</li>
@@ -128,9 +128,9 @@ export function DeleteAccountForm() {
 						</div>
 
 						<ul className="list-disc list-inside text-sm text-destructive space-y-1">
-							<li>Lançamentos, orçamentos e anotações</li>
+							<li>Lançamentos, metas e anotações</li>
 							<li>Contas, cartões e categorias</li>
-							<li>Pagadores, credenciais e configurações</li>
+							<li>Pessoas, credenciais e configurações</li>
 							<li className="font-medium">
 								Resumindo, sua conta irá de arrasta pra cima!
 							</li>
