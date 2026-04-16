@@ -36,12 +36,12 @@ export type FeatureItem = {
 };
 
 export const navLinks = [
-	{ href: "#telas", label: "conheça as telas" },
-	{ href: "#funcionalidades", label: "funcionalidades" },
-	{ href: "#mobile", label: "mobile" },
-	{ href: "#stack", label: "stack" },
-	{ href: "#como-usar", label: "como usar" },
-	{ href: "#para-quem-e", label: "para quem é" },
+	{ href: "#telas", label: "Conheça as telas" },
+	{ href: "#funcionalidades", label: "Funcionalidades" },
+	{ href: "#mobile", label: "Mobile" },
+	{ href: "#stack", label: "Stack" },
+	{ href: "#como-usar", label: "Como usar" },
+	{ href: "#para-quem-e", label: "Para quem é" },
 ] as const;
 
 export const mainFeatures: FeatureItem[] = [

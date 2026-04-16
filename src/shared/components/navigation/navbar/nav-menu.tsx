@@ -1,6 +1,7 @@
 "use client";
 
 import { RiDashboardLine, RiMenuLine } from "@remixicon/react";
+
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { CalculatorDialogContent } from "@/shared/components/calculator/calculator-dialog";
@@ -28,7 +29,7 @@ import { NavPill } from "./nav-pill";
 import { MobileTools, NavToolsDropdown } from "./nav-tools";
 
 const triggerClass =
-	"h-8! rounded-md! px-2! py-0! text-sm! font-medium! bg-transparent! shadow-none! lowercase! [&_svg]:text-current! text-black/75! hover:text-black! hover:bg-black/10! focus:text-black! focus:bg-black/10! focus-visible:ring-black/20! data-[state=open]:text-black! data-[state=open]:bg-black/10!";
+	"h-8! rounded-md! px-2! py-0! text-sm! font-medium! bg-transparent! shadow-none! capitalize! [&_svg]:text-current! text-black/75! hover:text-black! hover:bg-black/10! focus:text-black! focus:bg-black/10! focus-visible:ring-black/20! data-[state=open]:text-black! data-[state=open]:bg-black/10!";
 
 const triggerActiveClass = "bg-black/15! text-black!";
 
@@ -42,9 +43,9 @@ export function NavMenu() {
 	return (
 		<>
 			{/* Desktop */}
-			<nav className="hidden md:flex items-center justify-center flex-1">
+			<nav className="hidden md:flex items-center justify-center flex-1 gap-4">
 				<NavigationMenu viewport={false}>
-					<NavigationMenuList className="gap-0">
+					<NavigationMenuList className="gap-2">
 						<NavigationMenuItem>
 							<NavPill href="/dashboard" preservePeriod>
 								Dashboard
@@ -63,6 +64,7 @@ export function NavMenu() {
 										className={cn(
 											triggerClass,
 											isSectionActive && triggerActiveClass,
+											"capitalize",
 										)}
 									>
 										{section.label}
