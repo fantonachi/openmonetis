@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openmonetis_dev_password}
       POSTGRES_DB: ${POSTGRES_DB:-openmonetis_db}
       POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
+      PGDATA: /var/lib/postgresql/data
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
