@@ -50,7 +50,6 @@ export default async function Page() {
 							<TabsTrigger value="senha">Alterar senha</TabsTrigger>
 							<TabsTrigger value="passkeys">Passkeys</TabsTrigger>
 							<TabsTrigger value="email">Alterar e-mail</TabsTrigger>
-							<TabsTrigger value="intergrations">Integrações</TabsTrigger>
 							<TabsTrigger value="deletar" className="text-destructive">
 								Deletar conta
 							</TabsTrigger>
